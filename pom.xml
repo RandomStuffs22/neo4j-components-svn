@@ -1,0 +1,62 @@
+<project>
+
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.neo4j</groupId>
+	<artifactId>parent-pom</artifactId>
+	<name>Neo4j parent POM</name>
+	<version>1</version>
+	<packaging>pom</packaging>
+	
+	<url>http://neo4j.org</url>
+	<organization>
+		<name>Neo4j</name>
+		<url>http://neo4j.org</url>
+	</organization>
+
+	<mailingLists>
+		<mailingList>
+			<name>General Neo4j</name>
+			<subscribe>user-request@lists.neo4j.org?subject=subscribe</subscribe>
+			<unsubscribe>user-request@lists.neo4j.org?subject=unsubscribe</unsubscribe>
+			<post>user@lists.neo4j.org</post>
+			<archive>http://lists.neo4j.org/pipermail/user/</archive>
+			<otherArchives>
+				<otherArchive>http://www.mail-archive.com/user@lists.neo4j.org/info.html</otherArchive>
+			</otherArchives>
+		</mailingList>
+	</mailingLists>
+
+	<build>
+		<defaultGoal>compile</defaultGoal>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.5</source>
+					<target>1.5</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<repositories>
+		<repository>
+			<id>neo4j-public-repository</id>
+			<name>Publically available Maven 2 repository for Neo4j</name>
+			<url>http://m2.neo4j.org</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<distributionManagement>
+	    <repository>
+			<id>neo4j-upload-repository</id>
+			<name>Developers-only Maven 2 upload repository for Neo4j</name>
+			<url>scp://m2.neo4j.org/home/neo/maven2</url>
+		</repository>
+	</distributionManagement>
+
+</project>

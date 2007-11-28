@@ -1,0 +1,80 @@
+/*
+ * Copyright 2002-2007 Network Engine for Objects in Lund AB [neotechnology.com]
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package org.neo4j.impl.shell;
+
+import java.io.Serializable;
+import java.rmi.RemoteException;
+import org.neo4j.api.core.NeoService;
+import org.neo4j.impl.shell.apps.Ls;
+import org.neo4j.util.shell.AbstractClient;
+import org.neo4j.util.shell.BashVariableInterpreter;
+import org.neo4j.util.shell.Session;
+import org.neo4j.util.shell.ShellServer;
+import org.neo4j.util.shell.SimpleAppServer;
+import org.neo4j.util.shell.BashVariableInterpreter.Replacer;
+import org.neo4j.util.shell.apps.Help;
+
+public class NeoShellServer extends SimpleAppServer
+{
+	private NeoService neo;
+	private BashVariableInterpreter bashInterpreter;
+	
+	public NeoShellServer( NeoService neo ) 
+		throws RemoteException
+	{
+		super();
+		this.addPackage( Ls.class.getPackage().getName() );
+		this.neo = neo;
+		this.bashInterpreter = new BashVariableInterpreter();
+		this.bashInterpreter.addReplacer( "W", new WorkingDirReplacer() );
+		this.setProperty( AbstractClient.PROMPT_KEY, "neo-sh \\W$ " );
+	}
+	
+	@Override
+	public String welcome()
+	{
+		return "Welcome to NeoShell\n" +
+			Help.getHelpString( this );
+	}
+	
+	@Override
+	public Serializable interpretVariable( String key, Serializable value,
+		Session session ) throws RemoteException
+	{
+		if ( key.equals( AbstractClient.PROMPT_KEY ) )
+		{
+			return this.bashInterpreter.interpret( ( String ) value,
+				this, session );
+		}
+		return value;
+	}
+	
+	public NeoService getNeo()
+	{
+		return this.neo;
+	}
+	
+	public static class WorkingDirReplacer implements Replacer
+	{
+		public String getReplacement( ShellServer server, Session session )
+		{
+			throw new RuntimeException( "Fix this" );
+//			return "" + NeoApp.getDisplayNameForNode(
+//				NeoApp.getCurrentNode( session ) );
+		}
+	}
+}

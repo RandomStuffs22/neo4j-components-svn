@@ -1,0 +1,127 @@
+<project>
+	<parent>
+		<groupId>org.neo4j</groupId>
+		<artifactId>parent-pom</artifactId>
+		<version>1</version>
+		<relativePath>../../pom.xml</relativePath>    		
+	</parent>
+
+	<modelVersion>4.0.0</modelVersion>	
+	<groupId>org.neo4j</groupId>
+	<artifactId>neo</artifactId>
+	<version>1.0-rc1-SNAPSHOT</version>
+	<name>Neo</name>
+	<description>
+Neo is a lightweight, embedded Java database designed to store data structured
+as networks rather than tables. For more information, please see neo4j.org.
+	</description>
+
+	<build>
+		<sourceDirectory>src/java</sourceDirectory>
+		<testSourceDirectory>src/test</testSourceDirectory>
+		<plugins>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<skip>false</skip>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptors>
+						<descriptor>src/main/assembly/binary-release.xml</descriptor>
+						<descriptor>src/main/assembly/source-release.xml</descriptor>
+					</descriptors>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-dependency-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>clirr-maven-plugin</artifactId>
+				<configuration>
+					<includes>
+						<include>org/neo4j/api/**</include>
+					</includes>
+<!--					<comparisonVersion>1.0-b5</comparisonVersion> -->
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>javax.transaction</groupId>
+			<artifactId>jta</artifactId>
+			<version>1.0.1</version>
+		</dependency>
+		<dependency> 
+			<groupId>org.neo4j</groupId>
+			<artifactId>shell</artifactId>
+			<version>1.0-rc1-SNAPSHOT</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.1</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<reporting>
+		<plugins>
+			<plugin>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<configuration>
+					<subpackages>org.neo4j.api</subpackages>
+					<links>
+						<link>http://java.sun.com/j2se/1.5.0/docs/api/</link>
+					</links>
+					<quiet>true</quiet>
+				</configuration>
+				<reportSets>
+					<reportSet>
+						<reports>
+							<report>javadoc</report>
+						</reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>clirr-maven-plugin</artifactId>
+				<configuration>
+					<includes>
+						<include>org/neo4j/api/**</include>
+					</includes>
+<!--					<comparisonVersion>1.0-b5</comparisonVersion> -->
+				</configuration>
+			</plugin>			
+		</plugins>
+	</reporting>
+                        
+</project>
