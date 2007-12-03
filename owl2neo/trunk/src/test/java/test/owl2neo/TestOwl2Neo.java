@@ -43,7 +43,7 @@ public class TestOwl2Neo extends TestCase
 		clearNeoDirectory();
 		neo = new EmbeddedNeo( directory.getAbsolutePath() );
 		MetaManager metaManager = new MetaManager( neo );
-		owl2Neo = new Owl2Neo( metaManager );
+		owl2Neo = new Owl2Neo( neo, metaManager );
 	}
 
 	@Override

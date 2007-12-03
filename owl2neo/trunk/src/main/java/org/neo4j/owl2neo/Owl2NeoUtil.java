@@ -1,6 +1,10 @@
 package org.neo4j.owl2neo;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
@@ -9,9 +13,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.neo4j.api.core.Node;
+import org.neo4j.api.core.RelationshipType;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.meta.MetaManager;
 import org.neo4j.meta.NodeType;
+import org.neo4j.util.NeoStringSet;
+import org.neo4j.util.NeoUtil;
 import org.semanticweb.owl.apibinding.OWLManager;
 import org.semanticweb.owl.model.OWLAntiSymmetricObjectPropertyAxiom;
 import org.semanticweb.owl.model.OWLAxiomAnnotationAxiom;
@@ -84,7 +92,6 @@ import org.semanticweb.owl.model.OWLOntology;
 import org.semanticweb.owl.model.OWLOntologyAnnotationAxiom;
 import org.semanticweb.owl.model.OWLOntologyCreationException;
 import org.semanticweb.owl.model.OWLOntologyManager;
-import org.semanticweb.owl.model.OWLOntologyURIMapper;
 import org.semanticweb.owl.model.OWLProperty;
 import org.semanticweb.owl.model.OWLReflexiveObjectPropertyAxiom;
 import org.semanticweb.owl.model.OWLSameIndividualsAxiom;
@@ -115,6 +122,12 @@ import org.semanticweb.owl.vocab.OWLXMLVocabulary;
  */
 class Owl2NeoUtil
 {
+	private static enum Owl2NeoRelTypes implements RelationshipType
+	{
+		REF_OWL_2_NEO_ONTOLOGIES,
+		OWL_2_NEO_ONTOLOGY,
+	}
+	
 	private OWLOntologyManager owl;
 	private Owl2Neo owl2Neo;
 	private Set<String> ontologyBaseUris = new HashSet<String>();
@@ -135,6 +148,7 @@ class Owl2NeoUtil
 		try
 		{
 			owl.loadOntology( owlFile.toURI() );
+			getStoredOntologies().add( readFile( owlFile ) );
 		}
 		catch ( OWLOntologyCreationException e )
 		{
@@ -142,57 +156,144 @@ class Owl2NeoUtil
 		}
 	}
 	
+	private Node getReferenceNode()
+	{
+		return new NeoUtil( owl2Neo.getNeo() ).getOrCreateSubReferenceNode(
+			Owl2NeoRelTypes.REF_OWL_2_NEO_ONTOLOGIES );
+	}
+	
+	private Collection<String> getStoredOntologies()
+	{
+		return new NeoStringSet( owl2Neo.getNeo(), getReferenceNode(),
+			Owl2NeoRelTypes.OWL_2_NEO_ONTOLOGY ); 
+	}
+	
+	private String readFile( File file )
+	{
+		BufferedReader input = null;
+		try
+		{
+			input = new BufferedReader( new InputStreamReader(
+				new FileInputStream( file ) ) );
+			StringBuffer buffer = new StringBuffer();
+			char[] readBuffer = new char[ 4000 ];
+			int charsRead = -1;
+			do
+			{
+				charsRead = input.read( readBuffer );
+				if ( charsRead != -1 )
+				{
+					buffer.append( readBuffer, 0, charsRead );
+				}
+			}
+			while ( charsRead != -1 );
+			return buffer.toString();
+		}
+		catch ( IOException e )
+		{
+			throw new RuntimeException( e );
+		}
+		finally
+		{
+			if ( input != null )
+			{
+				try
+				{
+					input.close();
+				}
+				catch ( IOException e )
+				{ // Ok
+				}
+			}
+		}
+	}
+	
+	private String getOntologyUri( String entireOntologyAsString )
+	{
+		String lookFor = "xmlns=\"";
+		int startIndex = entireOntologyAsString.indexOf( lookFor );
+		if ( startIndex == -1 )
+		{
+			throw new RuntimeException( "Missing '" + lookFor + "'" );
+		}
+		startIndex += lookFor.length();
+		int endIndex = entireOntologyAsString.indexOf( "\"", startIndex );
+		if ( endIndex == -1 )
+		{
+			throw new RuntimeException( "No end for '" + lookFor + "'" );
+		}
+		String result =
+			entireOntologyAsString.substring( startIndex, endIndex );
+		if ( result.endsWith( "#" ) )
+		{
+			result = result.substring( 0, result.length() - 1 );
+		}
+		return result;
+	}
+	
 	/**
-	 * Performs the sync from the ontologies to our own representation,
+	 * Performs the sync from the ontologies to a neo representation,
 	 * using {@link Owl2Neo#getMetaManager()} and {@link Owl2Neo#getOwlModel()}.
 	 * @param ontologies an array of files, containing ontologies
 	 * (in RDF XML format), to sync.
+	 * @param clearPreviousOntologies whether or not to remove previously stored
+	 * ontologies (ontologies are stored in neo after each sync).
 	 */
-	public void syncOntologiesWithNeoRepresentation( final File... ontologies )
+	public void syncOntologiesWithNeoRepresentation(
+		boolean clearPreviousOntologies, File... ontologies )
 	{
-		// This is just flat out stupid, that I have to map the given file
-		// from its URI and back to the file again!
-		owl.addURIMapper( new OWLOntologyURIMapper()
-		{
-			public URI getPhysicalURI( URI uri )
-			{
-				String lastPart = lastPartOfTheUri( uri );
-				for ( File file : ontologies )
-				{
-					if ( file.getName().equalsIgnoreCase( lastPart ) )
-					{
-						return file.toURI();
-					}
-				}
-				return uri;
-			}
-			
-			private String lastPartOfTheUri( URI uri )
-			{
-				int lastSlashIndex = uri.toString().lastIndexOf( '/' );
-				if ( lastSlashIndex == -1 )
-				{
-					throw new RuntimeException( "No last slash in '" + uri +
-						"'" );
-				}
-				return uri.toString().substring( lastSlashIndex + 1 );
-			}
-		} );
-		
-		for ( File ontology : ontologies )
-		{
-			this.putOwlFile( ontology );
-		}
-
-		Transaction tx = Transaction.begin();
+		Transaction tx = owl2Neo.getNeo().beginTx();
 		try
 		{
+			if ( clearPreviousOntologies )
+			{
+				getStoredOntologies().clear();
+			}
+			checkForNewOntologies( ontologies );
+			for ( File ontology : ontologies )
+			{
+				this.putOwlFile( ontology );
+			}
 			this.syncOntologies();
 			tx.success();
 		}
 		finally
 		{
 			tx.finish();
+		}
+	}
+	
+	private void checkForNewOntologies( File... ontologies )
+	{
+		Collection<String> storedOntologies = getStoredOntologies();
+		Map<String, String> map = new HashMap<String, String>();
+		for ( String ontologyString : getStoredOntologies() )
+		{
+			map.put( getOntologyUri( ontologyString ), ontologyString );
+		}
+		
+		for ( File ontology : ontologies )
+		{
+			String ontologyString = readFile( ontology );
+			String ontologyUri = getOntologyUri( ontologyString );
+			boolean addIt = false;
+			if ( map.containsKey( ontologyUri ) )
+			{
+				if ( !ontologyString.equals( map.get( ontologyUri ) ) )
+				{
+					storedOntologies.remove( map.get( ontologyUri ) );
+					addIt = true;
+				}
+			}
+			else
+			{
+				addIt = true;
+			}
+			
+			if ( addIt )
+			{
+				storedOntologies.add( ontologyString );
+			}
 		}
 	}
 	

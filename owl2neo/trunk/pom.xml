@@ -35,6 +35,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
+			<artifactId>neo-utils</artifactId>
+			<version>1.0-rc-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
 			<artifactId>neometa</artifactId>
 			<version>0.2-SNAPSHOT</version>
 		</dependency>

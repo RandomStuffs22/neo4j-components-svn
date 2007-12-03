@@ -2,6 +2,7 @@ package org.neo4j.owl2neo;
 
 import java.io.File;
 
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.meta.MetaManager;
 import org.neo4j.meta.NodeType;
@@ -16,6 +17,7 @@ import org.neo4j.meta.NodeType;
  */
 public class Owl2Neo
 {
+	private NeoService neo;
 	private MetaManager metaManager;
 	private OwlModel owlModel;
 	private Owl2NeoUtil util;
@@ -24,11 +26,20 @@ public class Owl2Neo
 	 * @param metaManager the {@link MetaManager} to use for storing
 	 * information about the ontologies.
 	 */
-	public Owl2Neo( MetaManager metaManager )
+	public Owl2Neo( NeoService neo, MetaManager metaManager )
 	{
+		this.neo = neo;
 		this.metaManager = metaManager;
 		this.owlModel = new OwlModel( this );
 		this.util = new Owl2NeoUtil( this );
+	}
+	
+	/**
+	 * @return the {@link NeoService} instance.
+	 */
+	public NeoService getNeo()
+	{
+		return this.neo;
 	}
 	
 	/**
@@ -57,7 +68,7 @@ public class Owl2Neo
 	 */
 	public NodeType getNodeType( String name, boolean createIfNotExists )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getNeo().beginTx();
 		try
 		{
 			if ( getMetaManager().hasNodeTypeByName( name ) )
@@ -80,13 +91,20 @@ public class Owl2Neo
 		}
 	}
 	
+	public void syncOntologiesWithNeoRepresentation( File... ontologies )
+	{
+		syncOntologiesWithNeoRepresentation( true, ontologies );
+	}
+	
 	/**
 	 * Performs the synchronization of ontologies into neo representation.
 	 * @param ontologies an array of files containing ontologies.
 	 */
-	public void syncOntologiesWithNeoRepresentation( File... ontologies )
+	public void syncOntologiesWithNeoRepresentation(
+		boolean clearPreviousOntologies, File... ontologies )
 	{
-		util.syncOntologiesWithNeoRepresentation( ontologies );
+		util.syncOntologiesWithNeoRepresentation(
+			clearPreviousOntologies, ontologies );
 	}
 	
 	/**
