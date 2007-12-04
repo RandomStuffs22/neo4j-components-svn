@@ -3,8 +3,10 @@ package org.neo4j.owl2neo;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
@@ -195,16 +197,27 @@ class Owl2NeoUtil
 		}
 		finally
 		{
-			if ( input != null )
-			{
-				try
-				{
-					input.close();
-				}
-				catch ( IOException e )
-				{ // Ok
-				}
-			}
+			IoUtil.safeClose( input );
+		}
+	}
+	
+	private File storeToTempFile( String string )
+	{
+		Writer writer = null;
+		try
+		{
+			File file = File.createTempFile( "owl", "neo" );
+			writer = new FileWriter( file );
+			writer.write( string );
+			return file;
+		}
+		catch ( IOException e )
+		{
+			throw new RuntimeException( e );
+		}
+		finally
+		{
+			IoUtil.safeClose( writer );
 		}
 	}
 	
@@ -250,9 +263,14 @@ class Owl2NeoUtil
 				getStoredOntologies().clear();
 			}
 			checkForNewOntologies( ontologies );
-			for ( File ontology : ontologies )
+			for ( String ontologyString : getStoredOntologies() )
 			{
-				this.putOwlFile( ontology );
+				// Well, this is a little awkwaard... but the ontology manager
+				// will complain if it doesn't get a File as the source of
+				// the ontology.
+				File ontologyFile = storeToTempFile( ontologyString );
+				this.putOwlFile( ontologyFile );
+				IoUtil.safeDelete( ontologyFile );
 			}
 			this.syncOntologies();
 			tx.success();

@@ -93,7 +93,7 @@ public class Owl2Neo
 	
 	public void syncOntologiesWithNeoRepresentation( File... ontologies )
 	{
-		syncOntologiesWithNeoRepresentation( true, ontologies );
+		syncOntologiesWithNeoRepresentation( false, ontologies );
 	}
 	
 	/**
