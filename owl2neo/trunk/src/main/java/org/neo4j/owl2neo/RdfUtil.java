@@ -73,6 +73,10 @@ public abstract class RdfUtil
 			new NormalConverter( Double.class ) );
 		datatypePropertyTypes.put( NS_XML_SCHEMA + "decimal",
 			new NormalConverter( Double.class ) );
+		datatypePropertyTypes.put( NS_XML_SCHEMA + "gMonthDay",
+			new DateConverter( new SimpleDateFormat( "MM-dd" ) ) );
+		datatypePropertyTypes.put( NS_XML_SCHEMA + "gDay",
+			new DateConverter( new SimpleDateFormat( "dd" ) ) );
 		datatypePropertyTypes.put( NS_XML_SCHEMA + "gYear",
 			new DateConverter( new SimpleDateFormat( "yyyy" ) ) );
 		datatypePropertyTypes.put( NS_XML_SCHEMA + "gMonth",
@@ -83,10 +87,11 @@ public abstract class RdfUtil
 			new DateConverter( new XmlSchemaDateFormat() ) );
 		datatypePropertyTypes.put( NS_XML_SCHEMA + "date",
 			new DateConverter( new SimpleDateFormat( "yyyy-MM-dd" ) ) );
+		datatypePropertyTypes.put( NS_XML_SCHEMA + "time",
+			new TimeConverter() );
 		
 		// TODO Also support these: hexBinary, base64Binary,
-		// gMonthDay, gDay, anyURI, token, language, NMTOKEN, Name,
-		// NCName, time.
+		// anyURI, token, language, NMTOKEN, Name, NCName, time.
 		
 		datatypePropertyTypes =
 			Collections.unmodifiableMap( datatypePropertyTypes );
@@ -235,6 +240,25 @@ public abstract class RdfUtil
 		public Class<?> getDatatype()
 		{
 			return Date.class;
+		}
+	}
+	
+	private static class TimeConverter extends DateConverter
+	{
+		private static String timeFormat = "HH:mm:ss";
+		private DateFormat withMillis =
+			new SimpleDateFormat( timeFormat + ".SSS" );
+		
+		TimeConverter()
+		{
+			super( new SimpleDateFormat( "HH:mm:ss" ) );
+		}
+		
+		@Override
+		public Object convert( String value ) throws ParseException
+		{
+			return value.length() == timeFormat.length() ?
+				super.convert( value ) : withMillis.parse( value );
 		}
 	}
 }

@@ -65,4 +65,30 @@ public class TestDateFormats extends TestCase
 			fail( "Unable to parse: " + e.toString() );
 		}
 	}
+	
+	public void testTimeFormat()
+	{
+		try
+		{
+			Date date = ( Date ) RdfUtil.getRealValue(
+				RdfUtil.NS_XML_SCHEMA + "time", "12:00:03" );
+			Calendar cal = Calendar.getInstance();
+			cal.setTime( date );
+			assertEquals( 12, cal.get( Calendar.HOUR_OF_DAY ) );
+			assertEquals( 0, cal.get( Calendar.MINUTE ) );
+			assertEquals( 3, cal.get( Calendar.SECOND ) );
+			
+			date = ( Date ) RdfUtil.getRealValue(
+				RdfUtil.NS_XML_SCHEMA + "time", "20:32:12.146" );
+			cal.setTime( date );
+			assertEquals( 20, cal.get( Calendar.HOUR_OF_DAY ) );
+			assertEquals( 32, cal.get( Calendar.MINUTE ) );
+			assertEquals( 12, cal.get( Calendar.SECOND ) );
+			assertEquals( 146, cal.get( Calendar.MILLISECOND ) );
+		}
+		catch ( ParseException e )
+		{
+			fail( "Unable to parse " + e.toString() );
+		}
+	}
 }
