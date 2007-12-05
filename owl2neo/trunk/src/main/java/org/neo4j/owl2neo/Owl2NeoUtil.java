@@ -262,7 +262,7 @@ class Owl2NeoUtil
 			{
 				getStoredOntologies().clear();
 			}
-			checkForNewOntologies( ontologies );
+			Map<String, String> updates = checkForNewOntologies( ontologies );
 			for ( String ontologyString : getStoredOntologies() )
 			{
 				// Well, this is a little awkwaard... but the ontology manager
@@ -273,6 +273,7 @@ class Owl2NeoUtil
 				IoUtil.safeDelete( ontologyFile );
 			}
 			this.syncOntologies();
+			sendUpdateEvents( updates );
 			tx.success();
 		}
 		finally
@@ -281,8 +282,29 @@ class Owl2NeoUtil
 		}
 	}
 	
-	private void checkForNewOntologies( File... ontologies )
+	private void sendUpdateEvents( Map<String, String> updates )
 	{
+		for ( Map.Entry<String, String> entry : updates.entrySet() )
+		{
+			for ( OntologyChangeHandler handler :
+				owl2Neo.getOntologyChangeHandlers() )
+			{
+				String ontologyUri = entry.getKey();
+				if ( entry.getValue().equals( "updated" ) )
+				{
+					handler.ontologyUpdated( ontologyUri );
+				}
+				else
+				{
+					handler.ontologyAdded( ontologyUri );
+				}
+			}
+		}
+	}
+	
+	private Map<String, String> checkForNewOntologies( File... ontologies )
+	{
+		Map<String, String> result = new HashMap<String, String>();
 		Collection<String> storedOntologies = getStoredOntologies();
 		Map<String, String> map = new HashMap<String, String>();
 		for ( String ontologyString : getStoredOntologies() )
@@ -294,25 +316,22 @@ class Owl2NeoUtil
 		{
 			String ontologyString = readFile( ontology );
 			String ontologyUri = getOntologyUri( ontologyString );
-			boolean addIt = false;
 			if ( map.containsKey( ontologyUri ) )
 			{
 				if ( !ontologyString.equals( map.get( ontologyUri ) ) )
 				{
 					storedOntologies.remove( map.get( ontologyUri ) );
-					addIt = true;
+					storedOntologies.add( ontologyString );
+					result.put( ontologyUri, "updated" );
 				}
 			}
 			else
 			{
-				addIt = true;
-			}
-			
-			if ( addIt )
-			{
 				storedOntologies.add( ontologyString );
+				result.put( ontologyUri, "added" );
 			}
 		}
+		return result;
 	}
 	
 	String[] getOntologyBaseUris()

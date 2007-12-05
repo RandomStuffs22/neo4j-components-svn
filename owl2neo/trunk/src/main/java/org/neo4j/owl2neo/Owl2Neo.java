@@ -1,6 +1,8 @@
 package org.neo4j.owl2neo;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.HashSet;
 
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Transaction;
@@ -21,6 +23,8 @@ public class Owl2Neo
 	private MetaManager metaManager;
 	private OwlModel owlModel;
 	private Owl2NeoUtil util;
+	private Collection<OntologyChangeHandler> changeHandlers =
+		new HashSet<OntologyChangeHandler>();
 
 	/**
 	 * @param metaManager the {@link MetaManager} to use for storing
@@ -57,6 +61,16 @@ public class Owl2Neo
 	public OwlModel getOwlModel()
 	{
 		return this.owlModel;
+	}
+	
+	public void addOntologyChangeHandler( OntologyChangeHandler handler )
+	{
+		this.changeHandlers.add( handler );
+	}
+	
+	public Iterable<OntologyChangeHandler> getOntologyChangeHandlers()
+	{
+		return this.changeHandlers;
 	}
 
 	/**
