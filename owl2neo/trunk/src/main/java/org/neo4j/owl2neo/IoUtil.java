@@ -5,7 +5,7 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Some common I/O utils
+ * Some common I/O utils.
  */
 public abstract class IoUtil
 {
