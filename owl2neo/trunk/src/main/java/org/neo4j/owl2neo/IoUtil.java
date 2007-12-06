@@ -4,6 +4,9 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * Some common I/O utils
+ */
 public abstract class IoUtil
 {
 	public static void safeClose( Closeable c )
