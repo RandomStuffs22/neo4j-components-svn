@@ -41,7 +41,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
-			<artifactId>neometa</artifactId>
+			<artifactId>neo-meta</artifactId>
 			<version>0.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
