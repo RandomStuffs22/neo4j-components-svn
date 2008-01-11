@@ -39,6 +39,7 @@ public class SparqlServlet extends HttpServlet
 		return this.debugEnabled;
 	}
 	
+	@Override
 	protected void doGet( HttpServletRequest request,
 	    HttpServletResponse response ) throws IOException
 	{		
