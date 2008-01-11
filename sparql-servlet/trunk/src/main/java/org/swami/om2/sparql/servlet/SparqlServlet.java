@@ -59,12 +59,15 @@ public class SparqlServlet extends HttpServlet
         {
 			encodedQuery = request.getParameter( "query" );
 			tx = Transaction.begin();
-			 Query query = SPARQLParser.parse( new StringReader( 
+			Query query = SPARQLParser.parse( new StringReader( 
 			 	encodedQuery ) );
 			if ( query instanceof SelectQuery )
 			{
+				long time = System.currentTimeMillis();
 				RdfBindingSet result = ( ( SelectQuery ) query ).execute(
 					new NeoRdfSource() );
+				time = System.currentTimeMillis() - time;
+				queryExecuted( encodedQuery, time );
 				out.println( "<?xml version=\"1.0\"?>" );
 				out.println( 
 					"<sparql xmlns=\"http://www.w3.org/2005/sparql-results#\">"
@@ -129,6 +132,10 @@ public class SparqlServlet extends HttpServlet
         	}
         }
 		out.close();
+	}
+	
+	protected void queryExecuted( String query, long timeSpent )
+	{
 	}
 
 	private String getStartHeaderVarType( VariableType variableType )
