@@ -35,7 +35,7 @@ public abstract class RdfUtil
 			new NormalConverter( String.class ) );
 		
 		datatypePropertyTypes.put( NS_XML_SCHEMA + "boolean",
-			new NormalConverter( Boolean.class ) );
+			new BooleanConverter() );
 		
 		datatypePropertyTypes.put( NS_XML_SCHEMA + "byte",
 			new NormalConverter( Byte.class ) );
@@ -211,6 +211,33 @@ public abstract class RdfUtil
 		public Class<?> getDatatype()
 		{
 			return cls;
+		}
+	}
+	
+	private static class BooleanConverter extends ValueConverter
+	{
+		@Override
+		public Object convert( String value ) throws ParseException
+		{
+			if ( !value.equals( Boolean.TRUE.toString() ) &&
+				!value.equals( Boolean.FALSE.toString() ) )
+			{
+				throw new ParseException( "Invalid boolean value '" + value +
+					"'", 0 );
+			}
+			return Boolean.parseBoolean( value );
+		}
+		
+		@Override
+		public String convertToString( Object value )
+		{
+			return value.toString();
+		}
+		
+		@Override
+		public Class<?> getDatatype()
+		{
+			return Boolean.class;
 		}
 	}
 	
