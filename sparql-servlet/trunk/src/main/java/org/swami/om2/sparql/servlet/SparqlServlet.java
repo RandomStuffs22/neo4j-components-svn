@@ -39,6 +39,16 @@ public class SparqlServlet extends HttpServlet
 		return this.debugEnabled;
 	}
 	
+	protected boolean mayAskQuery( String query )
+	{
+		return true;
+	}
+	
+	protected boolean mayViewObject( String objectUrl )
+	{
+		return true;
+	}
+	
 	@Override
 	protected void doGet( HttpServletRequest request,
 	    HttpServletResponse response ) throws IOException
@@ -58,6 +68,13 @@ public class SparqlServlet extends HttpServlet
 		try
         {
 			encodedQuery = request.getParameter( "query" );
+			if ( !mayAskQuery( encodedQuery ) )
+			{
+				response.sendError( HttpServletResponse.SC_BAD_REQUEST,
+					"Not permitted to ask query '" + encodedQuery + "'" );
+				return;
+			}
+			
 			tx = Transaction.begin();
 			Query query = SPARQLParser.parse( new StringReader( 
 			 	encodedQuery ) );
@@ -85,19 +102,12 @@ public class SparqlServlet extends HttpServlet
 				Iterator iterator = result.iterator();
 				while ( iterator.hasNext() )
 				{
-					out.println( "\t\t<result>" );
 					NeoBindingRow bindingRow =
 						( NeoBindingRow ) iterator.next();
-					for ( NeoVariable var : vars ) 
+					if ( isAllowedToView( bindingRow, vars ) )
 					{
-						out.println( "\t\t\t<binding name=\"" + 
-							var.getName() + "\">" +
-							getStartHeaderVarType( var.getVariableType() ) +
-							bindingRow.getValue( var ) + 
-							getEndHeaderVarType( var.getVariableType() ) +
-							"</binding>" );
+						outputRow( bindingRow, vars, out );
 					}
-					out.println( "\t\t</result>" );
 				}
 				out.println( "\t</results>" );
 				out.println( "</sparql>" );
@@ -130,8 +140,38 @@ public class SparqlServlet extends HttpServlet
         	{
         		tx.finish();
         	}
+    		out.close();
         }
-		out.close();
+	}
+	
+	protected void outputRow( NeoBindingRow row, List<NeoVariable> vars,
+		PrintWriter out )
+	{
+		out.println( "\t\t<result>" );
+		for ( NeoVariable var : vars ) 
+		{
+			out.println( "\t\t\t<binding name=\"" + 
+				var.getName() + "\">" +
+				getStartHeaderVarType( var.getVariableType() ) +
+				row.getValue( var ) + 
+				getEndHeaderVarType( var.getVariableType() ) +
+				"</binding>" );
+		}
+		out.println( "\t\t</result>" );
+	}
+	
+	protected boolean isAllowedToView( NeoBindingRow row,
+		List<NeoVariable> vars )
+	{
+		for ( NeoVariable var : vars ) 
+		{
+			if ( var.getVariableType() == VariableType.URI &&
+				!mayViewObject( row.getValue( var ).toString() ) )
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	protected void queryExecuted( String query, long timeSpent )
