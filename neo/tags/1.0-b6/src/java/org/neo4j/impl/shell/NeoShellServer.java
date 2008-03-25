@@ -18,7 +18,9 @@ package org.neo4j.impl.shell;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
+
 import org.neo4j.api.core.NeoService;
+import org.neo4j.api.core.Transaction;
 import org.neo4j.impl.shell.apps.Ls;
 import org.neo4j.util.shell.AbstractClient;
 import org.neo4j.util.shell.BashVariableInterpreter;
@@ -55,12 +57,22 @@ public class NeoShellServer extends SimpleAppServer
 	public Serializable interpretVariable( String key, Serializable value,
 		Session session ) throws RemoteException
 	{
-		if ( key.equals( AbstractClient.PROMPT_KEY ) )
+		Transaction tx = Transaction.begin();
+		try
 		{
-			return this.bashInterpreter.interpret( ( String ) value,
-				this, session );
+			Serializable result = value;
+			if ( key.equals( AbstractClient.PROMPT_KEY ) )
+			{
+				result = this.bashInterpreter.interpret( ( String ) value,
+					this, session );
+			}
+			tx.success();
+			return result;
 		}
-		return value;
+		finally
+		{
+			tx.finish();
+		}
 	}
 	
 	public NeoService getNeo()
