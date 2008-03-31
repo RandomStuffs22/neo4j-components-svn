@@ -70,8 +70,7 @@ public class RdfsImporter
 		try
 		{
 			MetaStructure meta = new MetaStructure( neo, rootNode );
-			new RdfsImporter( meta.getGlobalNamespace() ).doImport(
-				new File( "test.rdfs" ) );
+			new RdfsImporter( meta ).doImport( new File( "test.rdfs" ) );
 		}
 		catch ( Exception e )
 		{
@@ -83,9 +82,9 @@ public class RdfsImporter
 		}
 	}
 	
-	private RdfsImporter( MetaStructureNamespace meta )
+	public RdfsImporter( MetaStructure meta )
 	{
-		this.meta = meta;
+		this.meta = meta.getGlobalNamespace();
 	}
 	
 	public void doImport( File file ) throws IOException
@@ -114,27 +113,19 @@ public class RdfsImporter
 		return node.asURI().asJavaURI().toString();
 	}
 	
-//	private String resourceType( Resource resource, Model model )
-//	{
-//		ClosableIterator<? extends Statement> itr = model.findStatements(
-//			resource, RDF.type, Variable.ANY );
-//		try
-//		{
-//			return resourceUri( itr.next().getObject() );
-//		}
-//		finally
-//		{
-//			itr.close();
-//		}
-//	}
-	
 	private void trySetLabelAndComment( MetaStructureThing thing,
 		Model model, Resource resource )
 	{
 		String label = tryGetLiteral( model, resource, RDFS.label );
 		String comment = tryGetLiteral( model, resource, RDFS.comment );
-		System.out.println( "\tlabel: " + label );
-		System.out.println( "\tcomment: " + comment );
+		if ( label != null )
+		{
+			System.out.println( "\tlabel: " + label );
+		}
+		if ( comment != null )
+		{
+			System.out.println( "\tcomment: " + comment );
+		}
 		if ( label != null )
 		{
 			thing.setLabel( label );
@@ -285,8 +276,11 @@ public class RdfsImporter
 					rangeType.equals( RDF.Bag.toString() ) ||
 					rangeType.equals( RDF.Alt.toString() ) )
 				{
-//					throw new UnsupportedOperationException( "range type " +
-//						rangeType + " not supported" );
+					// TODO
+				}
+				else if ( RdfUtil.recognizesDatatype( rangeType ) )
+				{
+					propertyRange = new RdfDatatypeRange( rangeType );
 				}
 				else if ( rangeType.equals( RDFS.Literal.toString() ) ||
 					rangeType.equals( RDFS.Datatype.toString() ) )
@@ -297,8 +291,9 @@ public class RdfsImporter
 				if ( propertyRange != null )
 				{
 					metaProperty.setRange( propertyRange );
+					System.out.println( "\trange: " + rangeType + " (" +
+						propertyRange.getClass().getName() + ")" );
 				}
-				System.out.println( "\trange: " + rangeType );
 			}
 		}
 		finally
