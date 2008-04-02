@@ -9,8 +9,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.neometa.structure.DatatypeClassRange;
 import org.neo4j.neometa.structure.MetaStructure;
@@ -37,33 +35,6 @@ import org.ontoware.rdf2go.vocabulary.RDFS;
 public class RdfsImporter
 {
 	private MetaStructure meta;
-	
-	public static void main( String[] args ) throws Exception
-	{
-		final NeoService neo = new EmbeddedNeo( "var/neo" );
-		Runtime.getRuntime().addShutdownHook( new Thread()
-		{
-			@Override
-			public void run()
-			{
-				neo.shutdown();
-			}
-		} );
-		
-		try
-		{
-			MetaStructure meta = new MetaStructure( neo );
-			new RdfsImporter( meta ).doImport( new File( "test.rdfs" ) );
-		}
-		catch ( Exception e )
-		{
-			e.printStackTrace();
-		}
-		finally
-		{
-			System.exit( 0 );
-		}
-	}
 	
 	public RdfsImporter( MetaStructure meta )
 	{
@@ -93,6 +64,11 @@ public class RdfsImporter
 		{
 			tx.finish();
 		}
+	}
+	
+	private void debug( String message )
+	{
+//		System.out.println( message );
 	}
 	
 	private void readFrom( Model model )
@@ -153,7 +129,7 @@ public class RdfsImporter
 		String value = tryGetLiteral( model, resource, property );
 		if ( value != null )
 		{
-			System.out.println( "\t" + key + ": " + value );
+			debug( "\t" + key + ": " + value );
 			thing.setAdditionalProperty( key, value );
 		}
 	}
@@ -165,7 +141,7 @@ public class RdfsImporter
 		if ( node != null )
 		{
 			String value = resourceUri( node );
-			System.out.println( "\t" + key + ": " + value );
+			debug( "\t" + key + ": " + value );
 			thing.setAdditionalProperty( key, value );
 		}
 	}
@@ -181,7 +157,7 @@ public class RdfsImporter
 				Statement statement = itr.next();
 				Resource subject = statement.getSubject();
 				String className = resourceUri( subject );
-				System.out.println( "Class: " + className );
+				debug( "Class: " + className );
 				MetaStructureClass metaClass =
 					meta().getMetaClass( className, true );
 				trySetLabelAndComment( metaClass, model, subject );
@@ -207,7 +183,7 @@ public class RdfsImporter
 				String subName = resourceUri( statement.getSubject() );
 				meta().getMetaClass( subName, true ).getDirectSupers().add(
 					meta().getMetaClass( superName, true ) );
-				System.out.println( subName + " subClassOf " + superName );
+				debug( subName + " subClassOf " + superName );
 			}
 		}
 		finally
@@ -227,7 +203,7 @@ public class RdfsImporter
 				Statement statement = itr.next();
 				Resource property = statement.getSubject();
 				String propertyName = resourceUri( property );
-				System.out.println( "Property: " + propertyName );
+				debug( "Property: " + propertyName );
 				MetaStructureProperty metaProperty =
 					meta().getMetaProperty( propertyName, true );
 				trySetLabelAndComment( metaProperty, model, property );
@@ -255,7 +231,7 @@ public class RdfsImporter
 				String subName = resourceUri( statement.getSubject() );
 				meta().getMetaProperty( subName, true ).getDirectSupers().add(
 					meta().getMetaProperty( superName, true ) );
-				System.out.println( subName + " subPropertyOf " + superName );
+				debug( subName + " subPropertyOf " + superName );
 			}
 		}
 		finally
@@ -275,9 +251,9 @@ public class RdfsImporter
 			{
 				Statement statement = itr.next();
 				String domainClass = resourceUri( statement.getObject() );
-				meta().getMetaClass( domainClass, true ).getProperties().add(
-					metaProperty );
-				System.out.println( "\tdomain: " + domainClass );
+				meta().getMetaClass( domainClass, true ).getDirectProperties().
+					add( metaProperty );
+				debug( "\tdomain: " + domainClass );
 			}
 		}
 		finally
@@ -329,7 +305,7 @@ public class RdfsImporter
 				if ( propertyRange != null )
 				{
 					metaProperty.setRange( propertyRange );
-					System.out.println( "\trange: " + rangeType + " (" +
+					debug( "\trange: " + rangeType + " (" +
 						propertyRange.getClass().getName() + ")" );
 				}
 			}
