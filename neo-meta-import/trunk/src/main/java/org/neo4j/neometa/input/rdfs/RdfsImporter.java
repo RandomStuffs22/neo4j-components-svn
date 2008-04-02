@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
@@ -26,6 +27,7 @@ import org.ontoware.rdf2go.RDF2Go;
 import org.ontoware.rdf2go.model.Model;
 import org.ontoware.rdf2go.model.Statement;
 import org.ontoware.rdf2go.model.node.Literal;
+import org.ontoware.rdf2go.model.node.Node;
 import org.ontoware.rdf2go.model.node.Resource;
 import org.ontoware.rdf2go.model.node.UriOrVariable;
 import org.ontoware.rdf2go.model.node.Variable;
@@ -34,7 +36,7 @@ import org.ontoware.rdf2go.vocabulary.RDFS;
 
 public class RdfsImporter
 {
-	private MetaStructureNamespace meta;
+	private MetaStructure meta;
 	
 	public static void main( String[] args ) throws Exception
 	{
@@ -65,7 +67,17 @@ public class RdfsImporter
 	
 	public RdfsImporter( MetaStructure meta )
 	{
-		this.meta = meta.getGlobalNamespace();
+		this.meta = meta;
+	}
+	
+	/**
+	 * Since all is happening in the global namespace when importing from RDFS
+	 * here's a method for that namespace.
+	 * @return the global namespace.
+	 */
+	protected MetaStructureNamespace meta()
+	{
+		return this.meta.getGlobalNamespace();
 	}
 	
 	public void doImport( File file ) throws IOException
@@ -128,26 +140,36 @@ public class RdfsImporter
 	private void trySetLabelAndComment( MetaStructureThing thing,
 		Model model, Resource resource )
 	{
-		String label = tryGetLiteral( model, resource, RDFS.label );
-		String comment = tryGetLiteral( model, resource, RDFS.comment );
-		if ( label != null )
+		trySetFromLiteral( thing, model, resource, RDFS.label, "label" );
+		trySetFromLiteral( thing, model, resource, RDFS.comment, "comment" );
+		trySetFromResource( thing, model, resource, RDFS.seeAlso, "seeAlso" );
+		trySetFromResource( thing, model, resource, RDFS.isDefinedBy,
+			"isDefinedBy" );
+	}
+	
+	private void trySetFromLiteral( MetaStructureThing thing, Model model,
+		Resource resource, UriOrVariable property, String key )
+	{
+		String value = tryGetLiteral( model, resource, property );
+		if ( value != null )
 		{
-			System.out.println( "\tlabel: " + label );
-		}
-		if ( comment != null )
-		{
-			System.out.println( "\tcomment: " + comment );
-		}
-		if ( label != null )
-		{
-			thing.setLabel( label );
-		}
-		if ( comment != null )
-		{
-			thing.setComment( comment );
+			System.out.println( "\t" + key + ": " + value );
+			thing.setAdditionalProperty( key, value );
 		}
 	}
 	
+	private void trySetFromResource( MetaStructureThing thing, Model model,
+		Resource resource, UriOrVariable property, String key )
+	{
+		Node node = tryGetResource( model, resource, property, Resource.class );
+		if ( node != null )
+		{
+			String value = resourceUri( node );
+			System.out.println( "\t" + key + ": " + value );
+			thing.setAdditionalProperty( key, value );
+		}
+	}
+
 	private void readClasses( Model model )
 	{
 		ClosableIterator<? extends Statement> itr =
@@ -161,7 +183,7 @@ public class RdfsImporter
 				String className = resourceUri( subject );
 				System.out.println( "Class: " + className );
 				MetaStructureClass metaClass =
-					meta.getMetaClass( className, true );
+					meta().getMetaClass( className, true );
 				trySetLabelAndComment( metaClass, model, subject );
 			}
 		}
@@ -183,8 +205,8 @@ public class RdfsImporter
 					continue;
 				}
 				String subName = resourceUri( statement.getSubject() );
-				meta.getMetaClass( subName, true ).getDirectSupers().add(
-					meta.getMetaClass( superName, true ) );
+				meta().getMetaClass( subName, true ).getDirectSupers().add(
+					meta().getMetaClass( superName, true ) );
 				System.out.println( subName + " subClassOf " + superName );
 			}
 		}
@@ -207,7 +229,7 @@ public class RdfsImporter
 				String propertyName = resourceUri( property );
 				System.out.println( "Property: " + propertyName );
 				MetaStructureProperty metaProperty =
-					meta.getMetaProperty( propertyName, true );
+					meta().getMetaProperty( propertyName, true );
 				trySetLabelAndComment( metaProperty, model, property );
 				trySetPropertyDomain( metaProperty, model, property );
 				trySetPropertyRange( metaProperty, model, property );
@@ -231,8 +253,8 @@ public class RdfsImporter
 					continue;
 				}
 				String subName = resourceUri( statement.getSubject() );
-				meta.getMetaProperty( subName, true ).getDirectSupers().add(
-					meta.getMetaProperty( superName, true ) );
+				meta().getMetaProperty( subName, true ).getDirectSupers().add(
+					meta().getMetaProperty( superName, true ) );
 				System.out.println( subName + " subPropertyOf " + superName );
 			}
 		}
@@ -253,7 +275,7 @@ public class RdfsImporter
 			{
 				Statement statement = itr.next();
 				String domainClass = resourceUri( statement.getObject() );
-				meta.getMetaClass( domainClass, true ).getProperties().add(
+				meta().getMetaClass( domainClass, true ).getProperties().add(
 					metaProperty );
 				System.out.println( "\tdomain: " + domainClass );
 			}
@@ -277,7 +299,7 @@ public class RdfsImporter
 				Resource range = statement.getObject().asResource();
 				String rangeType = resourceUri( range );
 				MetaStructureClass metaClass =
-					meta.getMetaClass( rangeType, false );
+					meta().getMetaClass( rangeType, false );
 				PropertyRange propertyRange = null;
 				if ( metaClass != null )
 				{
@@ -290,6 +312,8 @@ public class RdfsImporter
 					rangeType.equals( RDF.Bag.toString() ) ||
 					rangeType.equals( RDF.Alt.toString() ) )
 				{
+					metaProperty.setMaxCardinality( Integer.MAX_VALUE );
+					metaProperty.setCollectionBehaviourClass( List.class );
 					// TODO
 				}
 				else if ( RdfUtil.recognizesDatatype( rangeType ) )
@@ -333,8 +357,8 @@ public class RdfsImporter
 		}
 	}
 	
-	private String tryGetLiteral( Model model,
-		Resource resource, UriOrVariable predicate )
+	private Node tryGetResource( Model model, Resource resource,
+		UriOrVariable predicate, Class<? extends Node> resourceClass )
 	{
 		ClosableIterator<? extends Statement> itr =
 			model.findStatements( resource, predicate, Variable.ANY );
@@ -344,9 +368,9 @@ public class RdfsImporter
 			{
 				org.ontoware.rdf2go.model.node.Node object =
 					itr.next().getObject();
-				if ( object instanceof Literal )
+				if ( resourceClass.isAssignableFrom( object.getClass() ) )
 				{
-					return ( ( Literal ) object ).getValue();
+					return object;
 				}
 			}
 			return null;
@@ -355,6 +379,13 @@ public class RdfsImporter
 		{
 			itr.close();
 		}
+	}
+	
+	private String tryGetLiteral( Model model,
+		Resource resource, UriOrVariable predicate )
+	{
+		Node node = tryGetResource( model, resource, predicate, Literal.class );
+		return node == null ? null : ( ( Literal ) node ).getValue();
 	}
 	
 	private Model readModel( File file ) throws IOException
