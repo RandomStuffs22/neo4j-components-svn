@@ -19,6 +19,8 @@ import org.neo4j.neometa.structure.MetaStructureNamespace;
 import org.neo4j.neometa.structure.MetaStructureProperty;
 import org.neo4j.neometa.structure.MetaStructureThing;
 import org.neo4j.neometa.structure.PropertyRange;
+import org.neo4j.neometa.structure.RdfDatatypeRange;
+import org.neo4j.neometa.structure.RdfUtil;
 import org.ontoware.aifbcommons.collection.ClosableIterator;
 import org.ontoware.rdf2go.RDF2Go;
 import org.ontoware.rdf2go.model.Model;

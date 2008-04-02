@@ -1,4 +1,4 @@
-package org.neo4j.neometa.input.rdfs;
+package org.neo4j.neometa.structure;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -97,6 +97,10 @@ public abstract class RdfUtil
 			Collections.unmodifiableMap( datatypePropertyTypes );
 	}
 	
+	/**
+	 * @param rdfDatatypeUri the URI of the datatype.
+	 * @return wether or not the given URI is a standard XML Schema datatype.
+	 */
 	public static boolean recognizesDatatype( String rdfDatatypeUri )
 	{
 		return datatypePropertyTypes.containsKey( rdfDatatypeUri );

@@ -15,7 +15,7 @@
  *
  */
 
-package org.neo4j.neometa.input.rdfs;
+package org.neo4j.neometa.structure;
 
 import java.text.DateFormat;
 import java.text.FieldPosition;

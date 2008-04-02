@@ -1,24 +1,34 @@
-package org.neo4j.neometa.input.rdfs;
+package org.neo4j.neometa.structure;
 
 import java.text.ParseException;
 
-import org.neo4j.neometa.input.rdfs.RdfUtil.ValueConverter;
-import org.neo4j.neometa.structure.MetaStructureProperty;
-import org.neo4j.neometa.structure.SimpleStringPropertyRange;
+import org.neo4j.neometa.structure.RdfUtil.ValueConverter;
 
+/**
+ * Handles datatypes commonly used in RDF/XML Schema.
+ */
 public class RdfDatatypeRange extends SimpleStringPropertyRange
 {
 	private String datatype;
 	
+	/**
+	 * @param datatype the datatype uri.
+	 */
 	public RdfDatatypeRange( String datatype )
 	{
 		this.datatype = datatype;
 	}
 	
+	/**
+	 * Used internally.
+	 */
 	public RdfDatatypeRange()
 	{
 	}
 	
+	/**
+	 * @return the RDF datatype for this range.
+	 */
 	public String getRdfDatatype()
 	{
 		return this.datatype;
