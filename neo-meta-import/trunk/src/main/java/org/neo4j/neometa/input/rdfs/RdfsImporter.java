@@ -10,13 +10,11 @@ import java.net.URISyntaxException;
 
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.RelationshipType;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.neometa.structure.DatatypeClassRange;
-import org.neo4j.neometa.structure.MetaStructureClassRange;
 import org.neo4j.neometa.structure.MetaStructure;
 import org.neo4j.neometa.structure.MetaStructureClass;
+import org.neo4j.neometa.structure.MetaStructureClassRange;
 import org.neo4j.neometa.structure.MetaStructureNamespace;
 import org.neo4j.neometa.structure.MetaStructureProperty;
 import org.neo4j.neometa.structure.MetaStructureThing;
@@ -34,11 +32,6 @@ import org.ontoware.rdf2go.vocabulary.RDFS;
 
 public class RdfsImporter
 {
-	private static enum RelTypes implements RelationshipType
-	{
-		HEJSAN,
-	}
-	
 	private MetaStructureNamespace meta;
 	
 	public static void main( String[] args ) throws Exception
@@ -53,23 +46,9 @@ public class RdfsImporter
 			}
 		} );
 		
-		Transaction tx = neo.beginTx();
-		Node rootNode = null;
 		try
 		{
-			rootNode = neo.createNode();
-			neo.getReferenceNode().createRelationshipTo( rootNode,
-				RelTypes.HEJSAN );
-			tx.success();
-		}
-		finally
-		{
-			tx.finish();
-		}
-		
-		try
-		{
-			MetaStructure meta = new MetaStructure( neo, rootNode );
+			MetaStructure meta = new MetaStructure( neo );
 			new RdfsImporter( meta ).doImport( new File( "test.rdfs" ) );
 		}
 		catch ( Exception e )
@@ -112,6 +91,37 @@ public class RdfsImporter
 	{
 		return node.asURI().asJavaURI().toString();
 	}
+	
+//	private Resource isSubclassOf( Model model, Resource resource, String uri )
+//	{
+//		return isSubtypeOf( model, resource, uri, RDFS.subClassOf );
+//	}
+//	
+//	private Resource isSubtypeOf( Model model, Resource resource, String uri,
+//		UriOrVariable type )
+//	{
+//		ClosableIterator<? extends Statement> itr = model.findStatements(
+//			resource, type, Variable.ANY );
+//		while ( itr.hasNext() )
+//		{
+//			Statement statement = itr.next();
+//			Resource object = statement.getObject().asResource();
+//			if ( resourceUri( object ).equals( uri ) )
+//			{
+//				return object;
+//			}
+//			else
+//			{
+//				Resource furtherUp =
+//					isSubtypeOf( model, object, uri, type );
+//				if ( furtherUp != null )
+//				{
+//					return furtherUp;
+//				}
+//			}
+//		}
+//		return null;
+//	}
 	
 	private void trySetLabelAndComment( MetaStructureThing thing,
 		Model model, Resource resource )
@@ -271,6 +281,8 @@ public class RdfsImporter
 				{
 					propertyRange = new MetaStructureClassRange( metaClass );
 				}
+//				else if ( isSubclassOf( model,
+//					range, RDFS.Container.toString() ) != null )
 				else if ( rangeType.equals( RDFS.Container.toString() ) ||
 					rangeType.equals( RDF.Seq.toString() ) ||
 					rangeType.equals( RDF.Bag.toString() ) ||
