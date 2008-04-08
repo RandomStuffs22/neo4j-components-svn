@@ -425,40 +425,40 @@ public class RdfsImporter
 		}
 	}
 	
-	private void printStatementsAbout( Model model, Node node )
-	{
-		ClosableIterator<? extends Statement> itr = model.findStatements(
-			Variable.ANY, Variable.ANY, node );
-		printStatements( itr );
-		
-		if ( node instanceof Resource )
-		{
-			itr = model.findStatements( node.asResource(), Variable.ANY,
-				Variable.ANY );
-			printStatements( itr );
-		}
-	}
-	
-	private void printStatements( ClosableIterator<? extends Statement> itr )
-	{
-		try
-		{
-			while ( itr.hasNext() )
-			{
-				printStatement( itr.next() );
-			}
-		}
-		finally
-		{
-			itr.close();
-		}
-	}
-	
-	private void printStatement( Statement statement )
-	{
-		debug( statement.getSubject() + ":" +
-			statement.getPredicate() + ":" + statement.getObject() );
-	}
+//	private void printStatementsAbout( Model model, Node node )
+//	{
+//		ClosableIterator<? extends Statement> itr = model.findStatements(
+//			Variable.ANY, Variable.ANY, node );
+//		printStatements( itr );
+//		
+//		if ( node instanceof Resource )
+//		{
+//			itr = model.findStatements( node.asResource(), Variable.ANY,
+//				Variable.ANY );
+//			printStatements( itr );
+//		}
+//	}
+//	
+//	private void printStatements( ClosableIterator<? extends Statement> itr )
+//	{
+//		try
+//		{
+//			while ( itr.hasNext() )
+//			{
+//				printStatement( itr.next() );
+//			}
+//		}
+//		finally
+//		{
+//			itr.close();
+//		}
+//	}
+//	
+//	private void printStatement( Statement statement )
+//	{
+//		debug( statement.getSubject() + ":" +
+//			statement.getPredicate() + ":" + statement.getObject() );
+//	}
 	
 	private Collection<Object> nodesToLiterals( Collection<Node> nodes,
 		String datatype )
@@ -542,7 +542,6 @@ public class RdfsImporter
 					RDF.Seq.toString(), RDF.Bag.toString(),
 					RDF.Alt.toString() ) )
 				{
-					metaProperty.setMaxCardinality( Integer.MAX_VALUE );
 					metaProperty.setCollectionBehaviourClass( List.class );
 					// TODO
 				}
@@ -572,6 +571,26 @@ public class RdfsImporter
 				metaProperty.setRange( propertyRange );
 				debug( "\trange: " + propertyRange );
 			}
+			trySetPropertyFunctionality( model, property );
+		}
+	}
+	
+	private void trySetPropertyFunctionality( Model model, Resource property )
+	{
+		String propertyFunctionality = null;
+		if ( resourceIsType( model, property,
+			OWL.FunctionalProperty.toString() ) )
+		{
+			propertyFunctionality = "functional";
+		}
+		else if ( resourceIsType( model, property,
+			OWL.InverseFunctionalProperty.toString() ) )
+		{
+			propertyFunctionality = "inverseFunctional";
+		}
+		if ( propertyFunctionality != null )
+		{
+			debug( "\t" + propertyFunctionality );
 		}
 	}
 	
@@ -587,19 +606,6 @@ public class RdfsImporter
 			debug( "\tinverseOf: " + inverseProperty );
 		}
 	}
-
-//	private <T> boolean in( T item, T... items )
-//	{
-//		for ( T test : items )
-//		{
-//			if ( item.equals( test ) )
-//			{
-//				return true;
-//			}
-//		}
-//		return false;
-//	}
-	
 	private boolean isW3Uri( String uriString )
 	{
 		try
