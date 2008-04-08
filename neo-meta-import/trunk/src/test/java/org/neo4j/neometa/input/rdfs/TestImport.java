@@ -8,8 +8,23 @@ import org.neo4j.neometa.structure.MetaStructureClass;
 import org.neo4j.neometa.structure.MetaStructureNamespace;
 import org.neo4j.neometa.structure.MetaStructureProperty;
 
+/**
+ * Tests to import some graphs and verifies the contents in the meta model
+ * afterwards.
+ */
 public class TestImport extends MetaTestCase
 {
+	@Override
+	protected void setUp() throws Exception
+	{
+		System.out.println( "================================================" );
+		super.setUp();
+	}
+	
+	/**
+	 * A simple example.
+	 * @throws Exception if something goes wrong.
+	 */
 	public void testSomeImport() throws Exception
 	{
 		MetaStructure meta = new MetaStructure( neo() );
@@ -67,6 +82,42 @@ public class TestImport extends MetaTestCase
 			assertEquals( "TeacherYeah",
 				cTeacher.getAdditionalProperty( "label" ) );
 			
+			deleteMetaModel();
+			tx.success();
+		}
+		finally
+		{
+			tx.finish();
+		}
+	}
+	
+	/**
+	 * Imports the FOAF RDF/XML graph.
+	 * @throws Exception if something goes wrong.
+	 */
+	public void testFoafImport() throws Exception
+	{
+		doAnImportOf( "foaf.rdfs", "prim-3.owl", "om2-1.owl", "miro.owl",
+			"wnbasic.rdfs", "wnfull.rdfs" );
+	}
+	
+	private void doAnImportOf( String... files ) throws Exception
+	{
+		for ( String file : files )
+		{
+			doImport( file );
+		}
+	}
+	
+	private void doImport( String file ) throws Exception
+	{
+		System.out.println( "=========================" );
+		MetaStructure meta = new MetaStructure( neo() );
+		new RdfsImporter( meta ).doImport( new File( file ) );
+		
+		Transaction tx = neo().beginTx();
+		try
+		{
 			deleteMetaModel();
 			tx.success();
 		}

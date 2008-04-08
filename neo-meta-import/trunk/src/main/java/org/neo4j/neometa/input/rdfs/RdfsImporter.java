@@ -7,9 +7,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.neo4j.api.core.Transaction;
+import org.neo4j.neometa.structure.DataRange;
 import org.neo4j.neometa.structure.DatatypeClassRange;
 import org.neo4j.neometa.structure.MetaStructure;
 import org.neo4j.neometa.structure.MetaStructureClass;
@@ -24,18 +29,26 @@ import org.ontoware.aifbcommons.collection.ClosableIterator;
 import org.ontoware.rdf2go.RDF2Go;
 import org.ontoware.rdf2go.model.Model;
 import org.ontoware.rdf2go.model.Statement;
+import org.ontoware.rdf2go.model.node.BlankNode;
 import org.ontoware.rdf2go.model.node.Literal;
 import org.ontoware.rdf2go.model.node.Node;
 import org.ontoware.rdf2go.model.node.Resource;
-import org.ontoware.rdf2go.model.node.UriOrVariable;
 import org.ontoware.rdf2go.model.node.Variable;
+import org.ontoware.rdf2go.model.node.impl.URIImpl;
+import org.ontoware.rdf2go.vocabulary.OWL;
 import org.ontoware.rdf2go.vocabulary.RDF;
 import org.ontoware.rdf2go.vocabulary.RDFS;
 
+/**
+ * Imports RDF schema graphs and creates a neo meta model representation of it.
+ */
 public class RdfsImporter
 {
 	private MetaStructure meta;
 	
+	/**
+	 * @param meta the {@link MetaStructure} instance to use.
+	 */
 	public RdfsImporter( MetaStructure meta )
 	{
 		this.meta = meta;
@@ -51,6 +64,11 @@ public class RdfsImporter
 		return this.meta.getGlobalNamespace();
 	}
 	
+	/**
+	 * Imports an RDF/XML graph from a file.
+	 * @param file the file containing the RDF/XML graph.
+	 * @throws IOException if there were problems reading the file.
+	 */
 	public void doImport( File file ) throws IOException
 	{
 		Model model = readModel( file );
@@ -68,7 +86,13 @@ public class RdfsImporter
 	
 	private void debug( String message )
 	{
-//		System.out.println( message );
+		System.out.println( message );
+	}
+	
+	private static String local( String uri )
+	{
+		int index = uri.lastIndexOf( '#' );
+		return index == -1 ? uri : uri.substring( index + 1 );
 	}
 	
 	private void readFrom( Model model )
@@ -77,54 +101,102 @@ public class RdfsImporter
 		readProperties( model );
 	}
 	
-	private String resourceUri( org.ontoware.rdf2go.model.node.Node node )
+	private String resourceUri( Node node )
 	{
 		return node.asURI().asJavaURI().toString();
 	}
 	
-//	private Resource isSubclassOf( Model model, Resource resource, String uri )
-//	{
-//		return isSubtypeOf( model, resource, uri, RDFS.subClassOf );
-//	}
-//	
-//	private Resource isSubtypeOf( Model model, Resource resource, String uri,
-//		UriOrVariable type )
-//	{
-//		ClosableIterator<? extends Statement> itr = model.findStatements(
-//			resource, type, Variable.ANY );
-//		while ( itr.hasNext() )
-//		{
-//			Statement statement = itr.next();
-//			Resource object = statement.getObject().asResource();
-//			if ( resourceUri( object ).equals( uri ) )
-//			{
-//				return object;
-//			}
-//			else
-//			{
-//				Resource furtherUp =
-//					isSubtypeOf( model, object, uri, type );
-//				if ( furtherUp != null )
-//				{
-//					return furtherUp;
-//				}
-//			}
-//		}
-//		return null;
-//	}
+	private String resourceType( Model model, Resource resource )
+	{
+		Node[] nodes = subNodes( model, resource, RDF.type.toString() );
+		return nodes.length == 0 ? null : resourceUri( nodes[ 0 ] );
+	}
+	
+	private Node[] subNodes( Model model, Resource resource,
+		String predicate )
+	{
+		ClosableIterator<? extends Statement> itr = model.findStatements(
+			resource, new URIImpl( predicate ), Variable.ANY );
+		try
+		{
+			ArrayList<Node> result = new ArrayList<Node>();
+			while ( itr.hasNext() )
+			{
+				result.add( itr.next().getObject() );
+			}
+			return result.toArray( new Node[ result.size() ] );
+		}
+		finally
+		{
+			itr.close();
+		}
+	}
+	
+	private Node subNode( Model model, Resource resource, String predicate )
+	{
+		Node[] nodes = subNodes( model, resource, predicate );
+		if ( nodes.length > 1 )
+		{
+			throw new RuntimeException( "More than one " + predicate +
+				" for " + resourceUri( resource ) );
+		}
+		return nodes.length == 0 ? null : nodes[ 0 ];
+	}
+	
+	private boolean resourceIsType( Model model, Resource resource,
+		String type )
+	{
+		for ( Node typeNode : subNodes( model, resource, RDF.type.toString() ) )
+		{
+			if ( smartMatch( resourceUri( typeNode ), type ) )
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private boolean smartMatch( String type1, String type2 )
+	{
+		if ( type1.equals( type2 ) )
+		{
+			return true;
+		}
+		if ( isW3Uri( type1 ) && isW3Uri( type2 ) &&
+			local( type1 ).equals( local( type2 ) ) )
+		{
+			return true;
+		}
+		return false;
+	}
+	
+	private boolean smartMatchThese( String uri, String... matchWith )
+	{
+		for ( String match : matchWith )
+		{
+			if ( smartMatch( uri, match ) )
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	private void trySetLabelAndComment( MetaStructureThing thing,
 		Model model, Resource resource )
 	{
-		trySetFromLiteral( thing, model, resource, RDFS.label, "label" );
-		trySetFromLiteral( thing, model, resource, RDFS.comment, "comment" );
-		trySetFromResource( thing, model, resource, RDFS.seeAlso, "seeAlso" );
-		trySetFromResource( thing, model, resource, RDFS.isDefinedBy,
-			"isDefinedBy" );
+		trySetFromLiteral( thing, model, resource,
+			RDFS.label.toString(), "label" );
+		trySetFromLiteral( thing, model, resource,
+			RDFS.comment.toString(), "comment" );
+		trySetFromResource( thing, model, resource,
+			RDFS.seeAlso.toString(), "seeAlso" );
+		trySetFromResource( thing, model, resource,
+			RDFS.isDefinedBy.toString(), "isDefinedBy" );
 	}
 	
 	private void trySetFromLiteral( MetaStructureThing thing, Model model,
-		Resource resource, UriOrVariable property, String key )
+		Resource resource, String property, String key )
 	{
 		String value = tryGetLiteral( model, resource, property );
 		if ( value != null )
@@ -135,9 +207,9 @@ public class RdfsImporter
 	}
 	
 	private void trySetFromResource( MetaStructureThing thing, Model model,
-		Resource resource, UriOrVariable property, String key )
+		Resource resource, String property, String key )
 	{
-		Node node = tryGetResource( model, resource, property, Resource.class );
+		Node node = subNode( model, resource, property );
 		if ( node != null )
 		{
 			String value = resourceUri( node );
@@ -146,44 +218,85 @@ public class RdfsImporter
 		}
 	}
 
-	private void readClasses( Model model )
+	private abstract class ThingReader<T extends MetaStructureThing>
+	{
+		abstract T get( String name );
+		
+		abstract T readThing( Model model, Resource resource, String name );
+
+		abstract void couple( String superName, String subName );
+	}
+	
+	private class ClassReader extends ThingReader<MetaStructureClass>
+	{
+		@Override
+		MetaStructureClass get( String name )
+		{
+			return meta().getMetaClass( name, true );
+		}
+		
+		@Override
+		MetaStructureClass readThing( Model model, Resource resource,
+			String name )
+		{
+			MetaStructureClass metaClass = get( name );
+			trySetLabelAndComment( metaClass, model, resource );
+			return metaClass;
+		}
+		
+		@Override
+		void couple( String superName, String subName )
+		{
+			get( superName ).getDirectSubs().add( get( subName ) );
+		}
+	}
+	
+	private class PropertyReader extends ThingReader<MetaStructureProperty>
+	{
+		@Override
+		MetaStructureProperty get( String name )
+		{
+			return meta().getMetaProperty( name, true );
+		}
+		
+		@Override
+		MetaStructureProperty readThing( Model model, Resource resource,
+			String name )
+		{
+			MetaStructureProperty metaProperty = get( name );
+			trySetLabelAndComment( metaProperty, model, resource );
+			trySetPropertyDomain( metaProperty, model, resource );
+			trySetPropertyRange( metaProperty, model, resource );
+			trySetPropertyInverseOf( metaProperty, model, resource );
+			return metaProperty;
+		}
+		
+		@Override
+		void couple( String superName, String subName )
+		{
+			get( superName ).getDirectSubs().add( get( subName ) );
+		}
+	}
+
+	private <T extends MetaStructureThing> void readThings( Model model,
+		org.ontoware.rdf2go.model.node.URI type, ThingReader<T> reader )
 	{
 		ClosableIterator<? extends Statement> itr =
-			model.findStatements( Variable.ANY, RDF.type, RDFS.Class );
+			model.findStatements( Variable.ANY, RDF.type, type );
 		try
 		{
 			while ( itr.hasNext() )
 			{
 				Statement statement = itr.next();
 				Resource subject = statement.getSubject();
-				String className = resourceUri( subject );
-				debug( "Class: " + className );
-				MetaStructureClass metaClass =
-					meta().getMetaClass( className, true );
-				trySetLabelAndComment( metaClass, model, subject );
-			}
-		}
-		finally
-		{
-			itr.close();
-		}
-		
-		itr = model.findStatements( Variable.ANY, RDFS.subClassOf,
-			Variable.ANY );
-		try
-		{
-			while ( itr.hasNext() )
-			{
-				Statement statement = itr.next();
-				String superName = resourceUri( statement.getObject() );
-				if ( isW3Uri( superName ) )
+				if ( subject instanceof BlankNode )
 				{
+					debug( "Skipping blank " + local( type.toString() ) );
 					continue;
 				}
-				String subName = resourceUri( statement.getSubject() );
-				meta().getMetaClass( subName, true ).getDirectSupers().add(
-					meta().getMetaClass( superName, true ) );
-				debug( subName + " subClassOf " + superName );
+				String className = resourceUri( subject );
+				debug( local( type.toString() ) + ": " + className );
+				reader.readThing( model, subject, className );
 			}
 		}
 		finally
@@ -192,68 +305,147 @@ public class RdfsImporter
 		}
 	}
 	
-	private void readProperties( Model model )
+	private <T extends MetaStructureThing> void coupleThings( Model model,
+		org.ontoware.rdf2go.model.node.URI type, ThingReader<T> reader )
 	{
 		ClosableIterator<? extends Statement> itr = model.findStatements(
-			Variable.ANY, RDF.type, RDF.Property );
+			Variable.ANY, type, Variable.ANY );
 		try
 		{
 			while ( itr.hasNext() )
 			{
 				Statement statement = itr.next();
-				Resource property = statement.getSubject();
-				String propertyName = resourceUri( property );
-				debug( "Property: " + propertyName );
-				MetaStructureProperty metaProperty =
-					meta().getMetaProperty( propertyName, true );
-				trySetLabelAndComment( metaProperty, model, property );
-				trySetPropertyDomain( metaProperty, model, property );
-				trySetPropertyRange( metaProperty, model, property );
-			}
-		}
-		finally
-		{
-			itr.close();
-		}
-
-		itr = model.findStatements( Variable.ANY, RDFS.subPropertyOf,
-			Variable.ANY );
-		try
-		{
-			while ( itr.hasNext() )
-			{
-				Statement statement = itr.next();
+				if ( resourceIsType( model, statement.getObject().
+					asResource(), OWL.Restriction.toString() ) )
+				{
+					debug( "Skipping restriction" );
+					continue;
+				}
 				String superName = resourceUri( statement.getObject() );
 				if ( isW3Uri( superName ) )
 				{
 					continue;
 				}
 				String subName = resourceUri( statement.getSubject() );
-				meta().getMetaProperty( subName, true ).getDirectSupers().add(
-					meta().getMetaProperty( superName, true ) );
-				debug( subName + " subPropertyOf " + superName );
+				reader.couple( superName, subName );
+				debug( subName + " " + local( type.toString() ) +
+					" " + superName );
 			}
 		}
 		finally
 		{
 			itr.close();
 		}
+	}
+
+	private void readClasses( Model model )
+	{
+		ClassReader reader = new ClassReader();
+		readThings( model, RDFS.Class, reader );
+		readThings( model, OWL.Class, reader );
+		coupleThings( model, RDFS.subClassOf, reader );
+	}
+	
+	private void readProperties( Model model )
+	{
+		PropertyReader reader = new PropertyReader();
+		readThings( model, RDF.Property, reader );
+		readThings( model, OWL.DatatypeProperty, reader );
+		readThings( model, OWL.ObjectProperty, reader );
+		coupleThings( model, RDFS.subPropertyOf, reader );
 	}
 	
 	private void trySetPropertyDomain( MetaStructureProperty metaProperty,
 		Model model, Resource property )
 	{
-		ClosableIterator<? extends Statement> itr =
-			model.findStatements( property, RDFS.domain, Variable.ANY );
+		for ( Node domainNode :
+			subNodes( model, property, RDFS.domain.toString() ) )
+		{
+			for ( Node classNode :
+				getClassOrUnionOfClasses( model, domainNode.asResource() ) )
+			{
+				String domainClass = resourceUri( classNode );
+				meta().getMetaClass( domainClass, true ).getDirectProperties().
+					add( metaProperty );
+				debug( "\tdomain: " + domainClass );
+			}
+		}
+	}
+	
+	private Collection<Node> getClassOrUnionOfClasses( Model model,
+		Resource theClassOrUnion )
+	{
+		Collection<Node> result = null;
+		if ( resourceIsType( model, theClassOrUnion, OWL.Class.toString() ) &&
+			theClassOrUnion instanceof BlankNode )
+		{
+			result = new ArrayList<Node>();
+			for ( Node classNode : subNodes( model, theClassOrUnion,
+				OWL.unionOf.toString() ) )
+			{
+				result = parseCollection( model, classNode.asResource() );
+			}
+		}
+		else
+		{
+			result = Arrays.asList( ( Node ) theClassOrUnion );
+		}
+		return result;
+	}
+	
+	private Node getFirstInCollection( Model model, Resource resource )
+	{
+		return subNode( model, resource, RDF.first.toString() );
+	}
+	
+	private Collection<Node> parseCollection( Model model,
+		Resource resourceWhichIsACollection )
+	{
+		ArrayList<Node> collection = new ArrayList<Node>();
+		collectFromCollection( model, resourceWhichIsACollection, collection );
+		return collection;
+	}
+	
+	private void collectFromCollection( Model model,
+		Resource resourceWhichIsACollection, Collection<Node> collection )
+	{
+		Node firstNode = getFirstInCollection( model,
+			resourceWhichIsACollection );
+		if ( firstNode != null )
+		{
+			collection.add( firstNode );
+			Node restNode = subNode( model, resourceWhichIsACollection,
+				RDF.rest.toString() );
+			if ( restNode != null && !resourceIsType( model,
+				restNode.asResource(), RDF.nil.toString() ) )
+			{
+				collectFromCollection( model, restNode.asResource(),
+					collection );
+			}
+		}
+	}
+	
+	private void printStatementsAbout( Model model, Node node )
+	{
+		ClosableIterator<? extends Statement> itr = model.findStatements(
+			Variable.ANY, Variable.ANY, node );
+		printStatements( itr );
+		
+		if ( node instanceof Resource )
+		{
+			itr = model.findStatements( node.asResource(), Variable.ANY,
+				Variable.ANY );
+			printStatements( itr );
+		}
+	}
+	
+	private void printStatements( ClosableIterator<? extends Statement> itr )
+	{
 		try
 		{
 			while ( itr.hasNext() )
 			{
-				Statement statement = itr.next();
-				String domainClass = resourceUri( statement.getObject() );
-				meta().getMetaClass( domainClass, true ).getDirectProperties().
-					add( metaProperty );
-				debug( "\tdomain: " + domainClass );
+				printStatement( itr.next() );
 			}
 		}
 		finally
@@ -262,31 +454,93 @@ public class RdfsImporter
 		}
 	}
 	
+	private void printStatement( Statement statement )
+	{
+		debug( statement.getSubject() + ":" +
+			statement.getPredicate() + ":" + statement.getObject() );
+	}
+	
+	private Collection<Object> nodesToLiterals( Collection<Node> nodes,
+		String datatype )
+	{
+		ArrayList<Object> list = new ArrayList<Object>();
+		for ( Node node : nodes )
+		{
+			try
+			{
+				list.add( RdfUtil.getRealValue(
+					datatype, ( ( Literal ) node ).getValue() ) );
+			}
+			catch ( ParseException e )
+			{
+				throw new RuntimeException( e );
+			}
+		}
+		return list;
+	}
+	
 	private void trySetPropertyRange( MetaStructureProperty metaProperty,
 		Model model, Resource property )
 	{
-		ClosableIterator<? extends Statement> itr =
-			model.findStatements( property, RDFS.range, Variable.ANY );
-		try
+		for ( Node rangeNode :
+			subNodes( model, property, RDFS.range.toString() ) )
 		{
-			while ( itr.hasNext() )
+			Resource range = rangeNode.asResource();
+			PropertyRange propertyRange = null;
+			if ( range instanceof BlankNode )
 			{
-				Statement statement = itr.next();
-				Resource range = statement.getObject().asResource();
+				String rangeType = resourceType( model, range );
+				if ( smartMatchThese( rangeType, OWL.DataRange.toString() ) )
+				{
+					Node collectionNode = subNode( model, range.asResource(),
+						OWL.oneOf.toString() );
+					if ( collectionNode == null )
+					{
+						throw new RuntimeException( "No collection" );
+					}
+					
+					Node first = getFirstInCollection( model,
+						collectionNode.asResource() );
+					String datatype =
+						first.asDatatypeLiteral().getDatatype().toString();
+					Collection<Node> nodes = parseCollection( model,
+						collectionNode.asResource() );
+					Collection<Object> values =
+						nodesToLiterals( nodes, datatype );
+					propertyRange = new DataRange( datatype, values.toArray() );
+				}
+				else if ( smartMatchThese( rangeType, OWL.Class.toString() ) )
+				{
+					Collection<Node> classNodes =
+						getClassOrUnionOfClasses( model, range );
+					MetaStructureClass[] classes =
+						new MetaStructureClass[ classNodes.size() ];
+					int i = 0;
+					for ( Node classNode : classNodes )
+					{
+						classes[ i++ ] = meta().getMetaClass(
+							resourceUri( classNode ), true );
+					}
+					propertyRange = new MetaStructureClassRange( classes );
+				}
+				else
+				{
+					throw new RuntimeException( "Unknown blank range " +
+						rangeType );
+				}
+			}
+			else
+			{
 				String rangeType = resourceUri( range );
 				MetaStructureClass metaClass =
 					meta().getMetaClass( rangeType, false );
-				PropertyRange propertyRange = null;
 				if ( metaClass != null )
 				{
 					propertyRange = new MetaStructureClassRange( metaClass );
 				}
-//				else if ( isSubclassOf( model,
-//					range, RDFS.Container.toString() ) != null )
-				else if ( rangeType.equals( RDFS.Container.toString() ) ||
-					rangeType.equals( RDF.Seq.toString() ) ||
-					rangeType.equals( RDF.Bag.toString() ) ||
-					rangeType.equals( RDF.Alt.toString() ) )
+				else if ( smartMatchThese( rangeType, RDFS.Container.toString(),
+					RDF.Seq.toString(), RDF.Bag.toString(),
+					RDF.Alt.toString() ) )
 				{
 					metaProperty.setMaxCardinality( Integer.MAX_VALUE );
 					metaProperty.setCollectionBehaviourClass( List.class );
@@ -296,25 +550,55 @@ public class RdfsImporter
 				{
 					propertyRange = new RdfDatatypeRange( rangeType );
 				}
-				else if ( rangeType.equals( RDFS.Literal.toString() ) ||
-					rangeType.equals( RDFS.Datatype.toString() ) )
+				else if ( smartMatchThese( rangeType, RDFS.Literal.toString(),
+					RDFS.Datatype.toString(), RDFS.XMLLiteral.toString() ) )
 				{
 					propertyRange = new DatatypeClassRange( String.class );
 				}
-				
-				if ( propertyRange != null )
+				else if ( smartMatchThese( rangeType, OWL.Thing.toString() ) )
 				{
-					metaProperty.setRange( propertyRange );
-					debug( "\trange: " + rangeType + " (" +
-						propertyRange.getClass().getName() + ")" );
+					// TODO Skip?
+				}
+				else
+				{
+					// TODO Throw something to let em know?
+					throw new RuntimeException( "Unknown property range type " +
+						rangeType );
 				}
 			}
-		}
-		finally
-		{
-			itr.close();
+
+			if ( propertyRange != null )
+			{
+				metaProperty.setRange( propertyRange );
+				debug( "\trange: " + propertyRange );
+			}
 		}
 	}
+	
+	private void trySetPropertyInverseOf( MetaStructureProperty metaProperty,
+		Model model, Resource property )
+	{
+		for ( Node inverseOfNode :
+			subNodes( model, property, OWL.inverseOf.toString() ) )
+		{
+			String inverseProperty = resourceUri( inverseOfNode );
+			metaProperty.setInverseOf( meta().getMetaProperty(
+				inverseProperty, true ) );
+			debug( "\tinverseOf: " + inverseProperty );
+		}
+	}
+
+//	private <T> boolean in( T item, T... items )
+//	{
+//		for ( T test : items )
+//		{
+//			if ( item.equals( test ) )
+//			{
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
 	
 	private boolean isW3Uri( String uriString )
 	{
@@ -333,35 +617,15 @@ public class RdfsImporter
 		}
 	}
 	
-	private Node tryGetResource( Model model, Resource resource,
-		UriOrVariable predicate, Class<? extends Node> resourceClass )
+	private String tryGetLiteral( Model model, Resource resource,
+		String predicate )
 	{
-		ClosableIterator<? extends Statement> itr =
-			model.findStatements( resource, predicate, Variable.ANY );
-		try
+		Node node = subNode( model, resource, predicate );
+		if ( node == null )
 		{
-			if ( itr.hasNext() )
-			{
-				org.ontoware.rdf2go.model.node.Node object =
-					itr.next().getObject();
-				if ( resourceClass.isAssignableFrom( object.getClass() ) )
-				{
-					return object;
-				}
-			}
 			return null;
 		}
-		finally
-		{
-			itr.close();
-		}
-	}
-	
-	private String tryGetLiteral( Model model,
-		Resource resource, UriOrVariable predicate )
-	{
-		Node node = tryGetResource( model, resource, predicate, Literal.class );
-		return node == null ? null : ( ( Literal ) node ).getValue();
+		return node instanceof Literal ? ( ( Literal ) node ).getValue() : null;
 	}
 	
 	private Model readModel( File file ) throws IOException
