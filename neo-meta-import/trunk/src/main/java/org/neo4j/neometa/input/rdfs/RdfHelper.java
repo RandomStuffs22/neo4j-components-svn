@@ -242,8 +242,10 @@ abstract class RdfHelper
 		{
 			try
 			{
+				String type = datatype != null ? datatype :
+					node.asDatatypeLiteral().getDatatype().toString();
 				list.add( RdfUtil.getRealValue(
-					datatype, ( ( Literal ) node ).getValue() ) );
+					type, ( ( Literal ) node ).getValue() ) );
 			}
 			catch ( ParseException e )
 			{

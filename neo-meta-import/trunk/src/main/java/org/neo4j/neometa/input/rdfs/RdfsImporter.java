@@ -3,7 +3,6 @@ package org.neo4j.neometa.input.rdfs;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 
 import org.neo4j.api.core.Transaction;
 import org.neo4j.neometa.structure.DataRange;
@@ -13,6 +12,7 @@ import org.neo4j.neometa.structure.MetaStructureClass;
 import org.neo4j.neometa.structure.MetaStructureClassRange;
 import org.neo4j.neometa.structure.MetaStructureNamespace;
 import org.neo4j.neometa.structure.MetaStructureProperty;
+import org.neo4j.neometa.structure.MetaStructureRestrictable;
 import org.neo4j.neometa.structure.MetaStructureThing;
 import org.neo4j.neometa.structure.PropertyRange;
 import org.neo4j.neometa.structure.RdfDatatypeRange;
@@ -69,6 +69,7 @@ public class RdfsImporter
 		}
 		finally
 		{
+			model.close();
 			tx.finish();
 		}
 	}
@@ -82,6 +83,7 @@ public class RdfsImporter
 	{
 		readClasses( model );
 		readProperties( model );
+		readRestrictions( model );
 	}
 	
 	private void trySetLabelAndComment( MetaStructureThing thing,
@@ -221,15 +223,15 @@ public class RdfsImporter
 				if ( RdfHelper.resourceIsType( model, statement.getObject().
 					asResource(), OWL.Restriction.toString() ) )
 				{
-					debug( "Skipping restriction" );
+//					debug( "Skipping restriction" );
 					continue;
 				}
 				String superName =
 					RdfHelper.resourceUri( statement.getObject() );
-				if ( RdfHelper.isW3Uri( superName ) )
-				{
-					continue;
-				}
+//				if ( RdfHelper.isW3Uri( superName ) )
+//				{
+//					continue;
+//				}
 				String subName =
 					RdfHelper.resourceUri( statement.getSubject() );
 				reader.couple( superName, subName );
@@ -277,121 +279,156 @@ public class RdfsImporter
 		}
 	}
 	
-	private void trySetPropertyRange( MetaStructureProperty metaProperty,
+	private MetaStructureClass[] nodesToClasses( Collection<Node> classNodes )
+	{
+		MetaStructureClass[] classes =
+			new MetaStructureClass[ classNodes.size() ];
+		int i = 0;
+		for ( Node classNode : classNodes )
+		{
+			classes[ i++ ] = meta().getMetaClass(
+				RdfHelper.resourceUri( classNode ), true );
+		}
+		return classes;
+	}
+	
+	private PropertyRange buildCollectionRange( Model model, Resource resource )
+	{
+		PropertyRange propertyRange = null;
+		String rangeType = RdfHelper.resourceType( model, resource );
+		if ( RdfHelper.smartMatchThese( rangeType,
+			OWL.DataRange.toString() ) )
+		{
+			Node collectionNode = RdfHelper.subNode( model,
+				resource.asResource(), OWL.oneOf.toString() );
+			if ( collectionNode == null )
+			{
+				throw new RuntimeException( "No collection" );
+			}
+			
+			Node first = RdfHelper.getFirstInCollection( model,
+				collectionNode.asResource() );
+			String datatype =
+				first.asDatatypeLiteral().getDatatype().toString();
+			Collection<Node> nodes = RdfHelper.parseCollection( model,
+				collectionNode.asResource() );
+			Collection<Object> values =
+				RdfHelper.nodesToLiterals( nodes, datatype );
+			propertyRange = new DataRange( datatype, values.toArray() );
+		}
+		else if ( RdfHelper.smartMatchThese( rangeType,
+			OWL.Class.toString() ) )
+		{
+			Collection<Node> classNodes =
+				RdfHelper.getClassOrUnionOfClasses( model, resource );
+			propertyRange = new MetaStructureClassRange(
+				nodesToClasses( classNodes ) );
+		}
+		else
+		{
+			throw new RuntimeException( "Unknown blank range " +
+				rangeType );
+		}
+		return propertyRange;
+	}
+	
+	private PropertyRange buildOneValueRange( Model model, Resource resource )
+	{
+		PropertyRange propertyRange = null;
+		String rangeType = RdfHelper.resourceUri( resource );
+		MetaStructureClass metaClass =
+			meta().getMetaClass( rangeType, false );
+		if ( metaClass != null )
+		{
+			propertyRange = new MetaStructureClassRange( metaClass );
+		}
+		else if ( RdfHelper.smartMatchThese( rangeType,
+			RDFS.Container.toString(), RDF.Seq.toString(),
+			RDF.Bag.toString(), RDF.Alt.toString() ) )
+		{
+			// TODO
+		}
+		else if ( RdfUtil.recognizesDatatype( rangeType ) )
+		{
+			propertyRange = new RdfDatatypeRange( rangeType );
+		}
+		else if ( RdfHelper.smartMatchThese( rangeType,
+			RDFS.Literal.toString(), RDFS.Datatype.toString(),
+			RDFS.XMLLiteral.toString() ) )
+		{
+			propertyRange = new DatatypeClassRange( String.class );
+		}
+		else if ( RdfHelper.smartMatchThese( rangeType,
+			OWL.Thing.toString() ) )
+		{
+			// TODO Skip?
+		}
+		else
+		{
+			// TODO Throw something to let em know?
+			throw new RuntimeException( "Unknown property range type " +
+				rangeType );
+		}
+		return propertyRange;
+	}
+	
+	private PropertyRange buildPropertyRange( Model model, Resource resource )
+	{
+		PropertyRange propertyRange = null;
+		if ( resource instanceof BlankNode )
+		{
+			propertyRange = buildCollectionRange( model, resource );
+		}
+		else
+		{
+			propertyRange = buildOneValueRange( model, resource );
+		}
+		return propertyRange;
+	}
+	
+	private void trySetPropertyRange( MetaStructureRestrictable restrictable,
 		Model model, Resource property )
 	{
 		for ( Node rangeNode :
 			RdfHelper.subNodes( model, property, RDFS.range.toString() ) )
 		{
 			Resource range = rangeNode.asResource();
-			PropertyRange propertyRange = null;
-			if ( range instanceof BlankNode )
-			{
-				String rangeType = RdfHelper.resourceType( model, range );
-				if ( RdfHelper.smartMatchThese( rangeType,
-					OWL.DataRange.toString() ) )
-				{
-					Node collectionNode = RdfHelper.subNode( model,
-						range.asResource(), OWL.oneOf.toString() );
-					if ( collectionNode == null )
-					{
-						throw new RuntimeException( "No collection" );
-					}
-					
-					Node first = RdfHelper.getFirstInCollection( model,
-						collectionNode.asResource() );
-					String datatype =
-						first.asDatatypeLiteral().getDatatype().toString();
-					Collection<Node> nodes = RdfHelper.parseCollection( model,
-						collectionNode.asResource() );
-					Collection<Object> values =
-						RdfHelper.nodesToLiterals( nodes, datatype );
-					propertyRange = new DataRange( datatype, values.toArray() );
-				}
-				else if ( RdfHelper.smartMatchThese( rangeType,
-					OWL.Class.toString() ) )
-				{
-					Collection<Node> classNodes =
-						RdfHelper.getClassOrUnionOfClasses( model, range );
-					MetaStructureClass[] classes =
-						new MetaStructureClass[ classNodes.size() ];
-					int i = 0;
-					for ( Node classNode : classNodes )
-					{
-						classes[ i++ ] = meta().getMetaClass(
-							RdfHelper.resourceUri( classNode ), true );
-					}
-					propertyRange = new MetaStructureClassRange( classes );
-				}
-				else
-				{
-					throw new RuntimeException( "Unknown blank range " +
-						rangeType );
-				}
-			}
-			else
-			{
-				String rangeType = RdfHelper.resourceUri( range );
-				MetaStructureClass metaClass =
-					meta().getMetaClass( rangeType, false );
-				if ( metaClass != null )
-				{
-					propertyRange = new MetaStructureClassRange( metaClass );
-				}
-				else if ( RdfHelper.smartMatchThese( rangeType,
-					RDFS.Container.toString(), RDF.Seq.toString(),
-					RDF.Bag.toString(), RDF.Alt.toString() ) )
-				{
-					metaProperty.setCollectionBehaviourClass( List.class );
-					// TODO
-				}
-				else if ( RdfUtil.recognizesDatatype( rangeType ) )
-				{
-					propertyRange = new RdfDatatypeRange( rangeType );
-				}
-				else if ( RdfHelper.smartMatchThese( rangeType,
-					RDFS.Literal.toString(), RDFS.Datatype.toString(),
-					RDFS.XMLLiteral.toString() ) )
-				{
-					propertyRange = new DatatypeClassRange( String.class );
-				}
-				else if ( RdfHelper.smartMatchThese( rangeType,
-					OWL.Thing.toString() ) )
-				{
-					// TODO Skip?
-				}
-				else
-				{
-					// TODO Throw something to let em know?
-					throw new RuntimeException( "Unknown property range type " +
-						rangeType );
-				}
-			}
-
+			PropertyRange propertyRange = buildPropertyRange( model, range );
 			if ( propertyRange != null )
 			{
-				metaProperty.setRange( propertyRange );
+				restrictable.setRange( propertyRange );
 				debug( "\trange: " + propertyRange );
 			}
-			trySetPropertyFunctionality( model, property );
+			
+			if ( restrictable instanceof MetaStructureProperty )
+			{
+				trySetPropertyFunctionality( model, property,
+					( MetaStructureProperty ) restrictable );
+			}
 		}
 	}
 	
-	private void trySetPropertyFunctionality( Model model, Resource property )
+	private void trySetPropertyFunctionality( Model model, Resource property,
+		MetaStructureProperty metaProperty )
 	{
 		String propertyFunctionality = null;
 		if ( RdfHelper.resourceIsType( model, property,
 			OWL.FunctionalProperty.toString() ) )
 		{
 			propertyFunctionality = "functional";
+			metaProperty.setMinCardinality( 0 );
+			metaProperty.setMaxCardinality( 1 );
 		}
 		else if ( RdfHelper.resourceIsType( model, property,
 			OWL.InverseFunctionalProperty.toString() ) )
 		{
 			propertyFunctionality = "inverseFunctional";
+			// TODO cardinality here?
 		}
 		if ( propertyFunctionality != null )
 		{
+			metaProperty.setAdditionalProperty( "functionality",
+				propertyFunctionality );
 			debug( "\t" + propertyFunctionality );
 		}
 	}
@@ -407,5 +444,103 @@ public class RdfsImporter
 				inverseProperty, true ) );
 			debug( "\tinverseOf: " + inverseProperty );
 		}
+	}
+	
+	private void readRestrictions( Model model )
+	{
+		ClosableIterator<? extends Statement> itr = model.findStatements(
+			Variable.ANY, RDFS.subClassOf, Variable.ANY );
+		try
+		{
+			while ( itr.hasNext() )
+			{
+				Statement statement = itr.next();
+				Resource restriction = statement.getObject().asResource();
+				if ( !RdfHelper.resourceIsType( model, restriction,
+					OWL.Restriction.toString() ) )
+				{
+					continue;
+				}
+				
+				Resource ownerClass = statement.getSubject();
+				Resource onProperty = RdfHelper.subNode( model, restriction,
+					OWL.onProperty.toString() ).asResource();
+				MetaStructureClass metaClass = meta().getMetaClass(
+					RdfHelper.resourceUri( ownerClass ), true );
+				MetaStructureProperty metaProperty = meta().getMetaProperty(
+					RdfHelper.resourceUri( onProperty ), true );
+				MetaStructureRestrictable restrictable =
+					metaClass.getRestriction( metaProperty, true );
+				debug( "Created a restriction " + metaClass +
+					" ----> " + metaProperty );
+				trySetCardinality( restrictable, model, restriction );
+				
+				// Try get the values, owl:allValuesFrom etc.
+				Resource rangeResource = findResourceOutOf( model, restriction,
+					OWL.allValuesFrom.toString(),
+					OWL.someValuesFrom.toString() );
+				if ( rangeResource != null )
+				{
+					PropertyRange propertyRange =
+						buildPropertyRange( model, rangeResource );
+					if ( propertyRange != null )
+					{
+						restrictable.setRange( propertyRange );
+						debug( "\trange: " + propertyRange );
+					}
+				}
+			}
+		}
+		finally
+		{
+			itr.close();
+		}
+	}
+	
+	private Resource findResourceOutOf( Model model, Resource resource,
+		String... predicatesToTest )
+	{
+		for ( String predicate : predicatesToTest )
+		{
+			Node subNode = RdfHelper.subNode( model, resource, predicate );
+			if ( subNode != null )
+			{
+				return subNode.asResource();
+			}
+		}
+		return null;
+	}
+	
+	private void trySetCardinality( MetaStructureRestrictable restrictable,
+		Model model, Resource restriction )
+	{
+		Integer cardinality = tryGetInteger( model, restriction,
+			OWL.cardinality.toString() );
+		Integer maxCardinality = tryGetInteger( model, restriction,
+			OWL.maxCardinality.toString() );
+		Integer minCardinality = tryGetInteger( model, restriction,
+			OWL.minCardinality.toString() );
+		if ( cardinality != null )
+		{
+			restrictable.setCardinality( cardinality );
+			debug( "\tcardinality: " + cardinality );
+		}
+		if ( maxCardinality != null )
+		{
+			restrictable.setMaxCardinality( maxCardinality );
+			debug( "\tmaxCardinality: " + maxCardinality );
+		}
+		if ( minCardinality != null )
+		{
+			restrictable.setMinCardinality( minCardinality );
+			debug( "\tminCardinality: " + minCardinality );
+		}
+	}
+	
+	private Integer tryGetInteger( Model model, Resource resource,
+		String predicate )
+	{
+		String literal = RdfHelper.tryGetLiteral( model, resource, predicate );
+		return literal == null ? null : Integer.parseInt( literal );
 	}
 }

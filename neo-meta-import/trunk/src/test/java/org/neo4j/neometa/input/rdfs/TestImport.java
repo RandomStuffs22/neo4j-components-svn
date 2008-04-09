@@ -17,7 +17,6 @@ public class TestImport extends MetaTestCase
 	@Override
 	protected void setUp() throws Exception
 	{
-		System.out.println( "================================================" );
 		super.setUp();
 	}
 	
@@ -97,8 +96,14 @@ public class TestImport extends MetaTestCase
 	 */
 	public void testFoafImport() throws Exception
 	{
-		doAnImportOf( "foaf.rdfs", "prim-3.owl", "om2-1.owl", "miro.owl",
-			"wnbasic.rdfs", "wnfull.rdfs" );
+		doAnImportOf(
+			"foaf.rdfs"
+			,"prim-3.owl"
+			,"om2-1.owl"
+			,"miro.owl"
+			,"wnbasic.rdfs"
+			,"wnfull.rdfs"
+			);
 	}
 	
 	private void doAnImportOf( String... files ) throws Exception
