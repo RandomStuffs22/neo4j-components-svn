@@ -153,6 +153,7 @@ abstract class RdfHelper
 		if ( RdfHelper.resourceIsType( model, theClassOrUnion,
 			OWL.Class.toString() ) && theClassOrUnion instanceof BlankNode )
 		{
+			// TODO Also support intersectionOf and complementOf
 			result = new ArrayList<Node>();
 			for ( Node classNode : RdfHelper.subNodes( model, theClassOrUnion,
 				OWL.unionOf.toString() ) )

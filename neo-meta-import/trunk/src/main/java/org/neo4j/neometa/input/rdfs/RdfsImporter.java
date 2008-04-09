@@ -478,7 +478,8 @@ public class RdfsImporter
 				// Try get the values, owl:allValuesFrom etc.
 				Resource rangeResource = findResourceOutOf( model, restriction,
 					OWL.allValuesFrom.toString(),
-					OWL.someValuesFrom.toString() );
+					OWL.someValuesFrom.toString(),
+					OWL.hasValue.toString() );
 				if ( rangeResource != null )
 				{
 					PropertyRange propertyRange =
