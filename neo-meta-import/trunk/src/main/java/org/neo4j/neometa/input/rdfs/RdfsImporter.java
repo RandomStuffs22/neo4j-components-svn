@@ -10,6 +10,7 @@ import org.neo4j.neometa.structure.DatatypeClassRange;
 import org.neo4j.neometa.structure.MetaStructure;
 import org.neo4j.neometa.structure.MetaStructureClass;
 import org.neo4j.neometa.structure.MetaStructureClassRange;
+import org.neo4j.neometa.structure.MetaStructureImpl;
 import org.neo4j.neometa.structure.MetaStructureNamespace;
 import org.neo4j.neometa.structure.MetaStructureProperty;
 import org.neo4j.neometa.structure.MetaStructureRestrictable;
@@ -61,7 +62,7 @@ public class RdfsImporter
 	public void doImport( File file ) throws IOException
 	{
 		Model model = RdfHelper.readModel( file );
-		Transaction tx = meta.neo().beginTx();
+		Transaction tx = ( ( MetaStructureImpl ) meta ).neo().beginTx();
 		try
 		{
 			readFrom( model );

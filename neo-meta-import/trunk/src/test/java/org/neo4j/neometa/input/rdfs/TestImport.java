@@ -5,6 +5,7 @@ import java.io.File;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.neometa.structure.MetaStructure;
 import org.neo4j.neometa.structure.MetaStructureClass;
+import org.neo4j.neometa.structure.MetaStructureImpl;
 import org.neo4j.neometa.structure.MetaStructureNamespace;
 import org.neo4j.neometa.structure.MetaStructureProperty;
 
@@ -26,7 +27,7 @@ public class TestImport extends MetaTestCase
 	 */
 	public void testSomeImport() throws Exception
 	{
-		MetaStructure meta = new MetaStructure( neo() );
+		MetaStructure meta = new MetaStructureImpl( neo() );
 		new RdfsImporter( meta ).doImport( new File( "test.rdfs" ) );
 		
 		Transaction tx = neo().beginTx();
@@ -117,7 +118,7 @@ public class TestImport extends MetaTestCase
 	private void doImport( String file ) throws Exception
 	{
 		System.out.println( "=========================" );
-		MetaStructure meta = new MetaStructure( neo() );
+		MetaStructure meta = new MetaStructureImpl( neo() );
 		new RdfsImporter( meta ).doImport( new File( file ) );
 		
 		Transaction tx = neo().beginTx();

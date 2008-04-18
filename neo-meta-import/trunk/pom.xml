@@ -56,4 +56,14 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	
+	<repositories>
+        <repository>
+            <id>semweb4j</id>
+            <url>http://semweb4j.org/repo</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+	</repositories>
 </project>
