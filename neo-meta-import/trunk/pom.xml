@@ -36,8 +36,8 @@
         </dependency>        
 		<dependency>
             <groupId>org.neo4j</groupId>
-            <artifactId>neo-meta-new</artifactId>
-            <version>0.1-SNAPSHOT</version>
+            <artifactId>neo-meta</artifactId>
+            <version>0.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.semweb4j</groupId>
