@@ -13,15 +13,23 @@ import java.util.jar.JarFile;
 
 /**
  * Well, since Class#getExtendingClasses doesn't exist, use this instead.
- * @author mattias
- *
+ * @author Mattias Persson
  */
 public class ClassLister
 {
 	private static final String CLASS_NAME_ENDING = ".class";
 	
+	/**
+	 * @param <T> the class type.
+	 * @param superClass the class which the resulting classes must implement
+	 * or extend.
+	 * @param lookInThesePackages an optional collection of which java packages
+	 * to search in. If null is specified then all packages are searched.
+	 * @return all classes (in the class path) which extends or implements
+	 * a certain class.
+	 */
 	public static <T> Collection<Class<? extends T>>
-		listClassesExtendingOrImplementing( Class<T> superClass,
+		listClassesExtendingOrImplementing( Class<? extends T> superClass,
 		Collection<String> lookInThesePackages )
 	{
 		String classPath = System.getProperty( "java.class.path" );
@@ -38,7 +46,7 @@ public class ClassLister
 	}
 	
 	private static <T> void collectClasses(
-		Collection<Class<? extends T>> classes, Class<T> superClass,
+		Collection<Class<? extends T>> classes, Class<? extends T> superClass,
 		Collection<String> lookInThesePackages, String classPathToken )
 	{
 		File directory = new File( classPathToken );
@@ -75,7 +83,7 @@ public class ClassLister
 	}
 	
 	private static <T> void collectFromDirectory(
-		Collection<Class<? extends T>> classes, Class<T> superClass,
+		Collection<Class<? extends T>> classes, Class<? extends T> superClass,
 		Collection<String> lookInThesePackages, String prefix, File directory )
 	{
 		// Should we even bother walking through these directories?
@@ -148,11 +156,12 @@ public class ClassLister
 	private static String fixJarEntryClassName( String entryName )
 	{
 		entryName = entryName.replace( File.separatorChar, '.' );
+		entryName = entryName.replace( '/', '.' );
 		return trimFromClassEnding( entryName );
 	}
 	
 	private static <T> void tryCollectClass(
-		Collection<Class<? extends T>> classes, Class<T> superClass,
+		Collection<Class<? extends T>> classes, Class<? extends T> superClass,
 		Collection<String> lookInThesePackages, String className )
 	{
 		try
@@ -162,8 +171,8 @@ public class ClassLister
 				return;
 			}
 			
-			Class<? extends T> cls = ( Class<? extends T> )
-				Class.forName( className );
+			Class<? extends T> cls = Class.forName( className ).asSubclass(
+				superClass );
 			if ( cls.isInterface() ||
 				Modifier.isAbstract( cls.getModifiers() ) )
 			{
