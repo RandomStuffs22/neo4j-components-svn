@@ -58,6 +58,18 @@
     <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#ObjectProperty"/>
     <rdfs:range rdf:resource="#Operation"/>
   </owl:FunctionalProperty>
+
+
+  <!-- This one isn't from MIRO, just in the test -->
+  <owl:FunctionalProperty rdf:ID="depth">
+   <rdf:type   rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
+   <rdfs:range rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+   >D</rdfs:range>
+   <rdfs:range rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
+   >s</rdfs:range>
+   <rdfs:domain rdf:resource="#ITEcoRelation"/>
+  </owl:FunctionalProperty>
+ 
 </rdf:RDF>
 
 <!-- Created with Protege (with OWL Plugin 3.3, Build 418)  http://protege.stanford.edu -->

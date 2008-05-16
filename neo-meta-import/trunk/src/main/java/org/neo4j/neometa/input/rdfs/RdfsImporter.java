@@ -2,6 +2,8 @@ package org.neo4j.neometa.input.rdfs;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 import org.neo4j.api.core.Transaction;
@@ -22,8 +24,10 @@ import org.ontoware.aifbcommons.collection.ClosableIterator;
 import org.ontoware.rdf2go.model.Model;
 import org.ontoware.rdf2go.model.Statement;
 import org.ontoware.rdf2go.model.node.BlankNode;
+import org.ontoware.rdf2go.model.node.Literal;
 import org.ontoware.rdf2go.model.node.Node;
 import org.ontoware.rdf2go.model.node.Resource;
+import org.ontoware.rdf2go.model.node.URI;
 import org.ontoware.rdf2go.model.node.Variable;
 import org.ontoware.rdf2go.vocabulary.OWL;
 import org.ontoware.rdf2go.vocabulary.RDF;
@@ -293,6 +297,48 @@ public class RdfsImporter
 		return classes;
 	}
 	
+	private PropertyRange mergeRange( PropertyRange previousRange,
+		PropertyRange newRange )
+	{
+		if ( previousRange == null )
+		{
+			return newRange;
+		}
+		
+		PropertyRange result = null;
+		if ( newRange instanceof DataRange )
+		{
+			DataRange previousDataRange = ( DataRange ) previousRange;
+			DataRange newDataRange = ( DataRange ) newRange;
+			Collection<Object> values = new ArrayList<Object>(
+				previousDataRange.getValues() );
+			values.addAll( newDataRange.getValues() );
+			result = new DataRange( newDataRange.getRdfDatatype(),
+				values );
+		}
+		else if ( newRange instanceof MetaStructureClassRange )
+		{
+			MetaStructureClassRange previousMetaRange =
+				( MetaStructureClassRange ) previousRange;
+			MetaStructureClassRange newMetaRange =
+				( MetaStructureClassRange ) newRange;
+			Collection<MetaStructureClass> classes =
+				new ArrayList<MetaStructureClass>();
+			classes.addAll( Arrays.asList(
+				previousMetaRange.getRangeClasses() ) );
+			classes.addAll( Arrays.asList(
+				newMetaRange.getRangeClasses() ) );
+			result = new MetaStructureClassRange(
+				classes.toArray( new MetaStructureClass[ classes.size() ] ) );
+		}
+		else
+		{
+			throw new RuntimeException( "Can't merge property range type " +
+				newRange );
+		}
+		return result;
+	}
+	
 	private PropertyRange buildCollectionRange( Model model, Resource resource )
 	{
 		PropertyRange propertyRange = null;
@@ -333,13 +379,43 @@ public class RdfsImporter
 		return propertyRange;
 	}
 	
-	private PropertyRange buildOneValueRange( Model model, Resource resource )
+	private PropertyRange buildOneValueRange( Model model, Node rangeNode )
 	{
 		PropertyRange propertyRange = null;
-		String rangeType = RdfHelper.resourceUri( resource );
+		String rangeType = null;
+		if ( rangeNode instanceof Resource )
+		{
+			rangeType = RdfHelper.resourceUri( rangeNode.asResource() );
+		}
+		else
+		{
+			rangeType = RdfHelper.literalDatatype( model,
+				( Literal ) rangeNode );
+		}
+		
 		MetaStructureClass metaClass =
 			meta().getMetaClass( rangeType, false );
-		if ( metaClass != null )
+		if ( rangeNode instanceof Literal ||
+			RdfUtil.recognizesDatatype( rangeType ) )
+		{
+			if ( rangeNode instanceof Literal )
+			{
+				Literal literal = ( Literal ) rangeNode;
+				String literalValue = literal.getValue();
+				propertyRange = new DataRange( rangeType, literalValue );
+			}
+			else if ( rangeNode instanceof URI )
+			{
+				propertyRange = new RdfDatatypeRange(
+					( ( URI ) rangeNode ).toString() );
+			}
+			else
+			{
+				throw new RuntimeException( "Unrecognized type '" +
+					rangeNode + "'" );
+			}
+		}
+		else if ( metaClass != null )
 		{
 			propertyRange = new MetaStructureClassRange( metaClass );
 		}
@@ -348,10 +424,6 @@ public class RdfsImporter
 			RDF.Bag.toString(), RDF.Alt.toString() ) )
 		{
 			// TODO
-		}
-		else if ( RdfUtil.recognizesDatatype( rangeType ) )
-		{
-			propertyRange = new RdfDatatypeRange( rangeType );
 		}
 		else if ( RdfHelper.smartMatchThese( rangeType,
 			RDFS.Literal.toString(), RDFS.Datatype.toString(),
@@ -373,16 +445,17 @@ public class RdfsImporter
 		return propertyRange;
 	}
 	
-	private PropertyRange buildPropertyRange( Model model, Resource resource )
+	private PropertyRange buildPropertyRange( Model model, Node rangeNode )
 	{
 		PropertyRange propertyRange = null;
-		if ( resource instanceof BlankNode )
+		if ( rangeNode instanceof BlankNode )
 		{
-			propertyRange = buildCollectionRange( model, resource );
+			propertyRange = buildCollectionRange( model,
+				rangeNode.asResource() );
 		}
 		else
 		{
-			propertyRange = buildOneValueRange( model, resource );
+			propertyRange = buildOneValueRange( model, rangeNode );
 		}
 		return propertyRange;
 	}
@@ -390,22 +463,25 @@ public class RdfsImporter
 	private void trySetPropertyRange( MetaStructureRestrictable restrictable,
 		Model model, Resource property )
 	{
+		PropertyRange propertyRange = null;
 		for ( Node rangeNode :
 			RdfHelper.subNodes( model, property, RDFS.range.toString() ) )
 		{
-			Resource range = rangeNode.asResource();
-			PropertyRange propertyRange = buildPropertyRange( model, range );
-			if ( propertyRange != null )
-			{
-				restrictable.setRange( propertyRange );
-				debug( "\trange: " + propertyRange );
-			}
-			
-			if ( restrictable instanceof MetaStructureProperty )
-			{
-				trySetPropertyFunctionality( model, property,
-					( MetaStructureProperty ) restrictable );
-			}
+			PropertyRange newRange = buildPropertyRange( model, rangeNode );
+			newRange = mergeRange( propertyRange, newRange );
+			propertyRange = newRange;
+		}
+		
+		if ( propertyRange != null )
+		{
+			restrictable.setRange( propertyRange );
+			debug( "\trange: " + propertyRange );
+		}
+		
+		if ( restrictable instanceof MetaStructureProperty )
+		{
+			trySetPropertyFunctionality( model, property,
+				( MetaStructureProperty ) restrictable );
 		}
 	}
 	

@@ -18,6 +18,7 @@ import org.ontoware.rdf2go.RDF2Go;
 import org.ontoware.rdf2go.model.Model;
 import org.ontoware.rdf2go.model.Statement;
 import org.ontoware.rdf2go.model.node.BlankNode;
+import org.ontoware.rdf2go.model.node.DatatypeLiteral;
 import org.ontoware.rdf2go.model.node.Literal;
 import org.ontoware.rdf2go.model.node.Node;
 import org.ontoware.rdf2go.model.node.Resource;
@@ -46,6 +47,15 @@ abstract class RdfHelper
 	{
 		Node[] nodes = subNodes( model, resource, RDF.type.toString() );
 		return nodes.length == 0 ? null : resourceUri( nodes[ 0 ] );
+	}
+	
+	static String literalDatatype( Model model, Literal literal )
+	{
+		if ( literal instanceof DatatypeLiteral )
+		{
+			return literal.asDatatypeLiteral().getDatatype().toString();
+		}
+		return RdfUtil.NS_XML_SCHEMA + "string";
 	}
 
 	static Node[] subNodes( Model model, Resource resource,
