@@ -9,16 +9,16 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.neo4j</groupId>
-	<artifactId>neo-rdf</artifactId>
-	<version>0.2-tx-fix</version>
+	<artifactId>neo-rdf-tx-fix</artifactId>
+	<version>0.2-SNAPSHOT</version>
 	<name>Neo RDF</name>
 	<description>Neo-backed RDF store</description>
 	
 	<dependencies>
 		<dependency>
 			<groupId>org.neo4j</groupId>
-			<artifactId>neo</artifactId>
-			<version>1.0-tx-fix</version>
+			<artifactId>neo-tx-fix</artifactId>
+			<version>1.0-rc1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
@@ -38,8 +38,8 @@
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
-			<artifactId>index-util</artifactId>
-			<version>0.4-tx-fix</version>
+			<artifactId>index-util-tx-fix</artifactId>
+			<version>0.4-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>

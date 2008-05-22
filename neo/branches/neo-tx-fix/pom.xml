@@ -8,8 +8,8 @@
 
 	<modelVersion>4.0.0</modelVersion>	
 	<groupId>org.neo4j</groupId>
-	<artifactId>neo</artifactId>
-	<version>1.0-tx-fix</version>
+	<artifactId>neo-tx-fix</artifactId>
+	<version>1.0-rc1-SNAPSHOT</version>
 	<name>Neo</name>
 	<description>
 Neo is a lightweight, embedded Java database designed to store data structured

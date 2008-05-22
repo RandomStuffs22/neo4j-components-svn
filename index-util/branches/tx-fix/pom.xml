@@ -9,8 +9,8 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.neo4j</groupId>
-	<artifactId>index-util</artifactId>
-	<version>0.4-tx-fix</version>
+	<artifactId>index-util-tx-fix</artifactId>
+	<version>0.4-SNAPSHOT</version>
 	<name>Index util for neo.</name>
 	<description>
 		Utility classes to add property indexing in Neo.
@@ -34,8 +34,8 @@
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
-			<artifactId>neo</artifactId>
-			<version>1.0-tx-fix</version>
+			<artifactId>neo-tx-fix</artifactId>
+			<version>1.0-rc1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.neo4j</groupId>
