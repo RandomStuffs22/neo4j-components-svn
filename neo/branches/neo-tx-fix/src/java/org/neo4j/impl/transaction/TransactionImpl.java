@@ -46,6 +46,7 @@ class TransactionImpl implements Transaction
 	
 	private final byte globalId[];
 	private int status = Status.STATUS_ACTIVE;
+	private boolean active = true;
 	
 	private final LinkedList<ResourceElement> resourceList = 
 		new LinkedList<ResourceElement>();
@@ -588,5 +589,25 @@ class TransactionImpl implements Transaction
 			return "Xid[" + xid + "] XAResource[" + resource + "] Status[" +
 			 statusString + "]";
 		}
+	}
+
+	synchronized void markAsActive() 
+	{
+		if ( active )
+		{
+			throw new IllegalStateException( "Transaction[" + this + 
+				"] already active" );
+		}
+		active = true;
+	}
+	
+	synchronized void markAsSuspended()
+	{
+		if ( !active )
+		{
+			throw new IllegalStateException( "Transaction[" + this + 
+				"] already suspended" );
+		}
+		active = false;
 	}
 }

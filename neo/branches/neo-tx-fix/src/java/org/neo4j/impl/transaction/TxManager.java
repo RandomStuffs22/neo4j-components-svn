@@ -796,12 +796,16 @@ public class TxManager implements TransactionManager
 		{
 			throw new IllegalStateException( "Transaction already associated" );
 		}
-		TransactionImpl txImpl = (TransactionImpl) tx;
-		if ( txImpl.getStatus() != Status.STATUS_NO_TRANSACTION )
+		if ( tx != null )
 		{
-			txThreadMap.put( thread, txImpl );
+			TransactionImpl txImpl = (TransactionImpl) tx;
+			if ( txImpl.getStatus() != Status.STATUS_NO_TRANSACTION )
+			{
+				txImpl.markAsActive();
+				txThreadMap.put( thread, txImpl );
+			}
+			// generate pro-active event resume
 		}
-		// generate pro-active event resume
 	}
 
 	public Transaction suspend() throws SystemException
@@ -817,6 +821,7 @@ public class TxManager implements TransactionManager
 		if ( tx != null )
 		{
 			// generate pro-active event suspend
+			tx.markAsSuspended();
 		}
 		return tx;
 	}
