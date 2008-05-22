@@ -314,7 +314,7 @@ public class RdfsImporter
 				previousDataRange.getValues() );
 			values.addAll( newDataRange.getValues() );
 			result = new DataRange( newDataRange.getRdfDatatype(),
-				values );
+				values.toArray() );
 		}
 		else if ( newRange instanceof MetaStructureClassRange )
 		{

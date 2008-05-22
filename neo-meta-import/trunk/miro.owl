@@ -70,6 +70,23 @@
    <rdfs:domain rdf:resource="#ITEcoRelation"/>
   </owl:FunctionalProperty>
  
+  <owl:FunctionalProperty rdf:ID="public_speaker">
+   <rdfs:range>
+     <owl:DataRange>
+       <owl:oneOf rdf:parseType="Resource">
+         <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean"
+         >true</rdf:first>
+         <rdf:rest rdf:parseType="Resource">
+           <rdf:rest rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#nil"/>
+           <rdf:first rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean"
+           >false</rdf:first>
+         </rdf:rest>
+       </owl:oneOf>
+     </owl:DataRange>
+   </rdfs:range>
+   <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#DatatypeProperty"/>
+   <rdfs:domain rdf:resource="#UCFaculty"/>
+ </owl:FunctionalProperty>
 </rdf:RDF>
 
 <!-- Created with Protege (with OWL Plugin 3.3, Build 418)  http://protege.stanford.edu -->
