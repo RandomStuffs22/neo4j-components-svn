@@ -390,6 +390,7 @@ public class NeoSailConnection implements SailConnection
     		transaction.commit();
     		tm.begin();
     		transaction = tm.getTransaction();
+    		clearBatchCommit();
     	}
     	catch ( Exception e )
     	{
@@ -411,6 +412,7 @@ public class NeoSailConnection implements SailConnection
     		transaction.rollback();
     		tm.begin();
     		transaction = tm.getTransaction();
+    		clearBatchCommit();
     	}
     	catch ( Exception e )
     	{
@@ -445,6 +447,7 @@ public class NeoSailConnection implements SailConnection
             	tm.commit();
             	tm.begin();
             	transaction = tm.getTransaction();
+            	clearBatchCommit();
             }
             catch ( Exception e )
             {
