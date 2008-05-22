@@ -56,7 +56,6 @@ public class NeoSailConnection implements SailConnection
     private Transaction transaction;
     private Transaction otherTx;
     private boolean open;
-//    private Transaction currentTransaction;
     private final AtomicInteger writeOperationCount = new AtomicInteger();
     private final Sail sail;
     private final AtomicInteger totalAddCount = new AtomicInteger();
@@ -190,7 +189,7 @@ public class NeoSailConnection implements SailConnection
         return null;
     }
 
-    public CloseableIteration<? extends Statement, SailException> getStatements(final Resource subject,
+    public synchronized CloseableIteration<? extends Statement, SailException> getStatements(final Resource subject,
                                                                                 final URI predicate,
                                                                                 final Value object,
                                                                                 boolean includeInferred,
@@ -201,7 +200,6 @@ public class NeoSailConnection implements SailConnection
             includeInferred = false;
         }
 
-//        ensureOpenTransaction();
 //System.out.println("getStatements(" + subject + ", " + predicate + ", " + object + ", " + includeInferred + ", " + contexts );
         suspendOtherAndResumeThis();
         try {
@@ -253,11 +251,11 @@ public class NeoSailConnection implements SailConnection
         return -1;
     }
 
-    public void addStatement( final Resource subject, final URI predicate,
-        final Value object, final Resource... contexts ) throws SailException
+    public synchronized void addStatement( final Resource subject, 
+    	final URI predicate, final Value object, final Resource... contexts ) 
+    		throws SailException
     {
     	totalAddCount.incrementAndGet();
-  //      ensureOpenTransaction();
     	suspendOtherAndResumeThis();
         try
         {
@@ -320,10 +318,10 @@ public class NeoSailConnection implements SailConnection
         }
     }
 
-    public void removeStatements( final Resource subject, final URI predicate,
-        final Value object, final Resource... contexts ) throws SailException
+    public synchronized void removeStatements( final Resource subject, 
+    	final URI predicate, final Value object, final Resource... contexts ) 
+    		throws SailException
     {
-        // ensureOpenTransaction();
     	suspendOtherAndResumeThis();
         try
         {
@@ -424,20 +422,6 @@ public class NeoSailConnection implements SailConnection
     	}
     }
 
-//    private synchronized void ensureOpenTransaction()
-//    {
-//        if ( !openTransaction() )
-//        {
-//            clearBatchCommit();
-//            currentTransaction = neo.beginTx();            
-//        }
-//    }
-    
-//    private synchronized boolean openTransaction()
-//    {
-//        return tx() != null;
-//    }
-    
     private synchronized void checkBatchCommit() throws SailException
     {
         if ( writeOperationCount.incrementAndGet() >= batchSize )
@@ -472,37 +456,32 @@ public class NeoSailConnection implements SailConnection
         return new NeoNamespaceIteration( getNamespaceNode(), neo );
     }
 
-    public String getNamespace( final String prefix ) throws SailException
+    public synchronized String getNamespace( final String prefix ) 
+    	throws SailException
     {
-        // Transaction tx = neo.beginTx();
     	suspendOtherAndResumeThis();
         try
         {
             String uri = ( String ) getNamespaceNode().getProperty( prefix,
                 null );
-            // tx.success();
             return uri;
         }
         finally
         {
-            // tx.finish();
         	suspendThisAndResumeOther();
         }
     }
 
-    public void setNamespace( final String prefix, final String uri )
+    public synchronized void setNamespace( final String prefix, final String uri )
         throws SailException
     {
-        // Transaction tx = neo.beginTx();
     	suspendOtherAndResumeThis();
         try
         {
             getNamespaceNode().setProperty( prefix, uri );
-            // tx.success();
         }
         finally
         {
-            // tx.finish();
         	suspendThisAndResumeOther();
         }
     }
@@ -513,34 +492,29 @@ public class NeoSailConnection implements SailConnection
             .getOrCreateSubReferenceNode( NeoSailRelTypes.REF_TO_NAMESPACE );
     }
 
-    public void removeNamespace( final String prefix ) throws SailException
+    public synchronized void removeNamespace( final String prefix ) 
+    	throws SailException
     {
-        // Transaction tx = neo.beginTx();
     	suspendOtherAndResumeThis();
         try
         {
             getNamespaceNode().removeProperty( prefix );
-            // tx.success();
         }
         finally
         {
-            // tx.finish();
         	suspendThisAndResumeOther();
         }
     }
 
-    public void clearNamespaces() throws SailException
+    public synchronized void clearNamespaces() throws SailException
     {
-        // Transaction tx = neo.beginTx();
     	suspendOtherAndResumeThis();
         try
         {
             getNamespaceNode().delete();
-            // tx.success();
         }
         finally
         {
-            // tx.finish();
         	suspendThisAndResumeOther();
         }
     }
