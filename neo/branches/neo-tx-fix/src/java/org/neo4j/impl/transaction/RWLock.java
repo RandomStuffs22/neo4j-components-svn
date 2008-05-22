@@ -18,6 +18,15 @@ package org.neo4j.impl.transaction;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.RollbackException;
+import javax.transaction.Synchronization;
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
+import javax.transaction.xa.XAResource;
+
 import org.neo4j.impl.util.ArrayMap;
 
 /**
@@ -57,8 +66,8 @@ class RWLock
 	private final LinkedList<WaitElement> waitingThreadList = 
 		new LinkedList<WaitElement>();
 
-	private final ArrayMap<Thread,ThreadLockElement> threadLockElementMap = 
-		new ArrayMap<Thread,ThreadLockElement>( 5, false, true );
+	private final ArrayMap<Transaction,ThreadLockElement> threadLockElementMap = 
+		new ArrayMap<Transaction,ThreadLockElement>( 5, false, true );
 	
 	private final RagManager ragManager;
 	
@@ -71,13 +80,13 @@ class RWLock
 	// keeps track a threads read and write lock count on this RWLock
 	private static class ThreadLockElement
 	{
-		final Thread thread;
+		final Transaction tx;
 		int readCount = 0;
 		int writeCount = 0;
 		
-		ThreadLockElement( Thread thread )
+		ThreadLockElement( Transaction tx )
 		{
-			this.thread = thread;
+			this.tx = tx;
 		}
 	}
 	
@@ -86,11 +95,13 @@ class RWLock
 	{
 		final ThreadLockElement element;
 		final LockType lockType;
+		final Thread waitingThread;
 		
-		WaitElement( ThreadLockElement element, LockType lockType )
+		WaitElement( ThreadLockElement element, LockType lockType, Thread thread )
 		{
 			this.element = element;
 			this.lockType = lockType;
+			this.waitingThread = thread;
 		}
 	}
 	
@@ -117,20 +128,25 @@ class RWLock
 	 */
 	synchronized void acquireReadLock() throws DeadlockDetectedException
 	{
-		Thread currentThread = Thread.currentThread();
-		ThreadLockElement tle = threadLockElementMap.get( currentThread );
+		// Thread currentThread = Thread.currentThread();
+		Transaction tx = ragManager.getCurrentTransaction();
+		if ( tx == null )
+		{
+			tx = new PlaceboTransaction();
+		}
+		ThreadLockElement tle = threadLockElementMap.get( tx );
 		if ( tle == null )
 		{
-			tle = new ThreadLockElement( currentThread );
+			tle = new ThreadLockElement( tx );
 		}
 		
 		try
 		{
 			while ( writeCount > tle.writeCount )
 			{
-				ragManager.checkWaitOn( this );
+				ragManager.checkWaitOn( this ); 
 				waitingThreadList.addFirst( 
-					new WaitElement( tle, LockType.READ ) );
+					new WaitElement( tle, LockType.READ, Thread.currentThread() ) );
 				try
 				{
 					wait();
@@ -148,7 +164,8 @@ class RWLock
 			}
 			readCount++;
 			tle.readCount++;
-			threadLockElementMap.put( currentThread, tle );
+			// TODO: this put could be optimized?
+			threadLockElementMap.put( tx, tle );
 		}
 		finally
 		{
@@ -165,18 +182,23 @@ class RWLock
 	synchronized void releaseReadLock() 
 		throws LockNotFoundException
 	{
-		Thread currentThread = Thread.currentThread();
-		ThreadLockElement tle = threadLockElementMap.get( currentThread );
+		// Thread currentThread = Thread.currentThread();
+		Transaction tx = ragManager.getCurrentTransaction();
+		if ( tx == null )
+		{
+			tx = new PlaceboTransaction();
+		}
+		ThreadLockElement tle = threadLockElementMap.get( tx );
 		if ( tle == null )
 		{
 			throw new LockNotFoundException( 
-				"No thread lock element found for " + currentThread );
+				"No thread lock element found for " + tx );
 		}
 		
 		
 		if ( tle.readCount == 0 )
 		{
-			throw new LockNotFoundException( "" + currentThread +
+			throw new LockNotFoundException( "" + tx +
 				" don't have readLock" );
 		}
 		
@@ -186,7 +208,7 @@ class RWLock
 		{
 			if ( !this.isMarked() )
 			{
-				threadLockElementMap.remove( currentThread );
+				threadLockElementMap.remove( tx );
 			}
 			ragManager.lockReleased( this );
 		}
@@ -206,7 +228,8 @@ class RWLock
 				{
 					// found a write lock with all read locks
 					waitingThreadList.removeLast();
-					we.element.thread.interrupt();
+					we.waitingThread.interrupt();
+					// we.element.thread.interrupt();
 				}
 				else
 				{
@@ -223,7 +246,8 @@ class RWLock
 						{
 							// found a write lock with all read locks
 							listItr.remove();
-							we.element.thread.interrupt();
+							we.waitingThread.interrupt();
+							// we.element.thread.interrupt();
 							// ----
 							 break;
 						}
@@ -231,7 +255,8 @@ class RWLock
 						{
 							// found a read lock, let it do the job...
 							listItr.remove();
-							we.element.thread.interrupt();
+							we.waitingThread.interrupt();
+							// we.element.thread.interrupt();
 						}
 					}
 				}
@@ -244,7 +269,8 @@ class RWLock
 				if ( writeCount == 0 )
 				{
 					waitingThreadList.removeLast();
-					we.element.thread.interrupt();
+					we.waitingThread.interrupt();
+					// we.element.thread.interrupt();
 				}
 			}
 		}
@@ -264,11 +290,16 @@ class RWLock
 	 */
 	synchronized void acquireWriteLock() throws DeadlockDetectedException
 	{
-		Thread currentThread = Thread.currentThread();
-		ThreadLockElement tle = threadLockElementMap.get( currentThread );
+		// Thread currentThread = Thread.currentThread();
+		Transaction tx = ragManager.getCurrentTransaction();
+		if ( tx == null )
+		{
+			tx = new PlaceboTransaction();
+		}
+		ThreadLockElement tle = threadLockElementMap.get( tx );
 		if ( tle == null )
 		{
-			tle = new ThreadLockElement( currentThread );
+			tle = new ThreadLockElement( tx );
 		}
 
 		try
@@ -277,7 +308,7 @@ class RWLock
 			{
 				ragManager.checkWaitOn( this );
 				waitingThreadList.addFirst( 
-					new WaitElement( tle, LockType.WRITE ) );
+					new WaitElement( tle, LockType.WRITE, Thread.currentThread() ) );
 				try
 				{
 					wait();
@@ -295,7 +326,8 @@ class RWLock
 			}
 			writeCount++;
 			tle.writeCount++;
-			threadLockElementMap.put( currentThread, tle );
+			// TODO optimize this put?
+			threadLockElementMap.put( tx, tle );
 		}
 		finally
 		{
@@ -304,7 +336,6 @@ class RWLock
 		}
 	}
 		
-	
 	/**
 	 * Releases the write lock held by current thread. If write count is zero
 	 * and there are waiting threads in the queue they will be interrupted if 
@@ -312,17 +343,22 @@ class RWLock
 	 */
 	synchronized void releaseWriteLock() throws LockNotFoundException
 	{
-		Thread currentThread = Thread.currentThread();
-		ThreadLockElement tle = threadLockElementMap.get( currentThread );		
+		// Thread currentThread = Thread.currentThread();
+		Transaction tx = ragManager.getCurrentTransaction();
+		if ( tx == null )
+		{
+			tx = new PlaceboTransaction();
+		}
+		ThreadLockElement tle = threadLockElementMap.get( tx );		
 		if ( tle == null )
 		{
 			throw new LockNotFoundException( 
-				"No thread lock element found for " + currentThread );
+				"No thread lock element found for " + tx );
 		}
 		
 		if ( tle.writeCount == 0 )
 		{
-			throw new LockNotFoundException( "" + currentThread +
+			throw new LockNotFoundException( "" + tx +
 				" don't have writeLock" );
 		}
 		
@@ -332,7 +368,7 @@ class RWLock
 		{
 			if ( !this.isMarked() )
 			{
-				threadLockElementMap.remove( currentThread );
+				threadLockElementMap.remove( tx );
 			}
 			ragManager.lockReleased( this );
 		}
@@ -349,7 +385,8 @@ class RWLock
 			do
 			{
 				WaitElement we = waitingThreadList.removeLast();
-				we.element.thread.interrupt();
+				we.waitingThread.interrupt();
+				// we.element.thread.interrupt();
 				if ( we.lockType == LockType.WRITE )
 				{
 					break;
@@ -383,7 +420,7 @@ class RWLock
 		while ( wElements.hasNext() )
 		{
 			WaitElement we = wElements.next();
-			System.out.print( "[" + we.element.thread + "(" +
+			System.out.print( "[" + we.waitingThread + "(" +
 				we.element.readCount + "r," + we.element.writeCount + "w)," +
 				we.lockType + "]" );
 			if ( wElements.hasNext() )
@@ -402,7 +439,7 @@ class RWLock
 		while ( lElements.hasNext() )
 		{
 			ThreadLockElement tle = (ThreadLockElement) lElements.next();
-			System.out.println( "" + tle.thread + "(" +
+			System.out.println( "" + tle.tx + "(" +
 				tle.readCount + "r," + tle.writeCount + "w)" );
 		}
 	}
@@ -410,5 +447,69 @@ class RWLock
 	public String toString()
 	{
 		return "RWLock[" + resource + "]";
+	}
+	
+	private static class PlaceboTransaction implements Transaction
+	{
+		private final Thread currentThread;
+		
+		PlaceboTransaction()
+		{
+			this.currentThread = Thread.currentThread();
+		}
+		
+		public boolean equals( Object o )
+		{
+			if ( !(o instanceof PlaceboTransaction) )
+			{
+				return false;
+			}
+			return this.currentThread.equals(
+				((PlaceboTransaction) o).currentThread );
+		}
+		
+		public int hashCode()
+		{
+			return currentThread.hashCode();
+		}
+
+		public void commit() 
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		public boolean delistResource( XAResource arg0, int arg1 ) 
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		public boolean enlistResource( XAResource arg0 ) 
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		public int getStatus() 
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		public void registerSynchronization( Synchronization arg0 )
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		public void rollback()
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		public void setRollbackOnly() 
+		{
+		}
+		
+		public String toString()
+		{
+			return "Placebo tx for thread " + currentThread;
+		}
 	}
 }

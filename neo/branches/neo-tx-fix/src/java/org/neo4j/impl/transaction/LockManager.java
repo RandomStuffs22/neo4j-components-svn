@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.transaction.TransactionManager;
+
 /**
  * The LockManager can lock resources for reading or writing. By doing this one
  * may achieve different transaction isolation levels. A resource can for now  
@@ -42,10 +44,11 @@ public class LockManager
 	private final Map<Object,RWLock> resourceLockMap = 
 		new HashMap<Object,RWLock>();
 	
-	private RagManager ragManager = new RagManager();
+	private final RagManager ragManager;
 	
-	public LockManager() 
+	public LockManager( TransactionManager tm ) 
 	{
+		ragManager = new RagManager( tm );
 	}
 	
 	/**

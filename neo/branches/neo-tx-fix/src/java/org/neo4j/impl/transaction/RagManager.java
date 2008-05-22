@@ -22,6 +22,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
+import javax.transaction.TransactionManager;
+
 import org.neo4j.impl.util.ArrayMap;
 
 /**
@@ -70,7 +75,12 @@ class RagManager
 	private final ArrayMap<Thread,Object> waitingThreadMap = 
 		new ArrayMap<Thread,Object>( 5, false, true );
 	
-	RagManager() {}
+	private final TransactionManager tm;
+	
+	RagManager( TransactionManager tm ) 
+	{
+		this.tm = tm;
+	}
 	
 	synchronized void lockAcquired( Object resource )
 	{
@@ -160,13 +170,15 @@ class RagManager
 			// circular	reference to exist (t1->r1->t1) otherwise we may traverse
 			// t1->r1->t2->r1->t2->r1->t2... until SOE
 			// ... KISS to you too
-			if ( lockingThread != waitingThread )
+			if ( lockingThread == waitingThread  ) // && 
+					// lockingTransaction == waitingTransaction )
 			{
-				graphStack.push( lockingThread );
-				checkWaitOnRecursive( lockingThread, waitingThread, 
-					checkedThreads, graphStack );
-				graphStack.pop();
+				continue;
 			}
+			graphStack.push( lockingThread );
+			checkWaitOnRecursive( lockingThread, waitingThread, 
+				checkedThreads, graphStack );
+			graphStack.pop();
 		}
 		
 		// ok no deadlock, we can wait on resource
@@ -283,6 +295,18 @@ class RagManager
 					System.out.println();
 				}
 			}
+		}
+	}
+
+	Transaction getCurrentTransaction() 
+	{
+		try 
+		{
+			return tm.getTransaction();
+		} 
+		catch (SystemException e) 
+		{
+			throw new RuntimeException( e );
 		}
 	}
 }

@@ -201,8 +201,8 @@ class NeoJvmInstance
             this.storeDir = storeDir;
 			eventModule = new EventModule();
 			cacheManager = new AdaptiveCacheManager();
-			txModule = new TxModule( eventModule.getEventManager(), storeDir );
-			lockManager = new LockManager();
+			txModule = new TxModule( eventModule.getEventManager(), this.storeDir );
+			lockManager = new LockManager( txModule.getTxManager() );
 			lockReleaser = new LockReleaser( lockManager, 
 				txModule.getTxManager() );
 			persistenceModule = new PersistenceModule( 

@@ -16,6 +16,15 @@
  */
 package org.neo4j.impl.transaction;
 
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.InvalidTransactionException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
+import javax.transaction.Transaction;
+import javax.transaction.TransactionManager;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -30,7 +39,7 @@ public class TestDeadlockDetection extends TestCase
 		super( name );
 	}
 	
-	private static LockManager lm = new LockManager();
+	private static LockManager lm = new LockManager( new PlaceboTm() );
 	
 	public static Test suite()
 	{
