@@ -19,7 +19,6 @@ package org.neo4j.impl.core;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
 import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import org.neo4j.api.core.Direction;
@@ -43,7 +42,6 @@ import org.neo4j.impl.transaction.LockManager;
 import org.neo4j.impl.transaction.LockNotFoundException;
 import org.neo4j.impl.transaction.LockType;
 import org.neo4j.impl.transaction.NotInTransactionException;
-import org.neo4j.impl.transaction.TxManager;
 import org.neo4j.impl.traversal.TraverserFactory;
 
 public class NodeManager

@@ -16,21 +16,9 @@
  */
 package org.neo4j.impl.transaction;
 
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.InvalidTransactionException;
-import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
-import javax.transaction.SystemException;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import org.neo4j.impl.transaction.DeadlockDetectedException;
-import org.neo4j.impl.transaction.LockManager;
 
 public class TestDeadlockDetection extends TestCase
 {
