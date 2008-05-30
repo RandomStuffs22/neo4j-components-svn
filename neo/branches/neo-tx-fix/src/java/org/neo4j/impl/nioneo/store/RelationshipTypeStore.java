@@ -129,8 +129,21 @@ public class RelationshipTypeStore extends AbstractStore implements Store
 		return typeNameStore.allocateRecords( startBlock, src );
 	}
 	
+    public void updateRecord( RelationshipTypeRecord record, boolean recovered )
+    {
+        assert recovered;
+        setRecovered();
+        try
+        {
+            updateRecord( record );
+        }
+        finally
+        {
+            unsetRecovered();
+        }
+    }
+    
 	public void updateRecord( RelationshipTypeRecord record ) 
-		throws IOException
 	{
 		if ( record.isTransferable() && !hasWindow( record.getId() ) )
 		{
@@ -172,21 +185,6 @@ public class RelationshipTypeStore extends AbstractStore implements Store
 		{
 			typeNameStore.updateRecord( typeRecord );
 		}
-	}
-	
-	private boolean transferRecord( RelationshipTypeRecord record ) 
-		throws IOException
-	{
-		long id = record.getId();
-		long count = record.getTransferCount();
-		FileChannel fileChannel = getFileChannel();
-		fileChannel.position( id * getRecordSize() );
-		if ( count != record.getFromChannel().transferTo( 
-			record.getTransferStartPosition(), count, fileChannel ) )
-		{
-			return false;
-		}
-		return true;
 	}
 	
 	public RelationshipTypeRecord getRecord( int id, ReadFromBuffer buffer ) 

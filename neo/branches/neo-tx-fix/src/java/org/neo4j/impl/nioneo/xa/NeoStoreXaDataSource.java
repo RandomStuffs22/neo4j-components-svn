@@ -68,6 +68,7 @@ public class NeoStoreXaDataSource extends XaDataSource
 	private final LockManager lockManager;
 	private final LockReleaser lockReleaser;
 	private final EventManager eventManager;
+    private final String storeDir;
 
 	/**
 	 * Creates a <CODE>NeoStoreXaDataSource</CODE> using configuration from
@@ -94,6 +95,7 @@ public class NeoStoreXaDataSource extends XaDataSource
 		this.lockReleaser = (LockReleaser) params.get( LockReleaser.class );
 		this.eventManager = (EventManager) params.get( EventManager.class );
 		String configFileName = ( String ) params.get( "config" );
+        storeDir = ( String ) params.get( "store_dir" );
 		Properties config = new Properties();
 		if ( configFileName != null )
 		{
@@ -141,7 +143,7 @@ public class NeoStoreXaDataSource extends XaDataSource
 		{
 			throw new IOException( "Unable to set lazy done records, " + e );
 		}
-		TxInfoManager.getManager().setRealLog( xaContainer.getLogicalLog() );
+		// TxInfoManager.getManager().setRealLog( xaContainer.getLogicalLog() );
 		xaContainer.openLogicalLog();
 		if ( !xaContainer.getResourceManager().hasRecoveredTransactions() )
 		{
@@ -196,10 +198,12 @@ public class NeoStoreXaDataSource extends XaDataSource
 		this.lockManager = lockManager;
 		this.lockReleaser = lockReleaser;
 		this.eventManager = eventManager;
+        storeDir = logicalLogPath;
 		neoStore = new NeoStore( neoStoreFileName );
 		xaContainer = XaContainer.create( logicalLogPath, 
 			new CommandFactory( neoStore ), 
 			new TransactionFactory() );
+        
 		try
 		{
 			xaContainer.setLazyDoneRecords();
@@ -208,7 +212,6 @@ public class NeoStoreXaDataSource extends XaDataSource
 		{
 			throw new IOException( "Unable to set lazy done records, " + e );
 		}
-		TxInfoManager.getManager().setRealLog( xaContainer.getLogicalLog() );
 		xaContainer.openLogicalLog();
 		if ( !xaContainer.getResourceManager().hasRecoveredTransactions() )
 		{
@@ -339,4 +342,9 @@ public class NeoStoreXaDataSource extends XaDataSource
 	{
 		xaContainer.writeOutLazyDoneRecords();
 	}
+
+    public String getStoreDir()
+    {
+        return storeDir;
+    }
 }

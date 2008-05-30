@@ -193,6 +193,20 @@ public class PropertyIndexStore extends AbstractStore implements Store
 		return record;
 	}
 	
+    public void updateRecord( PropertyIndexRecord record, boolean recovered )
+    {
+        assert recovered;
+        setRecovered();
+        try
+        {
+            updateRecord( record );
+        }
+        finally
+        {
+            unsetRecovered();
+        }
+    }
+    
 	public void updateRecord( PropertyIndexRecord record )
 	{
 		if ( record.isTransferable() && !hasWindow( record.getId() ) )
@@ -338,4 +352,5 @@ public class PropertyIndexStore extends AbstractStore implements Store
 	{
 		return "PropertyIndexStore";
 	}
+
 }
