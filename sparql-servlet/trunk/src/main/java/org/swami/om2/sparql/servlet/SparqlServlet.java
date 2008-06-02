@@ -68,6 +68,14 @@ public class SparqlServlet extends HttpServlet
 		try
         {
 			encodedQuery = request.getParameter( "query" );
+			if ( encodedQuery == null )
+			{
+				response.sendError( HttpServletResponse.SC_BAD_REQUEST,
+					"Please supply \"query\" parameter with your " +
+					"sparql query" );
+				return;
+			}
+			
 			if ( !mayAskQuery( encodedQuery ) )
 			{
 				response.sendError( HttpServletResponse.SC_BAD_REQUEST,
