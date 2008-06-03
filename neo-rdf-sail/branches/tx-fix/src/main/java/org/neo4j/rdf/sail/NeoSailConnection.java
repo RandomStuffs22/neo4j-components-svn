@@ -130,7 +130,10 @@ public class NeoSailConnection implements SailConnection
     {
     	try
     	{
-    		tm.suspend();
+    		if ( transaction != null )
+    		{
+    			tm.suspend();
+    		}
     		if ( otherTx != null )
     		{
     			tm.resume( otherTx );
@@ -408,8 +411,7 @@ public class NeoSailConnection implements SailConnection
     	try
     	{
     		transaction.rollback();
-    		tm.begin();
-    		transaction = tm.getTransaction();
+    		transaction = null;
     		clearBatchCommit();
     	}
     	catch ( Exception e )
