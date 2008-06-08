@@ -35,6 +35,8 @@ public class VerboseQuadExecutor extends UriBasedExecutor
     	REF_CONTEXTS,
     	IS_A_CONTEXT,
     }
+    
+    private Node contextRefNodeCache;
 
     public VerboseQuadExecutor( NeoService neo, IndexService index,
         MetaStructure meta )
@@ -44,8 +46,12 @@ public class VerboseQuadExecutor extends UriBasedExecutor
     
     public Node getContextsReferenceNode()
     {
-    	return this.neoUtil().getOrCreateSubReferenceNode(
-    		RelTypes.REF_CONTEXTS );
+    	if ( this.contextRefNodeCache == null )
+    	{
+    		this.contextRefNodeCache = this.neoUtil().
+    			getOrCreateSubReferenceNode( RelTypes.REF_CONTEXTS );
+    	}
+    	return this.contextRefNodeCache;
     }
 
     @Override
@@ -121,7 +127,7 @@ public class VerboseQuadExecutor extends UriBasedExecutor
         Relationship relationship = null;
         if ( willCreate )
         {
-	        Node contextRefNode = getContextsReferenceNode();
+            Node contextRefNode = getContextsReferenceNode();
 	        contextRefNode.createRelationshipTo( contextNode,
 	        	RelTypes.IS_A_CONTEXT );
 	        relationship = createRelationship( middleNode,
@@ -131,6 +137,13 @@ public class VerboseQuadExecutor extends UriBasedExecutor
         {
             relationship = ensureDirectlyConnected( middleNode,
             	abstractRelationship, contextNode );
+            if ( !contextNode.hasRelationship( RelTypes.IS_A_CONTEXT,
+            	Direction.INCOMING ) )
+            {
+                Node contextRefNode = getContextsReferenceNode();
+            	contextRefNode.createRelationshipTo( contextNode,
+            		RelTypes.IS_A_CONTEXT );
+            }
         }
         return relationship;
     }
