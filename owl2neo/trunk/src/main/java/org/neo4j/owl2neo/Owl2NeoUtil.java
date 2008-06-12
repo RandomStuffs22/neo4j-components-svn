@@ -6,9 +6,11 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.io.Writer;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -720,10 +722,30 @@ class Owl2NeoUtil
 			else if ( range instanceof OWLDataOneOf )
 			{
 				OWLDataOneOf oneOf = ( OWLDataOneOf ) range;
-				Set<Object> values = new HashSet<Object>();
+				Set<Serializable> values = new HashSet<Serializable>();
 				for ( OWLConstant aValue : oneOf.getValues() )
 				{
-					values.add( aValue.getLiteral() );
+					String stringValue = aValue.getLiteral();
+					Serializable realValue = null;
+					if ( aValue.isTyped() )
+					{
+						datatypeUri = aValue.asOWLTypedConstant().
+							getDataType().getURI().toString();
+						try
+						{
+							realValue = ( Serializable ) RdfUtil.getRealValue(
+								datatypeUri, stringValue );
+						}
+						catch ( ParseException e )
+						{
+							throw new RuntimeException( e );
+						}
+					}
+					else
+					{
+						realValue = stringValue;
+					}
+					values.add( realValue );
 				}
 				rangeValue = values;
 			}
