@@ -61,6 +61,20 @@ public class RelationshipTypeStore extends AbstractStore implements Store
 	}
 	
 	@Override
+    protected void setRecovered()
+    {
+		super.setRecovered();
+		typeNameStore.setRecovered();
+    }
+    
+	@Override
+    protected void unsetRecovered()
+    {
+		super.unsetRecovered();
+		typeNameStore.unsetRecovered();
+    }
+	
+	@Override
 	protected void initStorage() 
 	{
 		typeNameStore = new DynamicStringStore( 

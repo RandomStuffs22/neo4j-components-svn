@@ -66,6 +66,20 @@ public class PropertyIndexStore extends AbstractStore implements Store
 	}
 	
 	@Override
+    protected void setRecovered()
+    {
+		super.setRecovered();
+		keyPropertyStore.setRecovered();
+    }
+    
+	@Override
+    protected void unsetRecovered()
+    {
+		super.unsetRecovered();
+		keyPropertyStore.unsetRecovered();
+    }
+	
+	@Override
 	public void makeStoreOk()
 	{
 		keyPropertyStore.makeStoreOk();

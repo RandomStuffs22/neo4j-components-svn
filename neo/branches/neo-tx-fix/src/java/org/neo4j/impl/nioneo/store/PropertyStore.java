@@ -81,6 +81,24 @@ public class PropertyStore extends AbstractStore implements Store
 	}
 	
 	@Override
+    protected void setRecovered()
+    {
+		super.setRecovered();
+		stringPropertyStore.setRecovered();
+		propertyIndexStore.setRecovered();
+		arrayPropertyStore.setRecovered();
+    }
+    
+	@Override
+    protected void unsetRecovered()
+    {
+		super.unsetRecovered();
+		stringPropertyStore.unsetRecovered();
+		propertyIndexStore.unsetRecovered();
+		arrayPropertyStore.unsetRecovered();
+    }
+	
+	@Override
 	protected void closeStorage()
 	{
 		stringPropertyStore.close();

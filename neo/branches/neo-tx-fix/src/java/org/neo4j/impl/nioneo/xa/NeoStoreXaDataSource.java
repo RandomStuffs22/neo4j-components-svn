@@ -135,14 +135,15 @@ public class NeoStoreXaDataSource extends XaDataSource
 			( String ) config.get( "logical_log" ), 
 			new CommandFactory( neoStore ), 
 			new TransactionFactory() );
-		try
-		{
-			xaContainer.setLazyDoneRecords();
-		}
-		catch ( XAException e )
-		{
-			throw new IOException( "Unable to set lazy done records, " + e );
-		}
+
+//		try
+//		{
+//			xaContainer.setLazyDoneRecords();
+//		}
+//		catch ( XAException e )
+//		{
+//			throw new IOException( "Unable to set lazy done records, " + e );
+//		}
 		// TxInfoManager.getManager().setRealLog( xaContainer.getLogicalLog() );
 		xaContainer.openLogicalLog();
 		if ( !xaContainer.getResourceManager().hasRecoveredTransactions() )
