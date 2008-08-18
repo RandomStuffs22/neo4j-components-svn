@@ -1,0 +1,37 @@
+<project>
+    <parent>
+        <groupId>org.neo4j</groupId>
+        <artifactId>parent-pom</artifactId>
+        <version>1.1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.neo4j</groupId>
+    <artifactId>neo-jcr</artifactId>
+    <version>0.1-SNAPSHOT</version>
+    <name>Neo JCR</name>
+    <description>
+      An implementation for using Neo as a JCR backend.
+    </description>
+    
+    <dependencies>
+        <dependency>
+            <groupId>javax.jcr</groupId>
+            <artifactId>jcr</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo</artifactId>
+            <version>1.0-b7-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    
+</project>
