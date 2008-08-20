@@ -38,4 +38,6 @@ public interface MetaModelProxy
 	public String getObjectType( String subjectUri, String predicateUri );
 	
 	public String[] getSubTypes( String type, boolean includeMyself );
+
+	public String[] getAllTypes();
 }

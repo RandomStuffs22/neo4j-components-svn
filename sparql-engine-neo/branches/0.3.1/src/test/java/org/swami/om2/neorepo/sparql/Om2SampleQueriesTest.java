@@ -3,6 +3,7 @@ package org.swami.om2.neorepo.sparql;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+
 import name.levering.ryan.sparql.common.RdfBindingSet;
 import name.levering.ryan.sparql.common.RdfGraph;
 import name.levering.ryan.sparql.logic.SPARQLQueryLogic;
@@ -10,6 +11,7 @@ import name.levering.ryan.sparql.model.ConstructQuery;
 import name.levering.ryan.sparql.model.Query;
 import name.levering.ryan.sparql.model.SelectQuery;
 import name.levering.ryan.sparql.parser.SPARQLParser;
+
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.RelationshipType;
 import org.neo4j.api.core.Transaction;
@@ -21,7 +23,8 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 	{
 		INSTANCE_OF,
 		ONE,
-		OTHER
+		OTHER,
+		THING
 	}
 	
 	private static Map<String, OwlPropertyType> types =
@@ -36,13 +39,21 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 		types.put( PRIM_NAMESPACE + "other", OwlPropertyType.OBJECT_TYPE );
 		types.put( PRIM_NAMESPACE + "name", OwlPropertyType.DATATYPE_TYPE );
 		types.put( LADOK_NAMESPACE + "state", OwlPropertyType.DATATYPE_TYPE );
+		types.put( PRIM_NAMESPACE + "thing", OwlPropertyType.OBJECT_TYPE );
 		types.put( LADOK_NAMESPACE + "courseId",
 			OwlPropertyType.DATATYPE_TYPE );
+		types.put( OIDMAP_NAMESPACE + "identifiers",
+			OwlPropertyType.OBJECT_TYPE );
+		types.put( OIDMAP_NAMESPACE + "identifier",
+			OwlPropertyType.DATATYPE_TYPE );
+		types.put( OIDMAP_NAMESPACE + "namespace",
+			OwlPropertyType.OBJECT_TYPE );
 		
 		values.put( RDF_NAMESPACE + "type", Om2RelationshipType.INSTANCE_OF );
 		values.put( RDF_NAMESPACE + "about", "about" );
 		values.put( PRIM_NAMESPACE + "one", Om2RelationshipType.ONE );
 		values.put( PRIM_NAMESPACE + "other", Om2RelationshipType.OTHER );
+		values.put( PRIM_NAMESPACE + "thing", Om2RelationshipType.THING );
 		values.put( PRIM_NAMESPACE + "name", "name" );
 		values.put( LADOK_NAMESPACE + "state", "state" );
 		values.put( LADOK_NAMESPACE + "courseId", "courseId" );
@@ -50,6 +61,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 		counts.put( PRIM_NAMESPACE + "Person", new Integer( 10 ) );
 		counts.put( PRIM_NAMESPACE + "Department", new Integer( 2 ) );
 		counts.put( PRIM_NAMESPACE + "Responsible", new Integer( 3 ) );
+		counts.put( PRIM_NAMESPACE + "thing", new Integer( 3 ) );
 		counts.put( LADOK_NAMESPACE + "Student", new Integer( 10 ) );
 		counts.put( LADOK_NAMESPACE + "CourseInstance", new Integer( 5 ) );
 	}
@@ -67,6 +79,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 	Node studentD; // other and takes courseB and is registered
 	Node studentE; // other and takes courseA and is accepted
 	Node studentF; // other and takes CourseB and is accepted
+	Node studentG;
 	Node personReferenceNode;
 	Node personA;
 	Node personB;
@@ -74,6 +87,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 	Node personD;
 	Node personE;
 	Node personF;
+	Node personG;
 	Node departmentReferenceNode;
 	Node departmentA; // responsible for courseA and courseD
 	Node departmentB; // responsible for courseB and courseC
@@ -104,6 +118,8 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 			studentD = this.createNode( "studentD", studentReferenceNode );
 			studentE = this.createNode( "studentE", studentReferenceNode );
 			studentF = this.createNode( "studentF", studentReferenceNode );
+			studentG = this.createNode( "http://studentG",
+				studentReferenceNode );
 			
 			personReferenceNode = this.createReferenceNode(
 				"personReferenceNode", PRIM_NAMESPACE + "Person" );
@@ -113,6 +129,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 			personD = this.createNode( "personD", personReferenceNode );
 			personE = this.createNode( "personE", personReferenceNode );
 			personF = this.createNode( "personF", personReferenceNode );
+			personG = this.createNode( "http://personG", personReferenceNode );
 			
 			courseReferenceNode = this.createReferenceNode(
 				"courseReferenceNode", LADOK_NAMESPACE + "CourseInstance" );
@@ -159,6 +176,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 			studentD.createRelationshipTo( personD, Om2RelationshipType.ONE );
 			studentE.createRelationshipTo( personE, Om2RelationshipType.ONE );
 			studentF.createRelationshipTo( personF, Om2RelationshipType.ONE );
+			studentG.createRelationshipTo( personG, Om2RelationshipType.ONE );
 			
 			studentA.setProperty( "state", "registered" );
 			studentC.setProperty( "state", "registered" );
@@ -408,13 +426,9 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 				{ "studentC", "personC", "28040ht06", "registered" },
 				{ "studentD", "personD", "courseB", "registered" },
 				{ "studentE", "personE", "28040ht06", "accepted" },
-				{ "studentF", "personF", "courseB", "accepted" } };
+				{ "studentF", "personF", "courseB", "accepted" },
+				{ "http://studentG", "http://personG", "", "" } };
 			this.assertResult( result, variables, expectedResult );
-			studentA.setProperty( "state", "registered" );
-			studentC.setProperty( "state", "registered" );
-			studentD.setProperty( "state", "registered" );
-			studentE.setProperty( "state", "accepted" );
-			studentF.setProperty( "state", "accepted" );
 			
 			tx.success();
 		}
@@ -457,11 +471,93 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 			"(studentE, http://www.openmetadir.org/om2/prim-1.owl#one, personE)",
 			"(personE, http://www.openmetadir.org/om2/prim-1.owl#other, studentE)",
 			"(studentF, http://www.openmetadir.org/om2/prim-1.owl#one, personF)",
-			"(personF, http://www.openmetadir.org/om2/prim-1.owl#other, studentF)"
+			"(personF, http://www.openmetadir.org/om2/prim-1.owl#other, studentF)",
+			"(http://studentG, http://www.openmetadir.org/om2/prim-1.owl#one, http://personG)",
+			"(http://personG, http://www.openmetadir.org/om2/prim-1.owl#other, http://studentG)",
 			};
-			
+	
 			this.assertResult( ( NeoRdfGraph ) result, expectedResult );
 
+			tx.success();
+		}
+		finally
+		{
+			tx.finish();
+		}
+	}
+	
+	public void testQuery8() throws Exception
+	{
+		Transaction tx = Transaction.begin();
+		try
+		{
+			Query query = SPARQLParser.parse( new StringReader(
+				"PREFIX prim: <http://www.openmetadir.org/om2/prim-1.owl#> " +
+				"PREFIX ladok: <http://www.swami.se/om2/ladok-1.owl#> " +
+				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+				"SELECT ?about " +
+				"WHERE { " +
+				"?about rdf:type ladok:Student . " +
+				"?about prim:one <http://personG> }" ) );
+
+			RdfBindingSet result =
+				( ( SelectQuery ) query ).execute( new NeoRdfSource() );
+			Map<String, Integer> variables =
+				this.createVariableMap( "about" );
+			String[][] expectedResult = new String[][] { 
+				{ "http://studentG" },
+			};
+			this.assertResult( result, variables, expectedResult );
+
+			tx.success();
+		}
+		finally
+		{
+			tx.finish();
+		}
+	}
+	
+	public void testQuery9() throws Exception
+	{
+		Transaction tx = Transaction.begin();
+		try
+		{
+			Query query = SPARQLParser.parse( new StringReader(
+				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+				"SELECT ?a ?about " +
+				"WHERE { ?about rdf:type ?a . } " ) );
+			
+			RdfBindingSet result =
+				( ( SelectQuery ) query ).execute( new NeoRdfSource() );
+			
+			Map<String, Integer> variables =
+				this.createVariableMap( "about", "a" );
+			String[][] expectedResult = new String[][] { 
+				{ "studentA", "studentReferenceNode" },
+				{ "studentB", "studentReferenceNode" },
+				{ "studentC", "studentReferenceNode" },
+				{ "studentD", "studentReferenceNode" },
+				{ "studentE", "studentReferenceNode" },
+				{ "studentF", "studentReferenceNode" },
+				{ "http://studentG", "studentReferenceNode" },
+				{ "responsibleA", "responsibleReferenceNode" },
+				{ "responsibleB", "responsibleReferenceNode" },
+				{ "28040ht06", "courseReferenceNode" },
+				{ "courseB", "courseReferenceNode" },
+				{ "courseC", "courseReferenceNode" },
+				{ "courseD", "courseReferenceNode" },
+				{ "courseE", "courseReferenceNode" },
+				{ "departmentA", "departmentReferenceNode" },
+				{ "departmentB", "departmentReferenceNode" },
+				{ "personA", "personReferenceNode" },
+				{ "personB", "personReferenceNode" },
+				{ "personC", "personReferenceNode" },
+				{ "personD", "personReferenceNode" },
+				{ "personE", "personReferenceNode" },
+				{ "personF", "personReferenceNode" },
+				{ "http://personG", "personReferenceNode" },
+			};
+			this.assertResult( result, variables, expectedResult );
 			tx.success();
 		}
 		finally

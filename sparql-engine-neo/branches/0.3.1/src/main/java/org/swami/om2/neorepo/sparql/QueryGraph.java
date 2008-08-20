@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import name.levering.ryan.sparql.common.QueryException;
 import name.levering.ryan.sparql.model.GroupConstraint;
 import name.levering.ryan.sparql.model.OptionalConstraint;
@@ -15,8 +16,10 @@ import name.levering.ryan.sparql.model.TripleConstraint;
 import name.levering.ryan.sparql.model.logic.ExpressionLogic;
 import name.levering.ryan.sparql.parser.model.ASTLiteral;
 import name.levering.ryan.sparql.parser.model.ASTQName;
+import name.levering.ryan.sparql.parser.model.ASTQuotedIRIref;
 import name.levering.ryan.sparql.parser.model.ASTVar;
 import name.levering.ryan.sparql.parser.model.URINode;
+
 import org.neo4j.api.core.RelationshipType;
 import org.neo4j.util.matching.PatternNode;
 import org.neo4j.util.matching.PatternRelationship;
@@ -59,6 +62,12 @@ public class QueryGraph
 		}
 		
 		return startNode;
+	}
+	
+	PatternNode findTypeNode()
+	{
+		return this.possibleStartNodes.isEmpty() ? null :
+			this.possibleStartNodes.iterator().next();
 	}
 
 	Collection<PatternNode> getOptionalGraphs()
@@ -152,13 +161,27 @@ public class QueryGraph
 		this.assertConstraint( constraint );
 		PatternNode subjectNode = this.getOrCreatePatternNode(
 			constraint.getSubjectExpression() );
-		PatternNode objectNode = this.getOrCreatePatternNode(
-			constraint.getObjectExpression(), ON_CREATED_TYPE );
+		PatternNode objectNode;
+		if ( constraint.getObjectExpression() instanceof ASTVar )
+		{
+			objectNode = this.getOrCreatePatternNode(
+				constraint.getObjectExpression() );
+			this.addVariable( ( ASTVar ) constraint.getObjectExpression(), 
+				NeoVariable.VariableType.URI, objectNode,
+				this.metaModel.getAboutKey() );
+			this.possibleStartNodes.add( objectNode );
+		}
+		else
+		{
+			objectNode = this.getOrCreatePatternNode(
+				constraint.getObjectExpression(), ON_CREATED_TYPE );
+			String objectUri = this.toUri( constraint.getObjectExpression() );
+			this.classMapping.put( constraint.getSubjectExpression(),
+				objectUri );
+			this.nodeTypes.put( objectUri, objectNode );
+		}
 		subjectNode.createRelationshipTo( objectNode,
 			this.metaModel.getTypeRelationship(), optional );
-		String objectUri = this.toUri( constraint.getObjectExpression() );
-		this.classMapping.put( constraint.getSubjectExpression(), objectUri );
-		this.nodeTypes.put( objectUri, objectNode );
 	}
 	
 	private void addConstraints( Set<TripleConstraint> constraints,
@@ -293,9 +316,16 @@ public class QueryGraph
 			new PatternNode( this.toUri( expression ) );
 		this.graph.put( expression, node );
 		
-		if ( expression instanceof ASTQName )
+		if ( expression instanceof ASTQName ||
+			expression instanceof ASTQuotedIRIref )
 		{
 			this.possibleStartNodes.add( node );
+		}
+		
+		if ( expression instanceof ASTQuotedIRIref )
+		{
+			node.addPropertyEqualConstraint( this.metaModel.getAboutKey(),
+				this.toUri( expression ) );
 		}
 		
 		if ( expression instanceof ASTVar )
@@ -370,6 +400,7 @@ public class QueryGraph
 	{
 		for ( PatternRelationship relationship : node.getAllRelationships() )
 		{
+			System.out.println( "rel: " + relationship );
 			if ( relationship.getType().equals(
 				this.metaModel.getTypeRelationship() ) )
 			{

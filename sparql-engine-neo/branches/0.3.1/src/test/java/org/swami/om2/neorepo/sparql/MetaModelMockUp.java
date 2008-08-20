@@ -54,7 +54,8 @@ public class MetaModelMockUp implements MetaModelProxy
 	
 	public int getCount( String uri )
 	{
-		return this.counts.get( uri );
+		Integer count = this.counts.get( uri );
+		return count == null ? Integer.MAX_VALUE : count;
 	}
 	
 	public Node getClassNode( String uri )
@@ -77,6 +78,11 @@ public class MetaModelMockUp implements MetaModelProxy
 	public String[] getSubTypes( String type, boolean includeMyself )
 	{
 		return new String[] { type };
+	}
+	
+	public String[] getAllTypes()
+	{
+		return this.referenceNodes.keySet().toArray( new String[] { } );
 	}
 	
 	// Help method for the unit tests.

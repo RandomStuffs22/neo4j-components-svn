@@ -29,8 +29,16 @@ public abstract class AbstractNeoQueryLogic
 		ArrayList<Iterable<PatternMatch>> results =
 			new ArrayList<Iterable<PatternMatch>>();
 		PatternNode startNode = graph.getStartNode();
-		String[] types =
-			this.metaModel.getSubTypes( startNode.getLabel(), true );
+		String[] types;
+		if ( startNode != null )
+		{
+			types = this.metaModel.getSubTypes( startNode.getLabel(), true );
+		}
+		else
+		{
+			startNode = graph.findTypeNode();
+			types = this.metaModel.getAllTypes();
+		}
 		for ( String type : types )
 		{
 			results.add( PatternMatcher.getMatcher().match( startNode,
@@ -52,7 +60,7 @@ public abstract class AbstractNeoQueryLogic
 	{
 		QueryGraph graph = new QueryGraph( this.metaModel, this.variableList );
 		graph.build( groupConstraint );
-		graph.assertGraph();
+//		graph.assertGraph();
 
 		return graph;
 	}

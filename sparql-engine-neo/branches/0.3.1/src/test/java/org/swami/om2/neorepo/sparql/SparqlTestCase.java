@@ -27,6 +27,8 @@ public abstract class SparqlTestCase extends TestCase
 		"http://www.openmetadir.org/om2/prim-1.owl#";
 	final static String FOAF_NAMESPACE =
 		"http://xmlns.com/foaf/1.0/";
+	final static String OIDMAP_NAMESPACE =
+		"http://www.umu.se/om2/oidmap.owl#";
 	protected EmbeddedNeo neo;
 	protected MetaModelMockUp metaModel;
 	private Set<Node> createdNodes;
