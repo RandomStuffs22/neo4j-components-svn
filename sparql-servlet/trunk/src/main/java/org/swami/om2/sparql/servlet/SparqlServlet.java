@@ -5,16 +5,20 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.List;
+
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import name.levering.ryan.sparql.common.RdfBindingSet;
 import name.levering.ryan.sparql.common.Variable;
 import name.levering.ryan.sparql.model.Query;
 import name.levering.ryan.sparql.model.SelectQuery;
 import name.levering.ryan.sparql.parser.ParseException;
 import name.levering.ryan.sparql.parser.SPARQLParser;
+
 import org.neo4j.api.core.Transaction;
+import org.openrdf.model.Value;
 import org.swami.om2.neorepo.sparql.NeoBindingRow;
 import org.swami.om2.neorepo.sparql.NeoRdfSource;
 import org.swami.om2.neorepo.sparql.NeoVariable;
@@ -158,12 +162,14 @@ public class SparqlServlet extends HttpServlet
 		out.println( "\t\t<result>" );
 		for ( NeoVariable var : vars ) 
 		{
-			out.println( "\t\t\t<binding name=\"" + 
-				var.getName() + "\">" +
-				getStartHeaderVarType( var.getVariableType() ) +
-				row.getValue( var ) + 
-				getEndHeaderVarType( var.getVariableType() ) +
-				"</binding>" );
+			for ( Value value : row.getValues( var ) )
+			{
+				out.println( "\t\t\t<binding name=\"" + var.getName() + "\">" );
+				out.println( "\t\t\t\t" +
+					getStartHeaderVarType( var.getVariableType() ) +
+					value + getEndHeaderVarType( var.getVariableType() ) );
+				out.println( "\t\t\t</binding>" );
+			}
 		}
 		out.println( "\t\t</result>" );
 	}

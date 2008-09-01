@@ -40,7 +40,7 @@
 		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>sparql-engine-neo</artifactId>
-			<version>0.2-SNAPSHOT</version> 
+			<version>0.3.1-SNAPSHOT</version> 
 		</dependency>
 	</dependencies>
 
