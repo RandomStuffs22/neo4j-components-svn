@@ -1,10 +1,15 @@
 package org.swami.om2.neorepo.sparql;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+
 import name.levering.ryan.sparql.common.RdfBindingRow;
 import name.levering.ryan.sparql.common.RdfBindingSet;
 import name.levering.ryan.sparql.common.Variable;
+
 import org.neo4j.util.matching.PatternElement;
 import org.neo4j.util.matching.PatternMatch;
 import org.openrdf.model.Value;
@@ -24,8 +29,50 @@ public class NeoBindingRow implements RdfBindingRow
 	{
 		return this.bindingSet;
 	}
+	
+	private Object[] neoPropertyAsArray( Object neoPropertyValue )
+	{
+		if ( neoPropertyValue.getClass().isArray() )
+		{
+			int length = Array.getLength( neoPropertyValue );
+			Object[] result = new Object[ length ];
+			for ( int i = 0; i < length; i++ )
+			{
+				result[ i ] = Array.get( neoPropertyValue, i );
+			}
+			return result;
+		}
+		else
+		{
+			return new Object[] { neoPropertyValue };
+		}
+	}
+	
+	public Collection<Value> getValues( Variable variable )
+	{
+		Object rawValue = getRawValue( variable );
+		Collection<Value> result = new ArrayList<Value>();
+		if ( rawValue == null )
+		{
+			result.add( new NeoValue( "" ) );
+		}
+		else
+		{
+			for ( Object oneValue : neoPropertyAsArray( rawValue ) )
+			{
+				result.add( new NeoValue( oneValue ) );
+			}
+		}
+		return result;
+	}
 
 	public Value getValue( Variable variable )
+	{
+		Object rawValue = getRawValue( variable );
+		return rawValue == null ? new NeoValue( "" ) : new NeoValue( rawValue );
+	}
+	
+	private Object getRawValue( Variable variable )
 	{
 		NeoVariable neoVariable = this.getNeoVariable( variable );
 		for ( PatternElement element : this.match.getElements() )
@@ -36,14 +83,14 @@ public class NeoBindingRow implements RdfBindingRow
 				if ( element.getNode().hasProperty(
 					neoVariable.getProperty() ) )
 				{
-					return new NeoValue( element.getNode().getProperty(
-							neoVariable.getProperty() ) );
+					return element.getNode().getProperty(
+						neoVariable.getProperty() );
 				}
 				// Value was optional so just break and return ""
 				break;
 			}
 		}
-		return new NeoValue( "" );
+		return null;
 	}
 
 	private NeoVariable getNeoVariable( Variable variable )
