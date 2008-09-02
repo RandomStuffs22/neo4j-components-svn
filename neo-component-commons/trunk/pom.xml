@@ -1,0 +1,14 @@
+<project>
+	<parent>
+		<groupId>org.neo4j</groupId>
+		<artifactId>parent-pom</artifactId>
+		<version>1</version>
+	</parent>
+
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.neo4j</groupId>
+	<artifactId>neo-component-commons</artifactId>
+	<version>0.1-SNAPSHOT</version>
+	<name>Neo Component Commons</name>
+	<description>A collection of common classes to use in neo (and other) components</description>
+</project>
