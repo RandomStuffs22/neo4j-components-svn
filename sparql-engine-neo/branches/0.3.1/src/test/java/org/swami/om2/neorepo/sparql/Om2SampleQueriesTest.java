@@ -197,6 +197,8 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 			studentF.createRelationshipTo(
 				courseB, Om2RelationshipType.OTHER );
 			
+			courseB.setProperty( "state", "accepted" );
+			
 			SPARQLQueryLogic.getInstance().setLogicFactory(
 				new NeoLogic( this.metaModel ) );
 
@@ -565,4 +567,39 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 			tx.finish();
 		}
 	}
+//	
+//	public void testQuery10() throws Exception
+//	{
+//		Transaction tx = Transaction.begin();
+//		try
+//		{
+//			Query query = SPARQLParser.parse( new StringReader(
+//				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+//				"PREFIX ladok: <http://www.swami.se/om2/ladok-1.owl#> " +
+//				"SELECT ?student ?state ?id " +
+//				"WHERE { ?student ladok:state ?state . " +
+//				"?student rdf:type ?x . " +
+//				"OPTIONAL { ?student ladok:courseId ?id . } " + 
+//				"} " ) );
+//			
+//			RdfBindingSet result =
+//				( ( SelectQuery ) query ).execute( new NeoRdfSource() );
+//			
+//			Map<String, Integer> variables =
+//				this.createVariableMap( "student", "type", "id" );
+//			String[][] expectedResult = new String[][] { 
+//				{ "studentE", "studentReferenceNode", "" },
+//				{ "studentF", "studentReferenceNode", "" },
+//				{ "courseB", "courseReferenceNode", "KOSB15" },
+//			};
+//			
+//			this.printNeoBindingSet( result );
+////			this.assertResult( result, variables, expectedResult );
+//			tx.success();
+//		}
+//		finally
+//		{
+//			tx.finish();
+//		}
+//	}
 }

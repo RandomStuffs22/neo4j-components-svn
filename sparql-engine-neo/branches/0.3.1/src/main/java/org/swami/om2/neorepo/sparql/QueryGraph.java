@@ -160,12 +160,12 @@ public class QueryGraph
 	{
 		this.assertConstraint( constraint );
 		PatternNode subjectNode = this.getOrCreatePatternNode(
-			constraint.getSubjectExpression() );
+			constraint.getSubjectExpression(), true );
 		PatternNode objectNode;
 		if ( constraint.getObjectExpression() instanceof ASTVar )
 		{
 			objectNode = this.getOrCreatePatternNode(
-				constraint.getObjectExpression() );
+				constraint.getObjectExpression(), true );
 			this.addVariable( ( ASTVar ) constraint.getObjectExpression(), 
 				NeoVariable.VariableType.URI, objectNode,
 				this.metaModel.getAboutKey() );
@@ -174,7 +174,7 @@ public class QueryGraph
 		else
 		{
 			objectNode = this.getOrCreatePatternNode(
-				constraint.getObjectExpression(), ON_CREATED_TYPE );
+				constraint.getObjectExpression(), true, ON_CREATED_TYPE );
 			String objectUri = this.toUri( constraint.getObjectExpression() );
 			this.classMapping.put( constraint.getSubjectExpression(),
 				objectUri );
@@ -280,16 +280,22 @@ public class QueryGraph
 
 	private PatternNode getOrCreatePatternNode( ExpressionLogic expression )
 	{
-		return getOrCreatePatternNode( expression, null );
+		return getOrCreatePatternNode( expression, false );
 	}
 	
 	private PatternNode getOrCreatePatternNode( ExpressionLogic expression,
-		RunOnPatternNode runOnCreation )
+		boolean isClass )
+	{
+		return getOrCreatePatternNode( expression, isClass, null );
+	}
+	
+	private PatternNode getOrCreatePatternNode( ExpressionLogic expression,
+		boolean isClass, RunOnPatternNode runOnCreation )
 	{
 		PatternNode node = this.graph.get( expression );
 		if ( node == null )
 		{
-			node = this.createPatternNode( expression );
+			node = this.createPatternNode( expression, isClass );
 			if ( runOnCreation != null )
 			{
 				runOnCreation.onCreated( node );
@@ -310,7 +316,8 @@ public class QueryGraph
 		return node;
 	}
 
-	private PatternNode createPatternNode( ExpressionLogic expression )
+	private PatternNode createPatternNode(
+		ExpressionLogic expression, boolean isClass )
 	{
 		PatternNode node =
 			new PatternNode( this.toUri( expression ) );
@@ -320,12 +327,11 @@ public class QueryGraph
 			expression instanceof ASTQuotedIRIref )
 		{
 			this.possibleStartNodes.add( node );
-		}
-		
-		if ( expression instanceof ASTQuotedIRIref )
-		{
-			node.addPropertyEqualConstraint( this.metaModel.getAboutKey(),
-				this.toUri( expression ) );
+			if ( !isClass )
+			{
+				node.addPropertyEqualConstraint( this.metaModel.getAboutKey(),
+					this.toUri( expression ) );
+			}
 		}
 		
 		if ( expression instanceof ASTVar )
@@ -400,7 +406,6 @@ public class QueryGraph
 	{
 		for ( PatternRelationship relationship : node.getAllRelationships() )
 		{
-			System.out.println( "rel: " + relationship );
 			if ( relationship.getType().equals(
 				this.metaModel.getTypeRelationship() ) )
 			{
