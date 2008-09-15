@@ -17,25 +17,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-This module defines the basic behaviour for all Neo4j.py objects.
+Mappings into the RDF layers for Neo4j.
 
 
 Copyright (c) 2008 "Neo Technology,"
     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
-from __future__ import generators
-
-class Base(object):
-    """This class is the base class of all Neo4j.py objects."""
-    def __setattr__(self,attr,value):
-        """Prevent creation of new attributes"""
-        if hasattr(self,attr) and attr.startswith('_'):
-            super(Base,self).__setattr__(attr,value)
-        else:
-            raise AttributeError("Cannot add attributes to %s" % self)
-
-    def __delattr__(self,attr):
-        """Prevent deletion of attributes"""
-        raise AttributeError("Cannot delete attributes from %s" % self)
-
+raise ImportError('Mapping for Neo RDF backend is not implemented yet')

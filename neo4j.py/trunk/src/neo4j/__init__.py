@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright 2008 Network Engine for Objects in Lund AB [neotechnology.com]
+# Copyright (c) 2008 "Neo Technology,"
+#     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
-# This program is free software: you can redistribute it and/or modify
+# This file is part of Neo4j.py.
+# 
+# Neo4j.py is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
@@ -36,7 +39,8 @@ The typical way to use Neo4j.py is:
 Further information about Neo4j can be found at http://neo4j.org/
 The Java api documentation can be found at http://api.neo4j.org/
 
-Copyright (C) 2008  Network Engine for Objects in Lund AB [neotechnology.com]
+Copyright (c) 2008 "Neo Technology,"
+    Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
 # NOTE: We would like to use absolute imports,
@@ -45,6 +49,8 @@ Copyright (C) 2008  Network Engine for Objects in Lund AB [neotechnology.com]
 
 # Initialize the backend engine. Assert that required libraries are available.
 import _backend; del _backend
+# Initialize all hooks
+import _hooks; del _hooks
 
 # Define the names that should get imported on "from neo4j import *"
 __all__ = ('EmbeddedNeo',

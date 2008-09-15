@@ -9,7 +9,8 @@ setup(
     url="http://neo4j.org/community/neo4jpy/",
     packages=['neo4j'],
     package_dir={'neo4j':'src/neo4j'},
-    license="""Copyright 2008 Network Engine for Objects in Lund AB [neotechnology.com]
+    license="""Copyright (c) 2002-2008 "Neo Technology,"
+    Network Engine for Objects in Lund AB [http://neotechnology.com]
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -23,5 +24,4 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-""",
-    )
+""")

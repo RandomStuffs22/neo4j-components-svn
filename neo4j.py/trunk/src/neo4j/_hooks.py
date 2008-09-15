@@ -17,25 +17,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-This module defines the basic behaviour for all Neo4j.py objects.
+Hooks into other systems, for automatically exporting Neo4j.py as persistence
+backend for various systems.
 
 
 Copyright (c) 2008 "Neo Technology,"
     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
-from __future__ import generators
-
-class Base(object):
-    """This class is the base class of all Neo4j.py objects."""
-    def __setattr__(self,attr,value):
-        """Prevent creation of new attributes"""
-        if hasattr(self,attr) and attr.startswith('_'):
-            super(Base,self).__setattr__(attr,value)
-        else:
-            raise AttributeError("Cannot add attributes to %s" % self)
-
-    def __delattr__(self,attr):
-        """Prevent deletion of attributes"""
-        raise AttributeError("Cannot delete attributes from %s" % self)
-
+# Try to add Neo as a backend for RDFLib
+try:
+    from rdflib import plugin
+    from rdflib.store import Store
+    import _rdf # assert that the RDF subsystem is available
+except: # requirements failed, don't register the hook
+    pass
+else: # register the hook
+    plugin.register('Neo', Store, 'neo4j.rdflib', 'NeoRdfStore')
