@@ -27,6 +27,7 @@ public class NodeProxyInterceptorTest extends TestCase {
 	private DomainObjectFactory factoryMock;
 	private MethodProxy methodProxyMock;
 
+	@Override
 	public void setUp() {
 		nodeMock = createMock(Node.class);
 		factoryMock = createMock(DomainObjectFactory.class);
@@ -34,6 +35,7 @@ public class NodeProxyInterceptorTest extends TestCase {
 		interceptor = new NodeProxyInterceptor(nodeMock, SomeInterface.class, factoryMock);
 	}
 
+	@Override
 	public void tearDown() {
 		nodeMock = null;
 		factoryMock = null;
