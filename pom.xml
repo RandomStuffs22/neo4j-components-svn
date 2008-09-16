@@ -68,6 +68,10 @@
             <name>Developers-only Maven 2 upload repository for Neo4j</name>
             <url>scp://m2.neo4j.org/home/neo/maven2</url>
         </repository>
+        <site>
+            <id>neo4j-site</id>
+            <url>scp://m2.neo4j.org/home/neo/components</url>
+        </site>
     </distributionManagement>
 
 </project>
