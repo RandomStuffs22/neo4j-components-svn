@@ -23,7 +23,9 @@ public class EventManager
 	public void registerProactivePreCommittedEventListener(
 	    CancelableEventListener listener, EventFilter filter )
 	{
-		if ( proactivePreCommitted.putIfAbsent( listener, filter ) != null )
+		EventFilter oldFilter = proactivePreCommitted.putIfAbsent( listener,
+		    filter );
+		if ( oldFilter != null )
 		{
 			// TODO: already registered, but with another filter, what to do?
 			// throw an exception?
@@ -43,7 +45,9 @@ public class EventManager
 	public void registerReactivePostCommittedEventListener(
 	    EventListener listener, EventFilter filter )
 	{
-		if ( reactivePostCommitted.putIfAbsent( listener, filter ) != null )
+		EventFilter oldFilter = reactivePostCommitted.putIfAbsent( listener,
+		    filter );
+		if ( oldFilter != null )
 		{
 			// TODO: already registered, but with another filter, what to do?
 			// see above for suggestions...

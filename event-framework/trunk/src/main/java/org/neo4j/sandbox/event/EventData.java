@@ -5,7 +5,6 @@ import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.PropertyContainer;
 import org.neo4j.api.core.Relationship;
-import org.neo4j.impl.core.CoreImplProxy;
 
 /**
  * An object that holds the data associated with an event.
@@ -88,9 +87,7 @@ public abstract class EventData
 			@Override
 			public PropertyContainer get( NeoService neo, int id )
 			{
-				// FIXME: how do we get a relationship by id?
-				return CoreImplProxy.getRelationship( ( ( EmbeddedNeo ) neo )
-				    .getConfig().getNeoModule().getNodeManager(), id );
+				return neo.getRelationshipById( id );
 			}
 		};
 		/**
