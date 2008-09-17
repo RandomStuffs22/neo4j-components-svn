@@ -12,6 +12,7 @@ import name.levering.ryan.sparql.common.RdfBindingRow;
 import name.levering.ryan.sparql.common.RdfBindingSet;
 import name.levering.ryan.sparql.common.Variable;
 import org.neo4j.api.core.EmbeddedNeo;
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
@@ -49,7 +50,7 @@ public abstract class SparqlTestCase extends TestCase
 	@Override
 	public void tearDown()
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			this.deleteAllNodes();
@@ -60,6 +61,11 @@ public abstract class SparqlTestCase extends TestCase
 			tx.finish();
 		}
 		neo.shutdown();
+	}
+	
+	protected NeoService neo()
+	{
+		return this.neo();
 	}
 	
 	protected Node createNode( String name )

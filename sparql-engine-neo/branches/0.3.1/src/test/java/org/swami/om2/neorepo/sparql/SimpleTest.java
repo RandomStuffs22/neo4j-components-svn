@@ -54,7 +54,7 @@ public class SimpleTest extends SparqlTestCase
 	{
 		super.setUp( MyRelationshipType.class );
 
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			person = this.createReferenceNode(
@@ -85,7 +85,7 @@ public class SimpleTest extends SparqlTestCase
 	
 	public void testSimpleSelectQuery() throws ParseException
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			Set<String> variables = new HashSet<String>();

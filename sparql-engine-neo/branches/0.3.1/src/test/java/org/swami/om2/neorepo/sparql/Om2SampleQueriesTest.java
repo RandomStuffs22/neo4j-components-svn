@@ -106,7 +106,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 	{
 		super.setUp( Om2RelationshipType.class );
 		
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			studentReferenceNode = this.createReferenceNode(
@@ -212,7 +212,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 	
 	public void testQuery1() throws Exception
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			// Which students are registered on the course 28040ht06?
@@ -253,7 +253,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 
 	public void testQuery2() throws Exception
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			// Which students are accepted to the course KOSB15?
@@ -290,7 +290,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 
 	public void testQuery3() throws Exception
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			// Which courses are the Psychology department responsible for?
@@ -326,7 +326,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 
 	public void testQuery4() throws Exception
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			// Which department is responsible for the course TMHB21?
@@ -362,7 +362,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 	
 	public void testQuery5() throws Exception
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			// Which department is responsible for the non-existant course
@@ -395,7 +395,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 	
 	public void testQuery6() throws Exception
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			// Get all students
@@ -442,7 +442,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 
 	public void testQuery7() throws Exception
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			// Construct a new rdf graph from all students/persons
@@ -490,7 +490,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 	
 	public void testQuery8() throws Exception
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			Query query = SPARQLParser.parse( new StringReader(
@@ -521,7 +521,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 	
 	public void testQuery9() throws Exception
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo().beginTx();
 		try
 		{
 			Query query = SPARQLParser.parse( new StringReader(
@@ -570,7 +570,7 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 //	
 //	public void testQuery10() throws Exception
 //	{
-//		Transaction tx = Transaction.begin();
+//		Transaction tx = neo().beginTx();
 //		try
 //		{
 //			Query query = SPARQLParser.parse( new StringReader(
