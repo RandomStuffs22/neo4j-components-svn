@@ -65,7 +65,7 @@ public abstract class SparqlTestCase extends TestCase
 	
 	protected NeoService neo()
 	{
-		return this.neo();
+		return this.neo;
 	}
 	
 	protected Node createNode( String name )
