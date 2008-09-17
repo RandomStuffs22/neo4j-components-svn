@@ -35,7 +35,7 @@ public final class MetaPropertyImpl extends MetaNodeWrapper
 	
 	public String getKey()
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			String key = ( String) getUnderlyingNode().getProperty(
@@ -51,7 +51,7 @@ public final class MetaPropertyImpl extends MetaNodeWrapper
 
 	void setKey( String newKey )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			getUnderlyingNode().setProperty( PROPERTY_KEY_KEY, newKey );
@@ -65,7 +65,7 @@ public final class MetaPropertyImpl extends MetaNodeWrapper
 
 	public Class<?> getValueType()
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			String propertyValue = ( String) getUnderlyingNode().getProperty(
@@ -98,7 +98,7 @@ public final class MetaPropertyImpl extends MetaNodeWrapper
 
 	public void setValueType( Class<?> valueTypeOrNullIfItDoesntMatter )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			if ( valueTypeOrNullIfItDoesntMatter == null )

@@ -18,7 +18,8 @@ public class MetaWrapperRelationshipSet<T extends MetaNodeWrapper> extends
 		RelationshipType relationshipType, Direction direction, Class<T> type,
 		AssociationLevel associationLevel )
 	{
-		super( underlyingNode, relationshipType, direction, type );
+		super( metaManager.getNeo(), underlyingNode, relationshipType,
+			direction, type );
 		this.metaManager = metaManager;
 		this.associationLevel = associationLevel;
 	}

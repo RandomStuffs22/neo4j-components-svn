@@ -103,7 +103,7 @@ public class Main
 	private static void createPersonType()
 	{
 		System.out.println( "Creating person type" );
-		Transaction tx = Transaction.begin();
+		Transaction tx = getNeo().beginTx();
 		try
 		{
 			NodeType newType = getMetaManager().createNodeType( "Person" );

@@ -26,7 +26,7 @@ class MetaNodeWrapperTraverser<T> implements Iterable<T>
 		{
 			public boolean hasNext()
 			{
-				Transaction tx = Transaction.begin();
+				Transaction tx = metaManager.getNeo().beginTx();
 				try
 				{
 					boolean result = me.hasNext();
@@ -41,7 +41,7 @@ class MetaNodeWrapperTraverser<T> implements Iterable<T>
 
 			public T next()
 			{
-				Transaction tx = Transaction.begin();
+				Transaction tx = metaManager.getNeo().beginTx();
 				try
 				{
 					T result = ( T ) MetaNodeWrapper.newInstance(

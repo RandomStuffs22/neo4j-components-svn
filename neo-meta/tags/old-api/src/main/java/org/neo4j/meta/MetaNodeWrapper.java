@@ -12,7 +12,7 @@ public abstract class MetaNodeWrapper extends NodeWrapperImpl
 	
 	public MetaNodeWrapper( Node underlyingNode, MetaManager metaManager )
 	{
-		super( underlyingNode );
+		super( metaManager.getNeo(), underlyingNode );
 		this.metaManager = metaManager;
 	}
 	
@@ -53,7 +53,7 @@ public abstract class MetaNodeWrapper extends NodeWrapperImpl
 			throw new IllegalArgumentException( "Value for property '" +
 				key + "' can't be null" );
 		}
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			getUnderlyingNode().setProperty( key, value );
@@ -67,7 +67,7 @@ public abstract class MetaNodeWrapper extends NodeWrapperImpl
 	
 	protected Object getPropertyFromNode( String key )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			Object value = getUnderlyingNode().getProperty( key );
@@ -82,7 +82,7 @@ public abstract class MetaNodeWrapper extends NodeWrapperImpl
 	
 	protected Object getPropertyFromNode( String key, Object defaultValue )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			Object value = getUnderlyingNode().getProperty( key, defaultValue );

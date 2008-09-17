@@ -32,7 +32,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 	
 	void setName( String name )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			setPropertyOnNode( PROPERTY_KEY_NAME, name );
@@ -84,7 +84,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 	
 	public boolean isSubTypeOf( final NodeType potentialSuperType )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			Traverser traverser = getUnderlyingNode().traverse(
@@ -136,7 +136,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 
 	public MetaProperty addRequiredProperty( String key )
 	{
-        Transaction tx = Transaction.begin();
+        Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			TypeConstraints.addProperty( this, key ).throwExceptionIfInvalid();
@@ -161,7 +161,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 	
 	public boolean removeRequiredProperty( MetaProperty property )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			boolean deleteSucceeded = propertySet().remove( property );
@@ -202,7 +202,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 	public MetaRelationship addAllowedRelationship( String type,
 		Direction direction, NodeType targetNodeType )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			TypeConstraints.addRelationship( this, type, direction ).
@@ -230,7 +230,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 
 	public boolean removeAllowedRelationship( MetaRelationship relationship )
     {
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			boolean deleteSucceeded =
@@ -306,7 +306,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 	@Override
     protected void cascadingDelete()
     {
-        Transaction tx = Transaction.begin();
+        Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			// super/subtypes are ok to clear wildly: they have association
@@ -331,7 +331,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 
 	public void delete()
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			getMetaManager().nodeTypeSet().remove( this );
@@ -359,7 +359,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 	
 	public void addInstance( MetaInstance instance )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			if ( findInstanceRelationship( instance ) != null )
@@ -401,7 +401,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 	
 	public void removeInstance( MetaInstance instance )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			Relationship rel = findInstanceRelationship( instance );
@@ -428,7 +428,7 @@ public final class NodeTypeImpl extends MetaNodeWrapper implements NodeType
 	
 	public boolean hasInstance( MetaInstance instance )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getMetaManager().getNeo().beginTx();
 		try
 		{
 			boolean result = findInstanceRelationship( instance ) != null;

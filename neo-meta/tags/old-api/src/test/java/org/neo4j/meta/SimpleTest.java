@@ -60,7 +60,7 @@ public class SimpleTest extends TestCase
 	public void testCreateAndDeleteNodeType()
 	{
 		String name = "UnitTest";
-		Transaction tx = Transaction.begin();
+		Transaction tx = getNeo().beginTx();
 		try
 		{
 			// Create and assert
@@ -95,7 +95,7 @@ public class SimpleTest extends TestCase
 	{
 		String typeName = "UnitTest1";
 		String propertyKey = "UnitTestPropName";
-		Transaction tx = Transaction.begin();
+		Transaction tx = getNeo().beginTx();
 		try
 		{
 			NodeType newNodeType = getMetaManager().createNodeType( typeName );
@@ -148,7 +148,7 @@ public class SimpleTest extends TestCase
 		String firstTypeName = "UnitTestRelTestType1";
 		String secondTypeName = "UnitTestRelTestType2";
 		String relationshipTypeName = "A_RELATIONSHIP_THAT_BINDS_THEM";
-		Transaction tx = Transaction.begin();
+		Transaction tx = getNeo().beginTx();
 		try
 		{
 			// Create types
@@ -203,7 +203,7 @@ public class SimpleTest extends TestCase
 		String subPropertyKey = "UnitTestSubPropertyKey";
 		String anotherSubPropertyKey = "UnitTestAnotherSubPropertyKey";
 		
-		Transaction tx = Transaction.begin();
+		Transaction tx = getNeo().beginTx();
 		try
 		{
 			// Create a simple type hierarchy

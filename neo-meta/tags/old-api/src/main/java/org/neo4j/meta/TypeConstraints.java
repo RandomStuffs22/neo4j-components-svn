@@ -1,6 +1,7 @@
 package org.neo4j.meta;
 
 import org.neo4j.api.core.Direction;
+import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.ReturnableEvaluator;
 import org.neo4j.api.core.StopEvaluator;
 import org.neo4j.api.core.Transaction;
@@ -120,11 +121,12 @@ class TypeConstraints
 		return TypeConstraints.OPERATION_OK_GENERIC_MESSAGE;
 	}
 	
-	static TypeConstraints addSubType( NodeType type, NodeType subType )
+	static TypeConstraints addSubType( NeoService neo,
+		NodeType type, NodeType subType )
 	{
 		// Adding a subtype is invalid if adding any of the subtype's properties
 		// or relationships would be invalid
-		Transaction tx = Transaction.begin();
+		Transaction tx = neo.beginTx();
 		try
 		{
 			// Try to add the subtype's properties to the potential supertype
@@ -170,8 +172,9 @@ class TypeConstraints
 		return false;
 	}
 	
-	static TypeConstraints addSuperType( NodeType type, NodeType superType )
+	static TypeConstraints addSuperType( NeoService neo,
+		NodeType type, NodeType superType )
 	{
-		return addSubType( superType, type );
+		return addSubType( neo, superType, type );
 	}
 }

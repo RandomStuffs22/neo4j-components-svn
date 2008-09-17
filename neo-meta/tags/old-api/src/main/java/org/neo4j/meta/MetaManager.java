@@ -17,10 +17,10 @@ public class MetaManager
 	
 	public MetaManager( NeoService embeddedNeo )
 	{
-		Transaction tx = Transaction.begin();
+		this.embeddedNeo = embeddedNeo;
+		Transaction tx = getNeo().beginTx();
 		try
 		{	
-			this.embeddedNeo = embeddedNeo;
 			this.neoUtil = new NeoUtil( embeddedNeo );
 			ensureMetaNodeSpace();	
 			tx.success();
@@ -33,7 +33,7 @@ public class MetaManager
 	
 	private void ensureMetaNodeSpace()
 	{
-        Transaction tx = Transaction.begin();
+        Transaction tx = getNeo().beginTx();
 		try
 		{
 			if ( getMetaRoot() == null )
@@ -62,7 +62,7 @@ public class MetaManager
 	
 	private Node getMetaRoot()
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getNeo().beginTx();
 		try
 		{
 			Node referenceNode = getNeo().getReferenceNode();
@@ -90,7 +90,7 @@ public class MetaManager
 				"with null name" );
 		}
 		
-		Transaction tx = Transaction.begin();
+		Transaction tx = getNeo().beginTx();
 		try
 		{
 			if ( getNodeTypeByNameOrNull( name ) != null )
