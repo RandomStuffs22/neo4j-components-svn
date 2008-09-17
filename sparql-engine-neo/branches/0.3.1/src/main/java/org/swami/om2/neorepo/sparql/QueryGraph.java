@@ -160,15 +160,15 @@ public class QueryGraph
 	{
 		this.assertConstraint( constraint );
 		PatternNode subjectNode = this.getOrCreatePatternNode(
-			constraint.getSubjectExpression(), true );
+			constraint.getSubjectExpression() );
 		PatternNode objectNode;
 		if ( constraint.getObjectExpression() instanceof ASTVar )
 		{
 			objectNode = this.getOrCreatePatternNode(
 				constraint.getObjectExpression(), true );
 			this.addVariable( ( ASTVar ) constraint.getObjectExpression(), 
-				NeoVariable.VariableType.URI, objectNode,
-				this.metaModel.getAboutKey() );
+				NeoVariable.VariableType.LITERAL, objectNode,
+				this.metaModel.getNodeTypeNameKey() );
 			this.possibleStartNodes.add( objectNode );
 		}
 		else
@@ -336,9 +336,10 @@ public class QueryGraph
 		
 		if ( expression instanceof ASTVar )
 		{
+			String key = isClass ? this.metaModel.getNodeTypeNameKey() :
+				this.metaModel.getAboutKey();
 			this.addVariable( ( ASTVar ) expression,
-				NeoVariable.VariableType.URI,
-				node, this.metaModel.getAboutKey() );
+				NeoVariable.VariableType.URI, node, key );
 		}
 		
 		return node;

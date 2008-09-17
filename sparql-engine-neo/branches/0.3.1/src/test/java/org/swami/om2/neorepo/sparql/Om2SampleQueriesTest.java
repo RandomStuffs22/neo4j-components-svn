@@ -526,8 +526,9 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 		{
 			Query query = SPARQLParser.parse( new StringReader(
 				"PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> " +
+				"PREFIX ladok: <http://www.swami.se/om2/ladok-1.owl#> " +
 				"SELECT ?a ?about " +
-				"WHERE { ?about rdf:type ?a . } " ) );
+				"WHERE { ?about rdf:type ?a } " ) );
 			
 			RdfBindingSet result =
 				( ( SelectQuery ) query ).execute( new NeoRdfSource() );
@@ -535,30 +536,31 @@ public class Om2SampleQueriesTest extends SparqlTestCase
 			Map<String, Integer> variables =
 				this.createVariableMap( "about", "a" );
 			String[][] expectedResult = new String[][] { 
-				{ "studentA", "studentReferenceNode" },
-				{ "studentB", "studentReferenceNode" },
-				{ "studentC", "studentReferenceNode" },
-				{ "studentD", "studentReferenceNode" },
-				{ "studentE", "studentReferenceNode" },
-				{ "studentF", "studentReferenceNode" },
-				{ "http://studentG", "studentReferenceNode" },
-				{ "responsibleA", "responsibleReferenceNode" },
-				{ "responsibleB", "responsibleReferenceNode" },
-				{ "28040ht06", "courseReferenceNode" },
-				{ "courseB", "courseReferenceNode" },
-				{ "courseC", "courseReferenceNode" },
-				{ "courseD", "courseReferenceNode" },
-				{ "courseE", "courseReferenceNode" },
-				{ "departmentA", "departmentReferenceNode" },
-				{ "departmentB", "departmentReferenceNode" },
-				{ "personA", "personReferenceNode" },
-				{ "personB", "personReferenceNode" },
-				{ "personC", "personReferenceNode" },
-				{ "personD", "personReferenceNode" },
-				{ "personE", "personReferenceNode" },
-				{ "personF", "personReferenceNode" },
-				{ "http://personG", "personReferenceNode" },
+				{ "studentA", LADOK_NAMESPACE + "Student" },
+				{ "studentB", LADOK_NAMESPACE + "Student" },
+				{ "studentC", LADOK_NAMESPACE + "Student" },
+				{ "studentD", LADOK_NAMESPACE + "Student" },
+				{ "studentE", LADOK_NAMESPACE + "Student" },
+				{ "studentF", LADOK_NAMESPACE + "Student" },
+				{ "http://studentG", LADOK_NAMESPACE + "Student" },
+				{ "responsibleA", PRIM_NAMESPACE + "Responsible" },
+				{ "responsibleB", PRIM_NAMESPACE + "Responsible" },
+				{ "28040ht06", LADOK_NAMESPACE + "CourseInstance" },
+				{ "courseB", LADOK_NAMESPACE + "CourseInstance" },
+				{ "courseC", LADOK_NAMESPACE + "CourseInstance" },
+				{ "courseD", LADOK_NAMESPACE + "CourseInstance" },
+				{ "courseE", LADOK_NAMESPACE + "CourseInstance" },
+				{ "departmentA", PRIM_NAMESPACE + "Department" },
+				{ "departmentB", PRIM_NAMESPACE + "Department" },
+				{ "personA", PRIM_NAMESPACE + "Person" },
+				{ "personB", PRIM_NAMESPACE + "Person" },
+				{ "personC", PRIM_NAMESPACE + "Person" },
+				{ "personD", PRIM_NAMESPACE + "Person" },
+				{ "personE", PRIM_NAMESPACE + "Person" },
+				{ "personF", PRIM_NAMESPACE + "Person" },
+				{ "http://personG", PRIM_NAMESPACE + "Person" },
 			};
+			
 			this.assertResult( result, variables, expectedResult );
 			tx.success();
 		}
