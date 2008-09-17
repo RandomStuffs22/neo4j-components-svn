@@ -25,6 +25,7 @@ public class SuperClassesCollection extends AbstractNeoSet<AbstractOwlThingie>
 	 */
 	public SuperClassesCollection( Owl2Neo owl2Neo, OwlClass owlClass )
 	{
+		super( owl2Neo.getNeo() );
 		this.owl2Neo = owl2Neo;
 		this.owlClass = owlClass;
 	}

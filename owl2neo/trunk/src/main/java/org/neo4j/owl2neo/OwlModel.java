@@ -93,6 +93,11 @@ public class OwlModel
 	{
 		this.owl2Neo = owl2Neo;
 	}
+	
+	Owl2Neo getOwl2Neo()
+	{
+		return this.owl2Neo;
+	}
 
 	/**
 	 * @param nodeType the {@link NodeType} the returned {@link OwlClass}
@@ -282,7 +287,8 @@ public class OwlModel
 			return;
 		}
 		
-		for ( OwlClass owlClass : classes.values() )
+		for ( OwlClass owlClass :
+			classes.values().toArray( new OwlClass[ 0 ] ) )
 		{
 			Set<OwlProperty> set = new HashSet<OwlProperty>();
 			gatherProperties( set, owlClass );

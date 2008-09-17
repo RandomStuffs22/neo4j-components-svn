@@ -37,7 +37,7 @@ public class OwlProperty extends AbstractOwlThingie
 	 */
 	public boolean isInDomain( OwlClass owlClass )
 	{
-		Transaction tx = Transaction.begin();
+		Transaction tx = getModel().getOwl2Neo().getNeo().beginTx();
 		try
 		{
 			boolean result = false;

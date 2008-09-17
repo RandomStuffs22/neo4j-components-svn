@@ -15,6 +15,7 @@ import org.neo4j.meta.NodeType;
  */
 public class OwlClass extends AbstractOwlThingie
 {
+	private Owl2Neo owl2Neo;
 	private NodeType nodeType;
 	private Map<OwlProperty, Collection<OwlRestriction>> restrictions =
 		new HashMap<OwlProperty, Collection<OwlRestriction>>();
@@ -23,6 +24,7 @@ public class OwlClass extends AbstractOwlThingie
 	OwlClass( Owl2Neo owl2Neo, OwlModel model, NodeType nodeType )
 	{
 		super( model, nodeType.getName() );
+		this.owl2Neo = owl2Neo;
 		this.nodeType = nodeType;
 		this.supers = new SuperClassesCollection( owl2Neo, this );
 	}
@@ -87,7 +89,7 @@ public class OwlClass extends AbstractOwlThingie
 			return true;
 		}
 		
-		Transaction tx = Transaction.begin();
+		Transaction tx = owl2Neo.getNeo().beginTx();
 		try
 		{
 			boolean result = false;
