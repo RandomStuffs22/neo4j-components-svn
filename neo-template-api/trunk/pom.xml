@@ -1,0 +1,38 @@
+<project>
+	<parent>
+		<groupId>org.neo4j</groupId>
+		<artifactId>parent-pom</artifactId>
+		<version>2</version>
+		<relativePath>../../pom.xml</relativePath>    		
+	</parent>
+
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.neo4j</groupId>
+	<artifactId>neo-template-api</artifactId>
+	<version>0.1-SNAPSHOT</version>
+	<name>Neo Template API</name>
+	<description>
+Inversion of Control template with callbacks executed in transaction.
+Graph wrapper for neo service with convenience methods.
+Traversal with fluent api and automatic result mapping for easy traversals. 
+GraphDescription for test-data graphs.
+	</description>
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.5</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo</artifactId>
+			<version>1.0-b7-SNAPSHOT</version>
+		</dependency>
+		<!--dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo-component-commons</artifactId>
+			<version>0.1-SNAPSHOT</version>
+		</dependency-->
+	</dependencies>
+</project>
