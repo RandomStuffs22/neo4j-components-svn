@@ -219,6 +219,7 @@ public abstract class RdfUtil
 		@Override
 		public Object convert( String value ) throws ParseException
 		{
+			value = value.toLowerCase();
 			if ( !value.equals( Boolean.TRUE.toString() ) &&
 				!value.equals( Boolean.FALSE.toString() ) )
 			{
