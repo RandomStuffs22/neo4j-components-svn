@@ -1,0 +1,3 @@
+Neo4j Weaver
+
+    A library that weaves Neo4j persistence into domain models in runtime.
