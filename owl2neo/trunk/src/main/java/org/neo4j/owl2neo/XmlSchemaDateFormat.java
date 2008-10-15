@@ -31,12 +31,12 @@ import java.util.TimeZone;
  */
 public class XmlSchemaDateFormat extends DateFormat
 {
-	private static final DateFormat DATEFORMAT_XSD_ZULU = new SimpleDateFormat(
-	    "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" );
-	
-	static
+	private static DateFormat getXsdZuluFormat()
 	{
-		DATEFORMAT_XSD_ZULU.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
+		DateFormat result =
+			new SimpleDateFormat( "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" );
+		result.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
+		return result;
 	}
 	
 	@Override
@@ -71,14 +71,17 @@ public class XmlSchemaDateFormat extends DateFormat
 			}
 			
 			// convert what we have validated so far
+			String withoutMillis = ( src == null ) ?
+				null : ( src.substring( 0, 19 ) + ".000Z" );
 			try
 			{
-				date = DATEFORMAT_XSD_ZULU.parse( ( src == null ) ?
-					null : ( src.substring( 0, 19 ) + ".000Z" ) );
+				date = getXsdZuluFormat().parse( withoutMillis );
 			}
 			catch ( Exception e )
 			{
-				throw new NumberFormatException( e.toString() );
+				e.printStackTrace();
+				throw new NumberFormatException( "Tried to parse '" + src +
+					"' (" + withoutMillis + "): " + e.toString() );
 			}
 			
 			index = 19;
@@ -183,7 +186,7 @@ public class XmlSchemaDateFormat extends DateFormat
 	public StringBuffer format( Date date, StringBuffer buffer,
 	    FieldPosition position )
 	{
-		String str = DATEFORMAT_XSD_ZULU.format( date );
+		String str = getXsdZuluFormat().format( date );
 		if ( buffer == null )
 		{
 			buffer = new StringBuffer();
