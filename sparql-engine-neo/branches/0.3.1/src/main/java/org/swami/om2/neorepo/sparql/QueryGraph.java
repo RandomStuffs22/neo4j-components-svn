@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import name.levering.ryan.sparql.common.QueryException;
+import name.levering.ryan.sparql.model.FilterConstraint;
 import name.levering.ryan.sparql.model.GroupConstraint;
 import name.levering.ryan.sparql.model.OptionalConstraint;
 import name.levering.ryan.sparql.model.TripleConstraint;
@@ -17,12 +18,18 @@ import name.levering.ryan.sparql.model.logic.ExpressionLogic;
 import name.levering.ryan.sparql.parser.model.ASTLiteral;
 import name.levering.ryan.sparql.parser.model.ASTQName;
 import name.levering.ryan.sparql.parser.model.ASTQuotedIRIref;
+import name.levering.ryan.sparql.parser.model.ASTRegexFuncNode;
 import name.levering.ryan.sparql.parser.model.ASTVar;
+import name.levering.ryan.sparql.parser.model.BinaryExpressionNode;
 import name.levering.ryan.sparql.parser.model.URINode;
 
 import org.neo4j.api.core.RelationshipType;
+import org.neo4j.util.matching.PatternGroup;
 import org.neo4j.util.matching.PatternNode;
 import org.neo4j.util.matching.PatternRelationship;
+import org.neo4j.util.matching.regex.RegexBinaryNode;
+import org.neo4j.util.matching.regex.RegexExpression;
+import org.neo4j.util.matching.regex.RegexPattern;
 import org.swami.om2.neorepo.sparql.MetaModelProxy.OwlPropertyType;
 import org.swami.om2.neorepo.sparql.NeoVariable.VariableType;
 
@@ -106,10 +113,13 @@ public class QueryGraph
 
 	void build( GroupConstraint groupConstraint, boolean optional )
 	{
+	    PatternGroup group = new PatternGroup();
 		Set<TripleConstraint> typeConstraints =
 			new HashSet<TripleConstraint>();
 		Set<TripleConstraint> normalConstraints =
 			new HashSet<TripleConstraint>();
+		Set<FilterConstraint> filterConstraints =
+		    new HashSet<FilterConstraint>();
 	
 		for ( Object constraint : groupConstraint.getConstraints() )
 		{
@@ -134,6 +144,10 @@ public class QueryGraph
 					constraint ).getConstraint(), true );
 				this.optionalGraphs.add( optionalGraph );
 			}
+			else if ( constraint instanceof FilterConstraint )
+			{
+			    filterConstraints.add( ( FilterConstraint ) constraint );
+			}
 			else
 			{
 				throw new QueryException(
@@ -142,30 +156,31 @@ public class QueryGraph
 		}
 	
 		// Must add types before the other constraints.
-		this.addTypes( typeConstraints, optional );
-		this.addConstraints( normalConstraints, optional );
+		this.addTypes( typeConstraints, group, optional );
+		this.addConstraints( normalConstraints, group, optional );
+		this.addFilters( filterConstraints, group, optional );
 	}
 	
-	private void addTypes(
-		Set<TripleConstraint> constraints, boolean optional )
+	private void addTypes( Set<TripleConstraint> constraints,
+	    PatternGroup group, boolean optional )
 	{
 		for ( TripleConstraint constraint : constraints )
 		{
-			this.addTypeToPattern( constraint, optional );
+			this.addTypeToPattern( constraint, group, optional );
 		}
 	}
 
 	private void addTypeToPattern(
-		TripleConstraint constraint, boolean optional )
+		TripleConstraint constraint, PatternGroup group, boolean optional )
 	{
 		this.assertConstraint( constraint );
 		PatternNode subjectNode = this.getOrCreatePatternNode(
-			constraint.getSubjectExpression() );
+			constraint.getSubjectExpression(), group );
 		PatternNode objectNode;
 		if ( constraint.getObjectExpression() instanceof ASTVar )
 		{
 			objectNode = this.getOrCreatePatternNode(
-				constraint.getObjectExpression(), true );
+				constraint.getObjectExpression(), group, true );
 			this.addVariable( ( ASTVar ) constraint.getObjectExpression(), 
 				NeoVariable.VariableType.LITERAL, objectNode,
 				this.metaModel.getNodeTypeNameKey() );
@@ -174,7 +189,8 @@ public class QueryGraph
 		else
 		{
 			objectNode = this.getOrCreatePatternNode(
-				constraint.getObjectExpression(), true, ON_CREATED_TYPE );
+				constraint.getObjectExpression(), group, true,
+				ON_CREATED_TYPE );
 			String objectUri = this.toUri( constraint.getObjectExpression() );
 			this.classMapping.put( constraint.getSubjectExpression(),
 				objectUri );
@@ -185,29 +201,79 @@ public class QueryGraph
 	}
 	
 	private void addConstraints( Set<TripleConstraint> constraints,
-		boolean optional )
+	    PatternGroup group, boolean optional )
 	{
 		for ( TripleConstraint constraint : constraints )
 		{
-			this.addToPattern( constraint, optional );
+			this.addToPattern( constraint, group, optional );
 		}
+	}
+	
+	private void addFilters( Set<FilterConstraint> filterConstraints,
+	    PatternGroup group, boolean optional )
+	{
+	    for ( FilterConstraint filterConstrains : filterConstraints )
+	    {
+	        this.addFilter( filterConstrains, group, optional );
+	    }
 	}
 
 	protected void addToPattern( TripleConstraint constraint,
-		boolean optional )
+	    PatternGroup group, boolean optional )
 	{
 		this.assertConstraint( constraint );
 		this.addOwlProperty( constraint.getSubjectExpression(),
 			constraint.getPredicateExpression(),
-			constraint.getObjectExpression(), optional );
+			constraint.getObjectExpression(), group, optional );
+	}
+	
+	protected void addFilter( FilterConstraint filterConstraint,
+	    PatternGroup group, boolean optional )
+	{
+	    group.addFilter(
+	        toRegexExpression( filterConstraint.getExpression() ) );
+	}
+	
+	private RegexExpression toRegexExpression( ExpressionLogic expressionLogic )
+	{
+	    RegexExpression result = null;
+	    if ( expressionLogic instanceof BinaryExpressionNode )
+	    {
+	        BinaryExpressionNode binaryNode = ( BinaryExpressionNode )
+	            expressionLogic;
+	        boolean operatorAnd = binaryNode.getOperator().equals( "&&" );
+	        result = new RegexBinaryNode(
+	            toRegexExpression( binaryNode.getLeftExpression() ),
+	            operatorAnd,
+	            toRegexExpression( binaryNode.getRightExpression() ) );
+	    }
+	    else
+	    {
+	        ASTRegexFuncNode regexNode = ( ASTRegexFuncNode ) expressionLogic;
+            List<?> arguments = regexNode.getArguments();
+            ASTVar variable = ( ASTVar ) arguments.get( 0 );
+            ASTLiteral regexValue = ( ASTLiteral ) arguments.get( 1 );
+            ASTLiteral regexOptions = arguments.size() > 2 ?
+                ( ASTLiteral ) arguments.get( 2 ) : null;
+            NeoVariable neoVariable = getVariableOrNull( variable );
+            if ( neoVariable == null )
+            {
+                throw new RuntimeException( "Undefined variable:" + variable +
+                    " in filter expr " + expressionLogic );
+            }
+            result = new RegexPattern( variable.getName(),
+                neoVariable.getProperty(), regexValue.getLabel(),
+                regexOptions == null ? "" : regexOptions.getLabel() );
+	    }
+	    return result;
 	}
 
 	private void addOwlProperty( ExpressionLogic subjectExpression,
 		ExpressionLogic predicateExpression, ExpressionLogic objectExpression,
-		boolean optional )
+		PatternGroup group, boolean optional )
 	{
 		PatternNode subjectNode = this.getOrCreatePatternNode(
-			subjectExpression );
+			subjectExpression, group );
 		
 		OwlProperty property = this.getOwlProperty(
 			subjectExpression, predicateExpression, objectExpression );
@@ -215,7 +281,7 @@ public class QueryGraph
 		if ( property.getType() == OwlPropertyType.OBJECT_TYPE )
 		{
 			subjectNode.createRelationshipTo(
-				this.getOrCreatePatternNode( objectExpression ),
+				this.getOrCreatePatternNode( objectExpression, group ),
 				( RelationshipType ) property.getMappedValue(), optional );
 		}
 		else // It's an OwlProperty.DATATYPE_TYPE
@@ -256,8 +322,23 @@ public class QueryGraph
 				return;
 			}
 		}
-		this.variableList.add(
-			new NeoVariable( var, type, subjectNode, string ) );
+		if ( getVariableOrNull( var ) == null )
+		{
+    		this.variableList.add(
+    			new NeoVariable( var, type, subjectNode, string ) );
+		}
+	}
+	
+	private NeoVariable getVariableOrNull( ASTVar var )
+	{
+	    for ( NeoVariable variable : this.variableList )
+	    {
+	        if ( var.getName().equals( variable.getName() ) )
+	        {
+	            return variable;
+	        }
+	    }
+	    return null;
 	}
 
 	private OwlProperty getOwlProperty( ExpressionLogic subjectExpression,
@@ -278,24 +359,25 @@ public class QueryGraph
 		}
 	}
 
-	private PatternNode getOrCreatePatternNode( ExpressionLogic expression )
+	private PatternNode getOrCreatePatternNode( ExpressionLogic expression,
+	    PatternGroup group )
 	{
-		return getOrCreatePatternNode( expression, false );
+		return getOrCreatePatternNode( expression, group, false );
 	}
 	
 	private PatternNode getOrCreatePatternNode( ExpressionLogic expression,
-		boolean isClass )
+		PatternGroup group, boolean isClass )
 	{
-		return getOrCreatePatternNode( expression, isClass, null );
+		return getOrCreatePatternNode( expression, group, isClass, null );
 	}
 	
 	private PatternNode getOrCreatePatternNode( ExpressionLogic expression,
-		boolean isClass, RunOnPatternNode runOnCreation )
+		PatternGroup group, boolean isClass, RunOnPatternNode runOnCreation )
 	{
 		PatternNode node = this.graph.get( expression );
 		if ( node == null )
 		{
-			node = this.createPatternNode( expression, isClass );
+			node = this.createPatternNode( expression, group, isClass );
 			if ( runOnCreation != null )
 			{
 				runOnCreation.onCreated( node );
@@ -317,10 +399,10 @@ public class QueryGraph
 	}
 
 	private PatternNode createPatternNode(
-		ExpressionLogic expression, boolean isClass )
+		ExpressionLogic expression, PatternGroup group, boolean isClass )
 	{
 		PatternNode node =
-			new PatternNode( this.toUri( expression ) );
+			new PatternNode( group, this.toUri( expression ) );
 		this.graph.put( expression, node );
 		
 		if ( expression instanceof ASTQName ||

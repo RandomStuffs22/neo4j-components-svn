@@ -1,9 +1,12 @@
 package org.swami.om2.neorepo.sparql;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+
 import name.levering.ryan.sparql.model.GroupConstraint;
 import org.neo4j.util.matching.PatternMatch;
 import org.neo4j.util.matching.PatternMatcher;
@@ -42,10 +45,20 @@ public abstract class AbstractNeoQueryLogic
 		for ( String type : types )
 		{
 			results.add( PatternMatcher.getMatcher().match( startNode,
-				this.metaModel.getClassNode( type ),
+				this.metaModel.getClassNode( type ), getObjectVariables(),
 				graph.getOptionalGraphs() ) );
 		}
 		return new PatternMatchesWrapper( results );
+	}
+	
+	private Map<String, PatternNode> getObjectVariables()
+	{
+	    Map<String, PatternNode> map = new HashMap<String, PatternNode>();
+	    for ( NeoVariable variable : this.variableList )
+	    {
+	        map.put( variable.getVariable().getName(), variable.getNode() );
+	    }
+	    return map;
 	}
 	
 //	private Iterable<PatternNode> getStartNodes(
