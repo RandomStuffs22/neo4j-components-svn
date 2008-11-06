@@ -17,7 +17,6 @@ import name.levering.ryan.sparql.model.SelectQuery;
 import name.levering.ryan.sparql.parser.ParseException;
 import name.levering.ryan.sparql.parser.SPARQLParser;
 
-import org.neo4j.api.core.Transaction;
 import org.openrdf.model.Value;
 import org.swami.om2.neorepo.sparql.NeoBindingRow;
 import org.swami.om2.neorepo.sparql.NeoRdfSource;
@@ -68,7 +67,6 @@ public class SparqlServlet extends HttpServlet
 		
 		PrintWriter out = response.getWriter();
 		String encodedQuery = "";
-		Transaction tx = null;
 		try
         {
 			encodedQuery = request.getParameter( "query" );
@@ -87,7 +85,6 @@ public class SparqlServlet extends HttpServlet
 				return;
 			}
 			
-			tx = Transaction.begin();
 			Query query = SPARQLParser.parse( new StringReader( 
 			 	encodedQuery ) );
 			if ( query instanceof SelectQuery )
@@ -130,10 +127,10 @@ public class SparqlServlet extends HttpServlet
 				response.sendError( HttpServletResponse.SC_BAD_REQUEST, 
 					"Query[" + encodedQuery + "] not a select query." );
 			}
-			tx.success();
         }
         catch ( ParseException pe )
         {
+            pe.printStackTrace();
         	response.sendError( HttpServletResponse.SC_BAD_REQUEST,  
         		"Query[" + encodedQuery + "] unable to parse, " + pe );
 	        // maybe internal logging should log pe stacktrace here 
@@ -143,15 +140,12 @@ public class SparqlServlet extends HttpServlet
         // and log message
         catch ( Throwable t )
         {
+            t.printStackTrace();
         	throw new RuntimeException( "Internal error parsing query[" + 
         		encodedQuery + "]", t );
         }
         finally
         {
-        	if ( tx != null )
-        	{
-        		tx.finish();
-        	}
     		out.close();
         }
 	}
