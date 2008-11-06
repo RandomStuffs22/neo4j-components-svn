@@ -15,7 +15,14 @@ import name.levering.ryan.sparql.model.GroupConstraint;
 import name.levering.ryan.sparql.model.OptionalConstraint;
 import name.levering.ryan.sparql.model.TripleConstraint;
 import name.levering.ryan.sparql.model.logic.ExpressionLogic;
+import name.levering.ryan.sparql.parser.model.ASTAndNode;
+import name.levering.ryan.sparql.parser.model.ASTEqualsNode;
+import name.levering.ryan.sparql.parser.model.ASTGreaterThanEqualsNode;
+import name.levering.ryan.sparql.parser.model.ASTGreaterThanNode;
+import name.levering.ryan.sparql.parser.model.ASTLessThanEqualsNode;
+import name.levering.ryan.sparql.parser.model.ASTLessThanNode;
 import name.levering.ryan.sparql.parser.model.ASTLiteral;
+import name.levering.ryan.sparql.parser.model.ASTOrNode;
 import name.levering.ryan.sparql.parser.model.ASTQName;
 import name.levering.ryan.sparql.parser.model.ASTQuotedIRIref;
 import name.levering.ryan.sparql.parser.model.ASTRegexFuncNode;
@@ -27,9 +34,12 @@ import org.neo4j.api.core.RelationshipType;
 import org.neo4j.util.matching.PatternGroup;
 import org.neo4j.util.matching.PatternNode;
 import org.neo4j.util.matching.PatternRelationship;
-import org.neo4j.util.matching.regex.RegexBinaryNode;
-import org.neo4j.util.matching.regex.RegexExpression;
-import org.neo4j.util.matching.regex.RegexPattern;
+import org.neo4j.util.matching.filter.CompareExpression;
+import org.neo4j.util.matching.filter.FilterBinaryNode;
+import org.neo4j.util.matching.filter.FilterExpression;
+import org.neo4j.util.matching.filter.RegexPattern;
+import org.openrdf.model.URI;
+import org.openrdf.model.datatypes.XMLDatatypeUtil;
 import org.swami.om2.neorepo.sparql.MetaModelProxy.OwlPropertyType;
 import org.swami.om2.neorepo.sparql.NeoVariable.VariableType;
 
@@ -231,41 +241,89 @@ public class QueryGraph
 	    PatternGroup group, boolean optional )
 	{
 	    group.addFilter(
-	        toRegexExpression( filterConstraint.getExpression() ) );
+	        toFilterExpression( filterConstraint.getExpression() ) );
 	}
 	
-	private RegexExpression toRegexExpression( ExpressionLogic expressionLogic )
+	private FilterExpression toFilterExpression(
+	    ExpressionLogic expressionLogic )
 	{
-	    RegexExpression result = null;
-	    if ( expressionLogic instanceof BinaryExpressionNode )
+	    FilterExpression result = null;
+	    if ( expressionLogic instanceof ASTAndNode ||
+	        expressionLogic instanceof ASTOrNode )
 	    {
 	        BinaryExpressionNode binaryNode = ( BinaryExpressionNode )
 	            expressionLogic;
 	        boolean operatorAnd = binaryNode.getOperator().equals( "&&" );
-	        result = new RegexBinaryNode(
-	            toRegexExpression( binaryNode.getLeftExpression() ),
+	        result = new FilterBinaryNode(
+	            toFilterExpression( binaryNode.getLeftExpression() ),
 	            operatorAnd,
-	            toRegexExpression( binaryNode.getRightExpression() ) );
+	            toFilterExpression( binaryNode.getRightExpression() ) );
 	    }
 	    else
 	    {
-	        ASTRegexFuncNode regexNode = ( ASTRegexFuncNode ) expressionLogic;
-            List<?> arguments = regexNode.getArguments();
-            ASTVar variable = ( ASTVar ) arguments.get( 0 );
-            ASTLiteral regexValue = ( ASTLiteral ) arguments.get( 1 );
-            ASTLiteral regexOptions = arguments.size() > 2 ?
-                ( ASTLiteral ) arguments.get( 2 ) : null;
-            NeoVariable neoVariable = getVariableOrNull( variable );
-            if ( neoVariable == null )
-            {
-                throw new RuntimeException( "Undefined variable:" + variable +
-                    " in filter expr " + expressionLogic );
-            }
-            result = new RegexPattern( variable.getName(),
-                neoVariable.getProperty(), regexValue.getLabel(),
-                regexOptions == null ? "" : regexOptions.getLabel() );
+	        if ( expressionLogic instanceof ASTGreaterThanEqualsNode ||
+	            expressionLogic instanceof ASTEqualsNode ||
+	            expressionLogic instanceof ASTGreaterThanNode ||
+	            expressionLogic instanceof ASTLessThanEqualsNode ||
+	            expressionLogic instanceof ASTLessThanNode )
+	        {
+	            result = formCompareExpression( expressionLogic );
+	        }
+	        else if ( expressionLogic instanceof ASTRegexFuncNode )
+	        {
+	            result = formRegexPattern( expressionLogic );
+	        }
+	        else
+	        {
+	            throw new RuntimeException( expressionLogic +
+	                " not supported" );
+	        }
 	    }
 	    return result;
+	}
+	
+	private FilterExpression formCompareExpression(
+	    ExpressionLogic expressionLogic )
+	{
+	    BinaryExpressionNode binaryNode =
+	        ( BinaryExpressionNode ) expressionLogic;
+	    String operator = binaryNode.getOperator();
+	    ASTVar var = ( ASTVar ) binaryNode.getLeftExpression();
+	    ASTLiteral value = ( ASTLiteral ) binaryNode.getRightExpression();
+	    URI datatype = value.getDatatype();
+	    Object realValue = null;
+	    String stringValue = value.toString();
+        if ( XMLDatatypeUtil.isDecimalDatatype( datatype ) ||
+            XMLDatatypeUtil.isFloatingPointDatatype( datatype ) )
+        {
+            realValue = new Double( stringValue );
+	    }
+        else if ( XMLDatatypeUtil.isIntegerDatatype( datatype ) )
+        {
+            realValue = new Integer( stringValue );
+        }
+	    else
+	    {
+	        realValue = value.getLabel();
+	    }
+        
+        NeoVariable variable = getVariable( var );
+        return new CompareExpression( var.getName(), variable.getProperty(),
+            operator, realValue );
+	}
+	
+	private FilterExpression formRegexPattern( ExpressionLogic expressionLogic )
+	{
+        ASTRegexFuncNode regexNode = ( ASTRegexFuncNode ) expressionLogic;
+        List<?> arguments = regexNode.getArguments();
+        ASTVar variable = ( ASTVar ) arguments.get( 0 );
+        ASTLiteral regexValue = ( ASTLiteral ) arguments.get( 1 );
+        ASTLiteral regexOptions = arguments.size() > 2 ?
+            ( ASTLiteral ) arguments.get( 2 ) : null;
+        NeoVariable neoVariable = getVariable( variable );
+        return new RegexPattern( variable.getName(),
+            neoVariable.getProperty(), regexValue.getLabel(),
+            regexOptions == null ? "" : regexOptions.getLabel() );
 	}
 
 	private void addOwlProperty( ExpressionLogic subjectExpression,
@@ -339,6 +397,16 @@ public class QueryGraph
 	        }
 	    }
 	    return null;
+	}
+	
+	private NeoVariable getVariable( ASTVar var )
+	{
+	    NeoVariable variable = getVariableOrNull( var );
+	    if ( variable == null )
+	    {
+	        throw new RuntimeException( "Undefined variable for " + var );
+	    }
+	    return variable;
 	}
 
 	private OwlProperty getOwlProperty( ExpressionLogic subjectExpression,
