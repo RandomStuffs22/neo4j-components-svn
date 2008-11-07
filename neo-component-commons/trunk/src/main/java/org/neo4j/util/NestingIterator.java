@@ -9,25 +9,25 @@ import java.util.Iterator;
  *
  * @param <T> the type of items.
  */
-public abstract class NestingIterator<T> extends PrefetchingIterator<T>
+public abstract class NestingIterator<T, U> extends PrefetchingIterator<T>
 {
-	private Iterator<T> source;
+	private Iterator<U> source;
 	private Iterator<T> currentNestedIterator;
-	private T currentSurfaceItem;
+	private U currentSurfaceItem;
 	
-	public NestingIterator( Iterator<T> source )
+	public NestingIterator( Iterator<U> source )
 	{
 		this.source = source;
 	}
 	
-	protected abstract Iterator<T> createNestedIterator( T item );
+	protected abstract Iterator<T> createNestedIterator( U item );
 	
-	public T getCurrentSurfaceItem()
+	public U getCurrentSurfaceItem()
 	{
 		if ( this.currentSurfaceItem == null )
 		{
 			throw new IllegalStateException( "Has no surface item right now," +
-				" you must to at least one next() first" );
+				" you must do at least one next() first" );
 		}
 		return this.currentSurfaceItem;
 	}
