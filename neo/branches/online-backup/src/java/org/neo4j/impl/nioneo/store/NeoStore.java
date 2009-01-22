@@ -150,6 +150,18 @@ public class NeoStore extends AbstractStore
         setRecord( 1, nr );
     }
     
+    public void setRecoveredStatus( boolean status )
+    {
+        if ( status )
+        {
+            setRecovered();
+        }
+        else
+        {
+            unsetRecovered();
+        }
+    }
+    
     public long getVersion()
     {
         return getRecord( 2 );

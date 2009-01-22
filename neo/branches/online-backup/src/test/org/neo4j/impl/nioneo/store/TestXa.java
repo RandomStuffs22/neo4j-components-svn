@@ -636,6 +636,7 @@ public class TestXa extends AbstractNeoTestCase
     {
         try
         {
+            ds.keepLogicalLogs( true );
             Xid xid = new XidImpl( new byte[1], new byte[1] );
             XAResource xaRes = xaCon.getXaResource();
             xaRes.start( xid, XAResource.TMNOFLAGS );
@@ -685,6 +686,7 @@ public class TestXa extends AbstractNeoTestCase
     {
         try
         {
+            ds.keepLogicalLogs( true );
             Xid xid = new XidImpl( new byte[1], new byte[1] );
             XAResource xaRes = xaCon.getXaResource();
             xaRes.start( xid, XAResource.TMNOFLAGS );

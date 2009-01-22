@@ -298,7 +298,19 @@ public class NeoStoreXaDataSource extends XaDataSource
         @Override
         public long getCurrentVersion()
         {
-            return neoStore.getVersion();
+            if ( getLogicalLog().scanIsComplete() )
+            {
+                return neoStore.getVersion();
+            }
+            neoStore.setRecoveredStatus( true );
+            try
+            {
+                return neoStore.getVersion();
+            }
+            finally
+            {
+                neoStore.setRecoveredStatus( false );
+            }
         }
         
         @Override
@@ -355,7 +367,7 @@ public class NeoStoreXaDataSource extends XaDataSource
     
     public void keepLogicalLogs( boolean keep )
     {
-        xaContainer.getLogicalLog().keepLogicalLogs( keep );
+        xaContainer.getLogicalLog().setKeepLogs( keep );
     }
     
     @Override
@@ -408,7 +420,7 @@ public class NeoStoreXaDataSource extends XaDataSource
     @Override
     public void rotateLogicalLog() throws IOException
     {
-        neoStore.flushAll();
+        // flush done inside rotate
         xaContainer.getLogicalLog().rotate();
     }
     
@@ -416,5 +428,15 @@ public class NeoStoreXaDataSource extends XaDataSource
     public ReadableByteChannel getLogicalLog( long version ) throws IOException
     {
         return xaContainer.getLogicalLog().getLogicalLog( version );
+    }
+    
+    public void setAutoRotate( boolean rotate )
+    {
+        xaContainer.getLogicalLog().setAutoRotateLogs( rotate );
+    }
+    
+    public void setLogicalLogTargetSize( long size )
+    {
+        xaContainer.getLogicalLog().setLogicalLogTargetSize( size );
     }
 }

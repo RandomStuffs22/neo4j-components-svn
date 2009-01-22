@@ -99,8 +99,8 @@ public class XaLogicalLog
     private final XaTransactionFactory xaTf;
     private char currentLog = CLEAN;
     private boolean keepLogs = false;
-    private boolean autoRotate = false;
-    private long rotateAtSize = 25*1024*1024; // 25MB
+    private boolean autoRotate = true;
+    private long rotateAtSize = 10*1024*1024; // 10MB
 
     XaLogicalLog( String fileName, XaResourceManager xaRm, XaCommandFactory cf,
         XaTransactionFactory xaTf )
@@ -203,11 +203,6 @@ public class XaLogicalLog
         writeBuffer = new MemoryMappedLogBuffer( fileChannel );
     }
     
-    public void keepLogicalLogs( boolean keep )
-    {
-        keepLogs = keep;
-    }
-    
     private void open( String fileToOpen ) throws IOException
     {
         fileChannel = new RandomAccessFile( fileToOpen, "rw" ).getChannel();
@@ -217,16 +212,16 @@ public class XaLogicalLog
         }
         else
         {
-            scanIsComplete = true;
             logVersion = xaTf.getCurrentVersion();
             buffer.clear();
             buffer.putLong( logVersion );
             buffer.flip();
             fileChannel.write( buffer );
+            scanIsComplete = true;
         }
     }
 
-    boolean scanIsComplete()
+    public boolean scanIsComplete()
     {
         return scanIsComplete;
     }
@@ -866,8 +861,7 @@ public class XaLogicalLog
             fileChannel.close();
             return;
         }
-        // TODO: move to version name
-        if ( !keepLogs && !autoRotate )
+        if ( !keepLogs )
         {
             deleteCurrentLogFile( fileName + "." + currentLog );
         }
@@ -1346,16 +1340,20 @@ public class XaLogicalLog
             throw new IllegalStateException( "Copy log file: " + oldCopy + 
                 " already exist" );
         }
+        writeBuffer.force();
         FileChannel newLog = new RandomAccessFile( 
             newLogFile, "rw" ).getChannel();
-        FileChannel copyLog = new RandomAccessFile( 
-            fileName + ".copy", "rw" ).getChannel();
-        writeBuffer.force();
-        buffer.clear();
-        buffer.putLong( currentVersion ).flip();
-        if ( copyLog.write( buffer ) != 8 )
+        FileChannel copyLog = null;
+        if ( keepLogs ) 
         {
-            throw new IOException( "Unable to write log version to copy" );
+            copyLog = new RandomAccessFile( 
+                fileName + ".copy", "rw" ).getChannel();
+            buffer.clear();
+            buffer.putLong( currentVersion ).flip();
+            if ( copyLog.write( buffer ) != 8 )
+            {
+                throw new IOException( "Unable to write log version to copy" );
+            }
         }
         buffer.clear();
         buffer.putLong( currentVersion + 1 ).flip();
@@ -1387,30 +1385,24 @@ public class XaLogicalLog
             switch ( entry )
             {
                 case TX_START:
-                    // System.out.println( "TX_START" );
                     readAndWriteTxStartEntry( copyLog, newLog );
                     break;
                 case TX_PREPARE:
-                    // System.out.println( "TX_PREPARE" );
                     readAndWriteTxPrepareEntry( copyLog, newLog );
                     break;
                 case TX_1P_COMMIT:
-                    // System.out.println( "TX_1P_COMMIT" );
                     readAndWriteTxOnePhaseCommit( copyLog, newLog );
                     break;
                 case TX_2P_COMMIT:
-                    // System.out.println( "TX_2P_COMMIT" );
                     readAndWriteTxTwoPhaseCommit( copyLog );
                     break;
                 case COMMAND:
                     readAndWriteCommandEntry( copyLog, newLog );
                     break;
                 case DONE:
-                    // System.out.println( "TX_DONE" );
                     readAndWriteDoneEntry( copyLog );
                     break;
                 case EMPTY:
-                    // System.out.println( "EMPTY" );
                     emptyHit = true;
                     break;
                 default:
@@ -1419,12 +1411,14 @@ public class XaLogicalLog
             }
             buffer.clear();
             buffer.limit( 1 );
-            // System.out.println( fileChannel.position() );
         }
         newLog.force( false );
-        copyLog.force( false );
-        copyLog.close();
-        renameCopyToVersion( fileName + ".copy", oldCopy );
+        if ( copyLog != null )
+        {
+            copyLog.force( false );
+            copyLog.close();
+            renameCopyToVersion( fileName + ".copy", oldCopy );
+        }
         setActiveLog( newActiveLog );
         if ( xaTf.getAndSetNewVersion() != currentVersion )
         {
@@ -1480,13 +1474,19 @@ public class XaLogicalLog
         {
             writeToLog = newLog;
         }
-        buffer.position( 0 );
-        if ( writeToLog.write( buffer ) != 5 )
+        if ( writeToLog != null )
         {
-            throw new RuntimeException( "Unable to write command header" );
+            buffer.position( 0 );
+            if ( writeToLog.write( buffer ) != 5 )
+            {
+                throw new RuntimeException( "Unable to write command header" );
+            }
         }
         XaCommand command = cf.readCommand( fileChannel, buffer );
-        command.writeToFile( new DirectLogBuffer( writeToLog, buffer ) );
+        if ( writeToLog != null )
+        {
+            command.writeToFile( new DirectLogBuffer( writeToLog, buffer ) );
+        }
     }
 
     private void readAndWriteDoneEntry( FileChannel copyLog ) 
@@ -1509,7 +1509,7 @@ public class XaLogicalLog
                 " done entry found but still active" );
         }
         buffer.position( 0 );
-        if ( writeToLog.write( buffer ) != 5 )
+        if ( writeToLog != null && writeToLog.write( buffer ) != 5 )
         {
             throw new RuntimeException( "Unable to write done entry" );
         }
@@ -1535,7 +1535,7 @@ public class XaLogicalLog
             writeToLog = newLog;
         }
         buffer.position( 0 );
-        if ( writeToLog.write( buffer ) != 5 )
+        if ( writeToLog != null && writeToLog.write( buffer ) != 5 )
         {
             throw new RuntimeException( "Unable to write 1P commit entry" );
         }
@@ -1561,7 +1561,7 @@ public class XaLogicalLog
                 " 2PC found but still active" );
         }
         buffer.position( 0 );
-        if ( writeToLog.write( buffer ) != 5 )
+        if ( writeToLog != null && writeToLog.write( buffer ) != 5 )
         {
             throw new RuntimeException( "Unable to write 2P commit entry" );
         }
@@ -1587,7 +1587,7 @@ public class XaLogicalLog
             writeToLog = newLog;
         }
         buffer.position( 0 );
-        if ( writeToLog.write( buffer ) != 5 )
+        if ( writeToLog != null && writeToLog.write( buffer ) != 5 )
         {
             throw new RuntimeException( "Unable to write prepare entry" );
         }
@@ -1626,9 +1626,40 @@ public class XaLogicalLog
             writeToLog = newLog;
         }
         buffer.position( 0 );
-        if ( writeToLog.write( buffer ) != 3 + 8 + xidLength )
+        if ( writeToLog != null && 
+            writeToLog.write( buffer ) != 3 + 8 + xidLength )
         {
             throw new RuntimeException( "Unable to write tx start xid" );
         }
+    }
+
+    public void setKeepLogs( boolean keep )
+    {
+        this.keepLogs = keep;
+    }
+    
+    public boolean isLogsKept()
+    {
+        return this.keepLogs;
+    }
+    
+    public void setAutoRotateLogs( boolean autoRotate )
+    {
+        this.autoRotate = autoRotate;
+    }
+    
+    public boolean isLogsAutoRotated()
+    {
+        return this.autoRotate;
+    }
+    
+    public void setLogicalLogTargetSize( long size )
+    {
+        this.rotateAtSize = size;
+    }
+    
+    public long getLogicalLogTargetSize()
+    {
+        return this.rotateAtSize;
     }
 }
