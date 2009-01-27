@@ -230,13 +230,30 @@ public class NeoSailConnection implements NeoRdfSailConnection
         }
     }
     
-    public synchronized CloseableIteration<FulltextQueryResult, SailException> evaluate(
-        String query )
+    public synchronized CloseableIteration<FulltextQueryResult, SailException>
+        evaluate( String query )
     {
         Transaction otherTx = suspendOtherAndResumeThis();
         try
         {
-            Iterable<QueryResult> queryResult = this.store.searchFulltext( query );
+            Iterable<QueryResult> queryResult =
+                this.store.searchFulltext( query );
+            return new QueryResultIteration( queryResult.iterator(), this );
+        }
+        finally
+        {
+            suspendThisAndResumeOther( otherTx );
+        }
+    }
+    
+    public synchronized CloseableIteration<FulltextQueryResult, SailException>
+        evaluateWithSnippets( String query, int snippetCountLimit )
+    {
+        Transaction otherTx = suspendOtherAndResumeThis();
+        try
+        {
+            Iterable<QueryResult> queryResult = this.store.
+                searchFulltextWithSnippets( query, snippetCountLimit );
             return new QueryResultIteration( queryResult.iterator(), this );
         }
         finally

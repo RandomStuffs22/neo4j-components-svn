@@ -180,7 +180,7 @@ public abstract class BaseSailTest
     private void evaluateFreetextQuery(final String query,
                                        final NeoRdfSailConnection sc) throws SailException {
         CloseableIteration<? extends FulltextQueryResult, SailException> iter;
-        iter = sc.evaluate(query);
+        iter = sc.evaluateWithSnippets(query, 100);
         try {
             while (iter.hasNext()) {
                 FulltextQueryResult r = iter.next();

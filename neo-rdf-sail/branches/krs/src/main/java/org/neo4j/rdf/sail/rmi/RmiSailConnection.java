@@ -60,6 +60,10 @@ interface RmiSailConnection extends Remote
     RmiIterationBuffer<? extends FulltextQueryResult, SailException>
         evaluate( String query ) throws SailException, RemoteException;
     
+    RmiIterationBuffer<? extends FulltextQueryResult, SailException>
+        evaluateWithSnippets( String query, int snippetCountLimit )
+        throws SailException, RemoteException;
+    
     RmiIterationBuffer<? extends Resource, SailException> getContextIDs()
         throws SailException, RemoteException;
     
