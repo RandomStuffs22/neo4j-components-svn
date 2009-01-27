@@ -345,8 +345,13 @@ public class SimpleFulltextIndex implements FulltextIndex
             Query q = new QueryParser( KEY_INDEX, analyzer ).parse( query );
             Hits hits = searcher.search( q, Sort.RELEVANCE );
             long searchTime = timer.lap();
-            Highlighter highlighter = new Highlighter( highlightFormatter,
-                new QueryScorer( searcher.rewrite( q ) ) );
+            Highlighter highlighter = null;
+            
+            if ( snippetCountLimit > 0 )
+            {
+                highlighter = new Highlighter( highlightFormatter,
+                    new QueryScorer( searcher.rewrite( q ) ) );
+            }
             Set<Long> ids = new HashSet<Long>();
             
             // Snippets and duplicate checks
