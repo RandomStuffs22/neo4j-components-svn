@@ -177,6 +177,13 @@ public class VerboseQuadStore extends RdfStoreImpl
     @Override
     public Iterable<QueryResult> searchFulltext( String query )
     {
+        return searchFulltextWithSnippets( query, 0 );
+    }
+    
+    @Override
+    public Iterable<QueryResult> searchFulltextWithSnippets( String query,
+        int snippetCountLimit )
+    {
         FulltextIndex fulltextIndex = getFulltextIndex();
         if ( fulltextIndex == null )
         {
@@ -185,7 +192,9 @@ public class VerboseQuadStore extends RdfStoreImpl
             "to get this feature" );
         }
         
-        Iterable<RawQueryResult> rawResult = fulltextIndex.search( query );
+        Iterable<RawQueryResult> rawResult = snippetCountLimit == 0 ?
+            fulltextIndex.search( query ) :
+            fulltextIndex.searchWithSnippets( query, snippetCountLimit );
         final RawQueryResult[] latestQueryResult = new RawQueryResult[ 1 ];
         Iterable<Node> middleNodes = new LiteralToMiddleNodeIterable(
             new IterableWrapper<Node, RawQueryResult>( rawResult )
@@ -205,7 +214,7 @@ public class VerboseQuadStore extends RdfStoreImpl
             fakeWildcardStatement, middleNodes );
         return new IterableWrapper<QueryResult, CompleteStatement>(
             statementIterator )
-            {
+        {
             @Override
             protected QueryResult underlyingObjectToObject(
                 CompleteStatement object )
@@ -214,7 +223,7 @@ public class VerboseQuadStore extends RdfStoreImpl
                     latestQueryResult[ 0 ].getScore(),
                     latestQueryResult[ 0 ].getSnippet() );
             }
-            };
+        };
     }
     
     @Override

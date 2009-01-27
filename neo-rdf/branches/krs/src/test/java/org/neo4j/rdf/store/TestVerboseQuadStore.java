@@ -171,7 +171,7 @@ public class TestVerboseQuadStore extends QuadStoreAbstractTestCase
         waitForFulltextIndex();
         
         Iterable<QueryResult> queryResult =
-            this.store().searchFulltext( " Mattias  Persson" );
+            this.store().searchFulltextWithSnippets( " Mattias  Persson", 100 );
         int counter = 0;
         for ( QueryResult oneResult : queryResult )
         {
@@ -180,8 +180,8 @@ public class TestVerboseQuadStore extends QuadStoreAbstractTestCase
         }
         assertEquals( 2, counter );
         
-        queryResult = this.store().searchFulltext(
-            "  \t \n Mattias  AND\tPersson \t    " );
+        queryResult = this.store().searchFulltextWithSnippets(
+            "  \t \n Mattias  AND\tPersson \t    ", 100 );
         counter = 0;
         for ( QueryResult oneResult : queryResult )
         {
@@ -193,7 +193,8 @@ public class TestVerboseQuadStore extends QuadStoreAbstractTestCase
         }
         assertEquals( 1, counter );
 
-        queryResult = this.store().searchFulltext( "\tpersson  " );
+        queryResult = this.store().searchFulltextWithSnippets( "\tpersson  ",
+            100 );
         counter = 0;
         for ( QueryResult oneResult : queryResult )
         {
@@ -202,7 +203,8 @@ public class TestVerboseQuadStore extends QuadStoreAbstractTestCase
         }
         assertEquals( 2, counter );
         
-        queryResult = this.store().searchFulltext( "\tpers*  " );
+        queryResult = this.store().searchFulltextWithSnippets( "\tpers*  ",
+            100 );
         counter = 0;
         for ( QueryResult oneResult : queryResult )
         {

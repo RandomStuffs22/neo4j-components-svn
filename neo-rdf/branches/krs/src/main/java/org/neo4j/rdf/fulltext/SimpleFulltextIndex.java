@@ -172,8 +172,6 @@ public class SimpleFulltextIndex implements FulltextIndex
     
     public void clear()
     {
-        TemporaryLogger.getLogger().info( getClass().getName() +
-            " clear called", new Exception() );
         internalShutDown();
         delete();
         startUpDirectoryAndThread();
@@ -331,6 +329,12 @@ public class SimpleFulltextIndex implements FulltextIndex
     
     public Iterable<RawQueryResult> search( String query )
     {
+        return searchWithSnippets( query, 0 );
+    }
+    
+    public Iterable<RawQueryResult> searchWithSnippets( String query,
+        int snippetCountLimit )
+    {
         IndexSearcher searcher = null;
         try
         {
@@ -344,6 +348,8 @@ public class SimpleFulltextIndex implements FulltextIndex
             Highlighter highlighter = new Highlighter( highlightFormatter,
                 new QueryScorer( searcher.rewrite( q ) ) );
             Set<Long> ids = new HashSet<Long>();
+            
+            // Snippets and duplicate checks
             for ( int i = 0; i < hits.length(); i++ )
             {
                 Document doc = hits.doc( i );
@@ -356,7 +362,12 @@ public class SimpleFulltextIndex implements FulltextIndex
                     continue;
                 }
                 float score = hits.score( i );
-                String snippet = generateSnippet( doc, highlighter );
+                
+                String snippet = null;
+                if ( i < snippetCountLimit )
+                {
+                    snippet = generateSnippet( doc, highlighter );
+                }
                 
                 try
                 {
@@ -377,11 +388,12 @@ public class SimpleFulltextIndex implements FulltextIndex
                 }
                 
             }
-            long sortTime = timer.lap();
+            long snippetingTime = timer.lap();
             TemporaryLogger.getLogger().info( "FulltextIndex.search: " +
                 "search{q:'" + query + "' time:" + searchTime +
                 " hits:" + hits.length() + "} " +
-                "sort and snippeting{time:" + sortTime + "}" );
+                "check duplicates and snippeting{time:" +
+                snippetingTime + "}" );
             return result;
         }
         catch ( IOException e )

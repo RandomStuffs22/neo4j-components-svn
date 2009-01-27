@@ -66,6 +66,17 @@ public interface FulltextIndex
     Iterable<RawQueryResult> search( String query );
     
     /**
+     * Searches the index for matches. See above for query format.
+     * @param query the search query.
+     * @param snippetCountLimit only generate snippets for a maximum of hits.
+     * The rest of the hits (if any) will be returned, but will not have
+     * snippets generated for them.
+     * @return the matches sorted by relevance.
+     */
+    Iterable<RawQueryResult> searchWithSnippets( String query,
+        int snippetCountLimit );
+    
+    /**
      * @return the {@link LiteralReader} instance used to get data from a
      * literal.
      */
