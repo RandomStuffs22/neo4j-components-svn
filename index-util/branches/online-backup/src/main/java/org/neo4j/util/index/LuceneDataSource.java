@@ -8,6 +8,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
@@ -27,7 +28,6 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.impl.cache.LruCache;
-import org.neo4j.impl.transaction.LockManager;
 import org.neo4j.impl.transaction.xaframework.XaCommand;
 import org.neo4j.impl.transaction.xaframework.XaCommandFactory;
 import org.neo4j.impl.transaction.xaframework.XaConnection;
@@ -45,7 +45,10 @@ public class LuceneDataSource extends XaDataSource
 
     private final XaContainer xaContainer;
     private final String storeDir;
-    private final LockManager lockManager;
+    // private final LockManager lockManager;
+    private final int LOCK_STRIPE_SIZE = 5;
+    private ReentrantReadWriteLock[] keyLocks = 
+        new ReentrantReadWriteLock[LOCK_STRIPE_SIZE];
     private final Analyzer fieldAnalyzer;
     private final LuceneIndexStore store;
 
@@ -58,7 +61,11 @@ public class LuceneDataSource extends XaDataSource
     public LuceneDataSource( Map<?,?> params ) throws InstantiationException
     {
         super( params );
-        this.lockManager = (LockManager) params.get( LockManager.class );
+        // this.lockManager = (LockManager) params.get( LockManager.class );
+        for ( int i = 0; i < keyLocks.length; i++ )
+        {
+            keyLocks[i] = new ReentrantReadWriteLock();
+        }
         this.storeDir = (String) params.get( "dir" );
         this.fieldAnalyzer = instantiateAnalyzer();
         String dir = storeDir;
@@ -77,7 +84,7 @@ public class LuceneDataSource extends XaDataSource
         }
         this.store = new LuceneIndexStore( storeDir + "/lucene-store.db" );
         XaCommandFactory cf = new LuceneCommandFactory();
-        XaTransactionFactory tf = new LuceneTransactionFactory();
+        XaTransactionFactory tf = new LuceneTransactionFactory( store );
         xaContainer = XaContainer.create( dir + "/lucene.log", cf, tf );
         try
         {
@@ -162,6 +169,13 @@ public class LuceneDataSource extends XaDataSource
     
     private class LuceneTransactionFactory extends XaTransactionFactory
     {
+        private final LuceneIndexStore store;
+        
+        LuceneTransactionFactory( LuceneIndexStore store )
+        {
+            this.store = store;
+        }
+        
         @Override
         public XaTransaction create( int identifier )
         {
@@ -173,11 +187,46 @@ public class LuceneDataSource extends XaDataSource
         {
             // Not much we can do...
         }
+
+        public long getCurrentVersion()
+        {
+            return store.getVersion();
+        }
+        
+        @Override
+        public long getAndSetNewVersion()
+        {
+            return store.incrementVersion();
+        }
+    }
+    
+    private void getReadLock( String key )
+    {
+        keyLocks[ Math.abs( key.hashCode() ) % 
+            LOCK_STRIPE_SIZE ].readLock().lock();
+    }
+    
+    private void releaseReadLock( String key )
+    {
+        keyLocks[ Math.abs( key.hashCode() ) % 
+            LOCK_STRIPE_SIZE ].readLock().unlock();
     }
 
+    private void getWriteLock( String key )
+    {
+        keyLocks[ Math.abs( key.hashCode() ) % 
+            LOCK_STRIPE_SIZE ].writeLock().lock();
+    }
+    
+    private void releaseWriteLock( String key )
+    {
+        keyLocks[ Math.abs( key.hashCode() ) % 
+            LOCK_STRIPE_SIZE ].writeLock().unlock();
+    }
+    
     IndexSearcher acquireIndexSearcher( String key )
     {
-        lockManager.getReadLock( key );
+        getReadLock( key );
         IndexSearcher searcher = indexSearchers.get( key );
         if ( searcher == null )
         {
@@ -208,12 +257,12 @@ public class LuceneDataSource extends XaDataSource
 
     void releaseIndexSearcher( String key, IndexSearcher searcher )
     {
-        lockManager.releaseReadLock( key );
+        releaseReadLock( key );
     }
 
     void removeIndexSearcher( String key )
     {
-        lockManager.getWriteLock( key );
+        getWriteLock( key );
         try
         {
             IndexSearcher searcher = indexSearchers.remove( key );
@@ -232,7 +281,7 @@ public class LuceneDataSource extends XaDataSource
         }
         finally
         {
-            lockManager.releaseWriteLock( key );
+            releaseWriteLock( key );
         }
     }
 
@@ -240,7 +289,7 @@ public class LuceneDataSource extends XaDataSource
     {
         try
         {
-            lockManager.getWriteLock( key );
+            getWriteLock( key );
             Directory dir = FSDirectory.getDirectory( storeDir + "/" + key );
             return new IndexWriter( dir, getAnalyzer(),
                 MaxFieldLength.UNLIMITED );
@@ -305,7 +354,7 @@ public class LuceneDataSource extends XaDataSource
         }
         finally
         {
-            lockManager.releaseWriteLock( key );
+            releaseWriteLock( key );
         }
     }
 
