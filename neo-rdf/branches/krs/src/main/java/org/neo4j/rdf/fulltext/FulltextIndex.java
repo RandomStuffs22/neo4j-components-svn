@@ -1,5 +1,7 @@
 package org.neo4j.rdf.fulltext;
 
+import java.io.PrintStream;
+
 import org.neo4j.api.core.Node;
 import org.neo4j.rdf.model.Uri;
 import org.neo4j.rdf.store.RdfStore;
@@ -75,6 +77,8 @@ public interface FulltextIndex
      */
     Iterable<RawQueryResult> searchWithSnippets( String query,
         int snippetCountLimit );
+    
+    boolean verify( VerificationHook hook, PrintStream output );
     
     /**
      * @return the {@link LiteralReader} instance used to get data from a

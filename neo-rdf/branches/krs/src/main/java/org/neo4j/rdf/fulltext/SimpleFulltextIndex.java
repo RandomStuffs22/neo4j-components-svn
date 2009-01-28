@@ -2,6 +2,7 @@ package org.neo4j.rdf.fulltext;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -449,6 +450,77 @@ public class SimpleFulltextIndex implements FulltextIndex
             }
         }
         return snippet.toString();
+    }
+    
+    public boolean verify( VerificationHook hook, PrintStream output )
+    {
+        IndexSearcher searcher = null;
+        try
+        {
+            searcher = new IndexSearcher( getDir() );
+            IndexReader reader = searcher.getIndexReader();
+            int maxDoc = reader.maxDoc();
+            int docsOk = 0;
+            int docsNotLiteral = 0;
+            int docsWrongLiteral = 0;
+            int docsMissing = 0;
+            output.println( "Max docs: " + maxDoc );
+            for ( int i = 0; i < maxDoc; i++ )
+            {
+                if ( i % 10000 == 0 )
+                {
+                    double percent = ( double ) maxDoc / ( double ) i;
+                    percent *= 100d;
+                    output.println( "---" + i + " (" + ( int ) percent + ")" );
+                }
+                
+                if ( reader.isDeleted( i ) )
+                {
+                    continue;
+                }
+                
+                Document doc = reader.document( i );
+                long nodeId = Long.parseLong( doc.get( KEY_ID ) );
+                VerificationHook.Status status = hook.verify( nodeId,
+                    doc.get( KEY_PREDICATE ), doc.get( KEY_INDEX_SOURCE ) );
+                if ( status == VerificationHook.Status.OK )
+                {
+                    docsOk++;
+                }
+                else
+                {
+                    if ( status == VerificationHook.Status.NOT_LITERAL )
+                    {
+                        docsNotLiteral++;
+                    }
+                    else if ( status == VerificationHook.Status.WRONG_LITERAL )
+                    {
+                        docsWrongLiteral++;
+                    }
+                    else
+                    {
+                        docsMissing++;
+                    }
+                    output.println( "VERIFY:" + status.name() + " " + nodeId );
+                }
+            }
+            
+            output.println( "\n-----------------\nTotal\n" );
+            output.println( "Ok:" + docsOk );
+            output.println( "Not literals:" + docsNotLiteral );
+            output.println( "Wrong literal:" + docsWrongLiteral );
+            output.println( "Missing:" + docsMissing );
+            return docsNotLiteral == 0 && docsMissing == 0 &&
+                docsWrongLiteral == 0;
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
+        finally
+        {
+            safeClose( searcher );
+        }
     }
     
     public LiteralReader getLiteralReader()
