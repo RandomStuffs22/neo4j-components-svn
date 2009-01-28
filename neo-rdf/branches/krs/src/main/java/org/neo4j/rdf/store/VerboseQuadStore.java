@@ -143,8 +143,7 @@ public class VerboseQuadStore extends RdfStoreImpl
         }
         }
     
-    @Override
-    public void reindexFulltextIndex()
+    public void reindexFulltextIndex( Integer maxEntries )
     {
         Transaction tx = neo().beginTx();
         try
@@ -153,6 +152,7 @@ public class VerboseQuadStore extends RdfStoreImpl
             Iterable<Object[]> allQuads = new MiddleNodeToQuadIterable(
                 new WildcardStatement( new Wildcard(), new Wildcard(),
                     new Wildcard(), new Wildcard() ), allMiddleNodes );
+            int totalCounter = 0;
             int counter = 0;
             FulltextIndex fulltextIndex = getFulltextIndex();
             for ( Object[] quad : allQuads )
@@ -171,8 +171,16 @@ public class VerboseQuadStore extends RdfStoreImpl
                         tx.success();
                         tx.finish();
                         tx = neo().beginTx();
+                        TemporaryLogger.getLogger().info( "Reindex progress " +
+                            counter + " (total statements traversed " +
+                            totalCounter + ")" );
+                        if ( maxEntries!= null && counter > maxEntries )
+                        {
+                            break;
+                        }
                     }
                 }
+                totalCounter++;
             }
             fulltextIndex.end( true );
             tx.success();
@@ -181,6 +189,12 @@ public class VerboseQuadStore extends RdfStoreImpl
         {
             tx.finish();
         }
+    }
+    
+    @Override
+    public void reindexFulltextIndex()
+    {
+        reindexFulltextIndex( null );
     }
     
     @Override
