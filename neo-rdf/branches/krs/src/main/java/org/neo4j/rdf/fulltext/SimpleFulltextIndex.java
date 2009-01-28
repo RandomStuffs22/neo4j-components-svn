@@ -356,10 +356,19 @@ public class SimpleFulltextIndex implements FulltextIndex
             Set<Long> ids = new HashSet<Long>();
             
             // Snippets and duplicate checks
+            long getIdTime = 0;
+            long getScoreTime = 0;
+            long checkDuplTime = 0;
+            long getNodeTime = 0;
+            long snippetTime = 0;
+            timer.lap();
             for ( int i = 0; i < hits.length(); i++ )
             {
+                long t = System.currentTimeMillis();
                 Document doc = hits.doc( i );
                 long id = Long.parseLong( doc.get( KEY_ID ) );
+                getIdTime += ( System.currentTimeMillis() - t );
+                t = System.currentTimeMillis();
                 if ( !ids.add( id ) )
                 {
                     // It's a duplicate here, probably after a crash or
@@ -367,18 +376,25 @@ public class SimpleFulltextIndex implements FulltextIndex
                     removeDuplicate( doc );
                     continue;
                 }
+                checkDuplTime += ( System.currentTimeMillis() - t );
+                t = System.currentTimeMillis();
                 float score = hits.score( i );
+                getScoreTime += ( System.currentTimeMillis() - t );
                 
+                t = System.currentTimeMillis();
                 String snippet = null;
                 if ( i < snippetCountLimit )
                 {
                     snippet = generateSnippet( doc, highlighter );
                 }
+                snippetTime += ( System.currentTimeMillis() - t );
                 
                 try
                 {
+                    t = System.currentTimeMillis();
                     Node node = neo.getNodeById( id );
                     result.add( new RawQueryResult( node, score, snippet ) );
+                    getNodeTime += ( System.currentTimeMillis() - t );
                 }
                 catch ( NotFoundException e )
                 {
@@ -394,12 +410,14 @@ public class SimpleFulltextIndex implements FulltextIndex
                 }
                 
             }
-            long snippetingTime = timer.lap();
+            long afterSearchTime = timer.lap();
             TemporaryLogger.getLogger().info( "FulltextIndex.search: " +
                 "search{q:'" + query + "' time:" + searchTime +
                 " hits:" + hits.length() + "} " +
-                "check duplicates and snippeting{time:" +
-                snippetingTime + "}" );
+                "after search{total:" + afterSearchTime + " getId:" +
+                getIdTime + " getScore:" + getScoreTime + " checkDupl:" +
+                checkDuplTime + " getNode:" + getNodeTime +
+                " snippets:" + snippetTime );
             return result;
         }
         catch ( IOException e )
