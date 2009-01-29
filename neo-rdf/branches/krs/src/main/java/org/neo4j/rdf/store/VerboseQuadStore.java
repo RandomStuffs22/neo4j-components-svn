@@ -155,6 +155,7 @@ public class VerboseQuadStore extends RdfStoreImpl
             int totalCounter = 0;
             int counter = 0;
             FulltextIndex fulltextIndex = getFulltextIndex();
+            fulltextIndex.clear();
             for ( Object[] quad : allQuads )
             {
                 String predicate = ( String ) quad[ 1 ];
