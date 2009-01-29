@@ -487,7 +487,7 @@ public class SimpleFulltextIndex implements FulltextIndex
             {
                 if ( i % 10000 == 0 )
                 {
-                    double percent = ( double ) maxDoc / ( double ) i;
+                    double percent = ( double ) i / ( double ) maxDoc;
                     percent *= 100d;
                     output.println( "---" + i + " (" + ( int ) percent + "%)" );
                 }
