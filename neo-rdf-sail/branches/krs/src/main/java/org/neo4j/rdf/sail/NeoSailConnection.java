@@ -304,7 +304,6 @@ public class NeoSailConnection implements NeoRdfSailConnection
                     "supply it in the RdfStore constructor" );
             }
             
-            fulltextIndex.clear();
             ( ( RdfStoreImpl ) store ).reindexFulltextIndex();
             log( "reindexFulltextIndex() completed" );
         }
