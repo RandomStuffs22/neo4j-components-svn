@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Set;
 
 import org.neo4j.api.core.Direction;
 import org.neo4j.api.core.NeoService;
@@ -14,9 +16,7 @@ import org.neo4j.api.core.Node;
 import org.neo4j.api.core.NotFoundException;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
-import org.neo4j.api.core.StopEvaluator;
 import org.neo4j.api.core.Transaction;
-import org.neo4j.api.core.Traverser.Order;
 import org.neo4j.neometa.structure.MetaStructure;
 import org.neo4j.rdf.fulltext.FulltextIndex;
 import org.neo4j.rdf.fulltext.QueryResult;
@@ -40,8 +40,8 @@ import org.neo4j.rdf.util.TemporaryLogger;
 import org.neo4j.util.FilteringIterable;
 import org.neo4j.util.FilteringIterator;
 import org.neo4j.util.IterableWrapper;
+import org.neo4j.util.NestingIterable;
 import org.neo4j.util.NestingIterator;
-import org.neo4j.util.OneOfRelTypesReturnableEvaluator;
 import org.neo4j.util.PrefetchingIterator;
 import org.neo4j.util.RelationshipToNodeIterable;
 import org.neo4j.util.index.IndexService;
@@ -171,16 +171,18 @@ public class VerboseQuadStore extends RdfStoreImpl
                         tx.success();
                         tx.finish();
                         tx = neo().beginTx();
-                        TemporaryLogger.getLogger().info( "Reindex progress " +
-                            counter + " (total statements traversed " +
-                            totalCounter + ")" );
-                        if ( maxEntries!= null && counter > maxEntries )
+                        if ( maxEntries != null && counter > maxEntries )
                         {
                             break;
                         }
                     }
                 }
-                totalCounter++;
+                
+                if ( ++totalCounter % 1000 == 0 )
+                {
+                    TemporaryLogger.getLogger().info( "Reindex progress " +
+                        totalCounter + " (literals " + counter + ")" );
+                }
             }
             fulltextIndex.end( true );
             tx.success();
@@ -395,13 +397,42 @@ public class VerboseQuadStore extends RdfStoreImpl
     
     private Iterable<Node> getMiddleNodesFromAllContexts()
     {
-        return getRepresentationStrategy().getExecutor().
-        getContextsReferenceNode().traverse( Order.DEPTH_FIRST,
-            StopEvaluator.END_OF_GRAPH,
-            new OneOfRelTypesReturnableEvaluator(
-                VerboseQuadStrategy.RelTypes.IN_CONTEXT ),
-                VerboseQuadExecutor.RelTypes.IS_A_CONTEXT, Direction.OUTGOING,
-                VerboseQuadStrategy.RelTypes.IN_CONTEXT, Direction.INCOMING );
+        Node contextsRefNode = getRepresentationStrategy().getExecutor().
+            getContextsReferenceNode();
+        Iterable<Node> contexts = new RelationshipToNodeIterable(
+            contextsRefNode, contextsRefNode.getRelationships(
+            VerboseQuadExecutor.RelTypes.IS_A_CONTEXT, Direction.OUTGOING ) );
+        
+        return new NestingIterable<Node, Node>( contexts )
+        {
+            private Set<Long> visitedMiddleNodes = new HashSet<Long>();
+            
+            @Override
+            protected Iterator<Node> createNestedIterator( Node contextNode )
+            {
+                return new FilteringIterator<Node>(
+                    new RelationshipToNodeIterable( contextNode,
+                        contextNode.getRelationships(
+                            VerboseQuadStrategy.RelTypes.
+                            IN_CONTEXT, Direction.INCOMING ) ).iterator() )
+                {
+                    @Override
+                    protected boolean passes( Node middleNode )
+                    {
+                        return visitedMiddleNodes.add( middleNode.getId() );
+                    }
+                };
+            }
+        };
+        
+        // Traversers are too slow, and it's so much manlier to do it manually
+//        return getRepresentationStrategy().getExecutor().
+//        getContextsReferenceNode().traverse( Order.DEPTH_FIRST,
+//            StopEvaluator.END_OF_GRAPH,
+//            new OneOfRelTypesReturnableEvaluator(
+//                VerboseQuadStrategy.RelTypes.IN_CONTEXT ),
+//                VerboseQuadExecutor.RelTypes.IS_A_CONTEXT, Direction.OUTGOING,
+//                VerboseQuadStrategy.RelTypes.IN_CONTEXT, Direction.INCOMING );
     }
     
     private Iterable<CompleteStatement> handleSubjectPredicateWildcard(
