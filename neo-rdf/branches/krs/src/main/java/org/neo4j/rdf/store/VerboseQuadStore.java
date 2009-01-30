@@ -949,7 +949,7 @@ public class VerboseQuadStore extends RdfStoreImpl
     
     public class QuadVerificationHook implements VerificationHook
     {
-        private static final int INTERVAL = 150;
+        private static final int INTERVAL = 10000;
         private PrintStream output;
         private int max;
         private int counter;
