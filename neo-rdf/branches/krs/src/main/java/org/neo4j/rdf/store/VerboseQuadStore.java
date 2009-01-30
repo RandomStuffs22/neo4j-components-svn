@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
 
 import org.neo4j.api.core.Direction;
@@ -260,26 +261,15 @@ public class VerboseQuadStore extends RdfStoreImpl
     public boolean verifyFulltextIndex()
     {
         Transaction tx = neo().beginTx();
-        PrintStream out = null;
         try
         {
-            out = new PrintStream( new File( "verify-fulltextindex-" +
-                System.currentTimeMillis() ) );
             boolean result = getInitializedFulltextIndex().verify(
-                new QuadVerificationHook(), out );
+                new QuadVerificationHook() );
             tx.success();
             return result;
         }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
         finally
         {
-            if ( out != null )
-            {
-                out.close();
-            }
             tx.finish();
         }
     }
@@ -959,15 +949,22 @@ public class VerboseQuadStore extends RdfStoreImpl
     
     public class QuadVerificationHook implements VerificationHook
     {
+        private static final int INTERVAL = 150;
+        private PrintStream output;
+        private int max;
+        private int counter;
+        
         public Status verify( long id, String predicate, Object literal )
         {
+            incrementCounter();
+            Status result = Status.OK;
             try
             {
                 Node node = neo().getNodeById( id );
                 Value value = getValueForObjectNode( predicate, node );
                 if ( !( value instanceof Literal ) )
                 {
-                    return Status.NOT_LITERAL;
+                    result = Status.NOT_LITERAL;
                 }
                 else
                 {
@@ -975,16 +972,69 @@ public class VerboseQuadStore extends RdfStoreImpl
                     if ( !literalObject.getValue().toString().equals(
                         literal.toString() ) )
                     {
-                        return Status.WRONG_LITERAL;
+                        result = Status.WRONG_LITERAL;
                     }
                 }
             }
             catch ( NotFoundException e )
             {
-                return Status.MISSING;
+                result = Status.MISSING;
             }
             
-            return Status.OK;
+            if ( result != Status.OK )
+            {
+                output.println( result.name() + " " + id );
+            }
+            return result;
+        }
+
+        public void verificationCompleted( Map<Status, Integer> counts )
+        {
+            displayProgress();
+            output.println( "\n-----------------\nTotal\n" );
+            for ( Map.Entry<Status, Integer> entry : counts.entrySet() )
+            {
+                output.println( entry.getKey().name() + ": " +
+                    entry.getValue() );
+            }
+        }
+
+        public void verificationStarting( int numberOfDocumentsToVerify )
+        {
+            try
+            {
+                output = new PrintStream( new File( "verify-fulltextindex-" +
+                    System.currentTimeMillis() ) );
+                output.println( "Verification starting. We have " +
+                    numberOfDocumentsToVerify + " documents ahead of us,\n" +
+                    "displaying progress each " + INTERVAL + " records\n" );
+                this.max = numberOfDocumentsToVerify;
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( e );
+            }
+        }
+        
+        private void incrementCounter()
+        {
+            if ( ++counter % INTERVAL == 0 )
+            {
+                displayProgress();
+            }
+        }
+        
+        private void displayProgress()
+        {
+            double percent = ( double ) counter / ( double ) max;
+            percent *= 100d;
+            output.println( "---" + counter +
+                " (" + ( int ) percent + "%)" );
+        }
+
+        public void oneWasSkipped()
+        {
+            incrementCounter();
         }
     }
 }

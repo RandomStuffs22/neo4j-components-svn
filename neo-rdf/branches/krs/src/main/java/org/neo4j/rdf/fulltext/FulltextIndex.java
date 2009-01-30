@@ -1,7 +1,5 @@
 package org.neo4j.rdf.fulltext;
 
-import java.io.PrintStream;
-
 import org.neo4j.api.core.Node;
 import org.neo4j.rdf.model.Uri;
 import org.neo4j.rdf.store.RdfStore;
@@ -78,7 +76,14 @@ public interface FulltextIndex
     Iterable<RawQueryResult> searchWithSnippets( String query,
         int snippetCountLimit );
     
-    boolean verify( VerificationHook hook, PrintStream output );
+    /**
+     * Runs through the index and verifying that its contents are ok.
+     * @param hook the hook which the caller uses to implement the verification
+     * logic for an entry as well as displaying progress a.s.o.
+     * @return {@code true} if the index was completely ok, otherwise
+     * {@code false}.
+     */
+    boolean verify( VerificationHook hook );
     
     /**
      * @return the {@link LiteralReader} instance used to get data from a

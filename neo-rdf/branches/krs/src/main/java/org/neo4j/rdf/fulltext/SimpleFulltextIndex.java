@@ -2,7 +2,6 @@ package org.neo4j.rdf.fulltext;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -47,6 +46,7 @@ import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.NotFoundException;
 import org.neo4j.rdf.fulltext.PersistentQueue.Entry;
+import org.neo4j.rdf.fulltext.VerificationHook.Status;
 import org.neo4j.rdf.model.Uri;
 import org.neo4j.rdf.util.TemporaryLogger;
 import org.neo4j.util.FilteringIterator;
@@ -545,18 +545,15 @@ public class SimpleFulltextIndex implements FulltextIndex
         return snippet.toString();
     }
     
-    public boolean verify( VerificationHook hook, PrintStream output )
+    public boolean verify( VerificationHook hook )
     {
         String queryOrNullForAll = null;
         IndexSearcher searcher = null;
         try
         {
             searcher = new IndexSearcher( getDir() );
-            int docsOk = 0;
-            int docsNotLiteral = 0;
-            int docsWrongLiteral = 0;
-            int docsMissing = 0;
-            
+            Map<Status, MutableInteger> counts =
+                new HashMap<Status, MutableInteger>();
             int maxDoc = 0;
             final IndexReader reader = searcher.getIndexReader();
             Iterator<Integer> hitsIterator = null;
@@ -602,56 +599,40 @@ public class SimpleFulltextIndex implements FulltextIndex
                 };
             }
             
-            output.println( "Max docs: " + maxDoc );
-            int i = 0;
+            hook.verificationStarting( maxDoc );
             while ( hitsIterator.hasNext() )
             {
                 int docId = hitsIterator.next();
-                if ( ++i % 10000 == 0 )
-                {
-                    double percent = ( double ) i / ( double ) maxDoc;
-                    percent *= 100d;
-                    output.println( "---" + i + " (" + ( int ) percent + "%)" );
-                }
-                
                 if ( reader.isDeleted( docId ) )
                 {
+                    hook.oneWasSkipped();
                     continue;
                 }
                 
                 Document doc = reader.document( docId );
                 long nodeId = Long.parseLong( doc.get( KEY_ID ) );
-                VerificationHook.Status status = hook.verify( nodeId,
+                Status status = hook.verify( nodeId,
                     doc.get( KEY_PREDICATE ), doc.get( KEY_INDEX_SOURCE ) );
-                if ( status == VerificationHook.Status.OK )
+                MutableInteger count = counts.get( status );
+                if ( count == null )
                 {
-                    docsOk++;
+                    count = new MutableInteger();
+                    counts.put( status, count );
                 }
-                else
-                {
-                    if ( status == VerificationHook.Status.NOT_LITERAL )
-                    {
-                        docsNotLiteral++;
-                    }
-                    else if ( status == VerificationHook.Status.WRONG_LITERAL )
-                    {
-                        docsWrongLiteral++;
-                    }
-                    else
-                    {
-                        docsMissing++;
-                    }
-                    output.println( "VERIFY:" + status.name() + " " + nodeId );
-                }
+                count.value++;
             }
             
-            output.println( "\n-----------------\nTotal\n" );
-            output.println( "Ok:" + docsOk );
-            output.println( "Not literals:" + docsNotLiteral );
-            output.println( "Wrong literal:" + docsWrongLiteral );
-            output.println( "Missing:" + docsMissing );
-            return docsNotLiteral == 0 && docsMissing == 0 &&
-                docsWrongLiteral == 0;
+            Map<Status, Integer> resultCounts = new HashMap<Status, Integer>();
+            int errors = 0;
+            for ( Map.Entry<Status, MutableInteger> count :
+                counts.entrySet() )
+            {
+                resultCounts.put( count.getKey(), count.getValue().value );
+                errors += ( count.getKey() == Status.OK ? 0 :
+                    count.getValue().value );
+            }
+            hook.verificationCompleted( resultCounts );
+            return errors > 0;
         }
         catch ( ParseException e )
         {
@@ -665,6 +646,11 @@ public class SimpleFulltextIndex implements FulltextIndex
         {
             safeClose( searcher );
         }
+    }
+    
+    private static class MutableInteger
+    {
+        private int value;
     }
     
     public LiteralReader getLiteralReader()
