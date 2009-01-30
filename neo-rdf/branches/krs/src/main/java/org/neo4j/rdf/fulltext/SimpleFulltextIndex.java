@@ -545,9 +545,8 @@ public class SimpleFulltextIndex implements FulltextIndex
         return snippet.toString();
     }
     
-    public boolean verify( VerificationHook hook )
+    public boolean verify( VerificationHook hook, String queryOrNullForAll )
     {
-        String queryOrNullForAll = null;
         IndexSearcher searcher = null;
         try
         {
@@ -632,7 +631,7 @@ public class SimpleFulltextIndex implements FulltextIndex
                     count.getValue().value );
             }
             hook.verificationCompleted( resultCounts );
-            return errors > 0;
+            return errors == 0;
         }
         catch ( ParseException e )
         {

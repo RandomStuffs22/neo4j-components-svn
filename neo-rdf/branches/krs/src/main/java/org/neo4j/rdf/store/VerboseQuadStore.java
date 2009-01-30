@@ -258,13 +258,13 @@ public class VerboseQuadStore extends RdfStoreImpl
         };
     }
     
-    public boolean verifyFulltextIndex()
+    public boolean verifyFulltextIndex( String queryOrNullForAll )
     {
         Transaction tx = neo().beginTx();
         try
         {
             boolean result = getInitializedFulltextIndex().verify(
-                new QuadVerificationHook() );
+                new QuadVerificationHook(), queryOrNullForAll );
             tx.success();
             return result;
         }

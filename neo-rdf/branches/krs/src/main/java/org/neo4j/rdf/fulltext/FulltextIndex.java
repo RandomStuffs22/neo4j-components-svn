@@ -80,10 +80,12 @@ public interface FulltextIndex
      * Runs through the index and verifying that its contents are ok.
      * @param hook the hook which the caller uses to implement the verification
      * logic for an entry as well as displaying progress a.s.o.
+     * @param queryOrNullForAll enter a query to just verify that result,
+     * or pass in {@code null} to verify the entire index.
      * @return {@code true} if the index was completely ok, otherwise
      * {@code false}.
      */
-    boolean verify( VerificationHook hook );
+    boolean verify( VerificationHook hook, String queryOrNullForAll );
     
     /**
      * @return the {@link LiteralReader} instance used to get data from a

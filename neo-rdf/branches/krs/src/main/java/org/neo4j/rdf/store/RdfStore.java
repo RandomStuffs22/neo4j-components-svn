@@ -49,7 +49,7 @@ public interface RdfStore
     Iterable<QueryResult> searchFulltextWithSnippets( String query,
         int snippetCountLimit );
     
-    boolean verifyFulltextIndex();
+    boolean verifyFulltextIndex( String queryOrNullForAll );
     
     /**
      * Removes any matching statement from the store.
