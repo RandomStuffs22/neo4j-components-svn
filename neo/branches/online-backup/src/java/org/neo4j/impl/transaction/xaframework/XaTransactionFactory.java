@@ -60,15 +60,9 @@ public abstract class XaTransactionFactory
     {
     }
 
-    public long getCurrentVersion()
-    {
-        return -1;
-    }
+    public abstract long getCurrentVersion();
     
-    public long getAndSetNewVersion()
-    {
-        return -1;
-    }
+    public abstract long getAndSetNewVersion();
     
     
 } 

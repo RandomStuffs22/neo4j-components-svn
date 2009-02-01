@@ -186,7 +186,7 @@ class MemoryMappedLogBuffer implements LogBuffer
             {
                 fallbackBuffer.clear();
                 fallbackBuffer.asCharBuffer().put( chars );
-                fallbackBuffer.flip();
+                fallbackBuffer.limit( chars.length * 2 );
                 fileChannel.write( fallbackBuffer, mappedStartPosition );
                 mappedStartPosition += (chars.length * 2);
                 return this;

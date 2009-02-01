@@ -40,5 +40,4 @@ public interface LogBuffer
     public long getFileChannelPosition() throws IOException;
 
     public FileChannel getFileChannel();
-
 }

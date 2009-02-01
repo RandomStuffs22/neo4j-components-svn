@@ -161,6 +161,18 @@ public class TestXaFramework extends AbstractNeoTestCase
         {
             
         }
+
+        @Override
+        public long getAndSetNewVersion()
+        {
+            return -1;
+        }
+
+        @Override
+        public long getCurrentVersion()
+        {
+            return -1;
+        }
     }
 
     public class DummyXaDataSource extends XaDataSource

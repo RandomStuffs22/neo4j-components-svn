@@ -85,7 +85,7 @@ class DirectLogBuffer implements LogBuffer
             if ( leftToWrite * 2 < buffer.capacity() )
             {
                 buffer.asCharBuffer().put( chars, position, leftToWrite );
-                buffer.flip();
+                buffer.limit( leftToWrite * 2);
                 fileChannel.write( buffer );
                 position += leftToWrite;
             }
@@ -93,7 +93,7 @@ class DirectLogBuffer implements LogBuffer
             {
                 int length = buffer.capacity() / 2;
                 buffer.asCharBuffer().put( chars, position, length );
-                buffer.flip();
+                buffer.limit( length * 2 );
                 fileChannel.write( buffer );
                 position += length;
             }
