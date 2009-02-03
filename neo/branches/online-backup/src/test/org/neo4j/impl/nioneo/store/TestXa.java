@@ -723,6 +723,7 @@ public class TestXa extends AbstractNeoTestCase
             ds.rotateLogicalLog();
             ds.rotateLogicalLog();
             ds.setCurrentLogVersion( currentVersion );
+            ds.makeBackupSlave();
             ds.applyLog( ds.getLogicalLog( currentVersion ) );
             ds.applyLog( ds.getLogicalLog( currentVersion + 1 ) );
             ds.applyLog( ds.getLogicalLog( currentVersion + 2 ) );

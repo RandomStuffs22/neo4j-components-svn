@@ -73,8 +73,6 @@ public class NeoStoreXaDataSource extends XaDataSource
     private final EventManager eventManager;
     private final String storeDir;
 
-    private byte[] branchId = null;
-    
     private boolean logApplied = false;
 
     /**
@@ -248,7 +246,7 @@ public class NeoStoreXaDataSource extends XaDataSource
     public XaConnection getXaConnection()
     {
         return new NeoStoreXaConnection( neoStore, 
-            xaContainer.getResourceManager(), branchId );
+            xaContainer.getResourceManager(), getBranchId() );
     }
 
     private static class CommandFactory extends XaCommandFactory
@@ -365,21 +363,10 @@ public class NeoStoreXaDataSource extends XaDataSource
         return storeDir;
     }
     
+    @Override
     public void keepLogicalLogs( boolean keep )
     {
         xaContainer.getLogicalLog().setKeepLogs( keep );
-    }
-    
-    @Override
-    public byte[] getBranchId()
-    {
-        return this.branchId;
-    }
-
-    @Override
-    public void setBranchId( byte[] branchId )
-    {
-        this.branchId = branchId;
     }
     
     @Override
@@ -399,12 +386,12 @@ public class NeoStoreXaDataSource extends XaDataSource
     {
         return neoStore.getVersion();
     }
-    
+
     public long incrementAndGetLogVersion()
     {
         return neoStore.incrementVersion();
     }
-    
+
     public void setCurrentLogVersion( long version )
     {
         neoStore.setVersion( version );
@@ -429,14 +416,34 @@ public class NeoStoreXaDataSource extends XaDataSource
     {
         return xaContainer.getLogicalLog().getLogicalLog( version );
     }
+
+    @Override
+    public boolean hasLogicalLog( long version )
+    {
+        return xaContainer.getLogicalLog().hasLogicalLog( version );
+    }
     
+    @Override
+    public boolean deleteLogicalLog( long version )
+    {
+        return xaContainer.getLogicalLog().deleteLogicalLog( version );
+    }
+    
+    @Override
     public void setAutoRotate( boolean rotate )
     {
         xaContainer.getLogicalLog().setAutoRotateLogs( rotate );
     }
     
+    @Override
     public void setLogicalLogTargetSize( long size )
     {
         xaContainer.getLogicalLog().setLogicalLogTargetSize( size );
+    }
+    
+    @Override
+    public void makeBackupSlave()
+    {
+        xaContainer.getLogicalLog().makeBackupSlave();
     }
 }

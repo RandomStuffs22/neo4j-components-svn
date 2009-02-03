@@ -51,12 +51,10 @@ public class LuceneDataSource extends XaDataSource
         new ReentrantReadWriteLock[LOCK_STRIPE_SIZE];
     private final Analyzer fieldAnalyzer;
     private final LuceneIndexStore store;
-
+    
     private Map<String,LruCache<String,Iterable<Long>>> caching = 
         Collections.synchronizedMap( 
             new HashMap<String,LruCache<String,Iterable<Long>>>() );
-
-    private byte[] branchId = null;
 
     public LuceneDataSource( Map<?,?> params ) throws InstantiationException
     {
@@ -144,7 +142,7 @@ public class LuceneDataSource extends XaDataSource
     public XaConnection getXaConnection()
     {
         return new LuceneXaConnection( storeDir, xaContainer
-            .getResourceManager(), branchId );
+            .getResourceManager(), getBranchId() );
     }
     
     protected Analyzer getAnalyzer()
@@ -378,18 +376,6 @@ public class LuceneDataSource extends XaDataSource
         }
     }
 
-    @Override
-    public byte[] getBranchId()
-    {
-        return branchId;
-    }
-
-    @Override
-    public void setBranchId( byte[] branchId )
-    {
-        this.branchId = branchId;
-    }
-    
     protected void fillDocument( Document document, long nodeId, Object value )
     {
         document.add( new Field( LuceneIndexService.DOC_ID_KEY,
@@ -456,13 +442,33 @@ public class LuceneDataSource extends XaDataSource
         return xaContainer.getLogicalLog().getLogicalLog( version );
     }
     
+    @Override
+    public boolean hasLogicalLog( long version )
+    {
+        return xaContainer.getLogicalLog().hasLogicalLog( version );
+    }
+    
+    @Override
+    public boolean deleteLogicalLog( long version )
+    {
+        return xaContainer.getLogicalLog().deleteLogicalLog( version );
+    }
+    
+    @Override
     public void setAutoRotate( boolean rotate )
     {
         xaContainer.getLogicalLog().setAutoRotateLogs( rotate );
     }
     
+    @Override
     public void setLogicalLogTargetSize( long size )
     {
         xaContainer.getLogicalLog().setLogicalLogTargetSize( size );
+    }
+    
+    @Override
+    public void makeBackupSlave()
+    {
+        xaContainer.getLogicalLog().makeBackupSlave();
     }
 }

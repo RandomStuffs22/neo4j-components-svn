@@ -159,7 +159,7 @@ abstract class LuceneCommand extends XaCommand
     {
         buffer.clear();
         int bytesLeft = charArray.length * 2;
-        int maxSize = buffer.capacity() / 2 * 2;
+        int maxSize = buffer.capacity();
         int offset = 0; // offset in chars
         while ( bytesLeft > 0 )
         {

@@ -98,9 +98,10 @@ public class XaLogicalLog
     private final XaCommandFactory cf;
     private final XaTransactionFactory xaTf;
     private char currentLog = CLEAN;
-    private boolean keepLogs = true;
+    private boolean keepLogs = false;
     private boolean autoRotate = true;
-    private long rotateAtSize = 1*1024*1024; // 10MB
+    private long rotateAtSize = 10*1024*1024; // 10MB
+    private boolean backupSlave = false;
 
     XaLogicalLog( String fileName, XaResourceManager xaRm, XaCommandFactory cf,
         XaTransactionFactory xaTf )
@@ -240,6 +241,12 @@ public class XaLogicalLog
     // [TX_START][xid[gid.length,bid.lengh,gid,bid]][identifier][format id]
     public synchronized int start( Xid xid ) throws XAException
     {
+        if ( backupSlave )
+        {
+            throw new XAException( "Resource is configured as backup slave, " + 
+                "no new transactions can be started for " + fileName + "." + 
+                currentLog );
+        }
         int xidIdent = getNextIdentifier();
         try
         {
@@ -884,7 +891,7 @@ public class XaLogicalLog
             fileChannel.close();
             return;
         }
-        if ( !keepLogs )
+        if ( !keepLogs || backupSlave )
         {
             deleteCurrentLogFile( fileName + "." + currentLog );
         }
@@ -1042,8 +1049,38 @@ public class XaLogicalLog
     
     public ReadableByteChannel getLogicalLog( long version ) throws IOException
     {
-        return new RandomAccessFile( fileName + ".v" + version, 
-            "r" ).getChannel();
+        String name = fileName + ".v" + version;
+        if ( !new File( name ).exists() )
+        {
+            throw new IOException( "No such log version:" + version );
+        }
+        return new RandomAccessFile( name, "r" ).getChannel();
+    }
+    
+    public boolean hasLogicalLog( long version )
+    {
+        String name = fileName + ".v" + version;
+        return new File( name ).exists();
+    }
+    
+    public boolean deleteLogicalLog( long version )
+    {
+        String name = fileName + ".v" + version;
+        File file = new File(name );
+        if ( file.exists() )
+        {
+            return file.delete();
+        }
+        return false;
+    }
+    
+    public void makeBackupSlave()
+    {
+        if ( xidIdentMap.size() > 0 )
+        {
+            throw new IllegalStateException( "There are active transactions" );
+        }
+        backupSlave = true;
     }
     
     private static class LogApplier
@@ -1294,6 +1331,10 @@ public class XaLogicalLog
     public synchronized void applyLog( ReadableByteChannel byteChannel ) 
         throws IOException
     {
+        if ( !backupSlave )
+        {
+            throw new IllegalStateException( "This is not a backup slave" );
+        }
         if ( xidIdentMap.size() > 0 )
         {
             throw new IllegalStateException( "There are active transactions" );
@@ -1352,12 +1393,12 @@ public class XaLogicalLog
         }
         if ( new File( newLogFile ).exists() )
         {
-            throw new IllegalStateException( "New log file: " + newLogFile + 
+            throw new IOException( "New log file: " + newLogFile + 
                 " already exist" );
         }
         if ( new File( oldCopy ).exists() )
         {
-            throw new IllegalStateException( "Copy log file: " + oldCopy + 
+            throw new IOException( "Copy log file: " + oldCopy + 
                 " already exist" );
         }
         long endPosition = writeBuffer.getFileChannelPosition();
@@ -1419,7 +1460,7 @@ public class XaLogicalLog
                     emptyHit = true;
                     break;
                 default:
-                    throw new IllegalStateException( "Log rotation failed, "
+                    throw new IOException( "Log rotation failed, "
                         + "unkown log entry[" + entry + "]" );
             }
             buffer.clear();
@@ -1439,7 +1480,7 @@ public class XaLogicalLog
         }
         if ( xaTf.getCurrentVersion() != ( currentVersion + 1 ) )
         {
-            throw new IllegalStateException( "version change failed" );
+            throw new IOException( "version change failed" );
         }
         fileChannel = newLog;
         writeBuffer = new MemoryMappedLogBuffer( fileChannel );
