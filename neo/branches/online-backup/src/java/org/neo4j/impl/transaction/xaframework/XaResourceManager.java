@@ -387,18 +387,18 @@ public class XaResourceManager
         }
         if ( !xaTransaction.isReadOnly() )
         {
-            txStatus.markCommitStarted();
-            xaTransaction.commit();
             if ( !xaTransaction.isRecovered() )
             {
                 if ( !onePhase )
                 {
                     log.commitTwoPhase( xaTransaction.getIdentifier() );
                 }
-                else
-                {
-                    log.done( xaTransaction.getIdentifier() );
-                }
+            }
+            txStatus.markCommitStarted();
+            xaTransaction.commit();
+            if ( !xaTransaction.isRecovered() )
+            {
+                log.done( xaTransaction.getIdentifier() );
             }
         }
         else if ( !xaTransaction.isRecovered() )

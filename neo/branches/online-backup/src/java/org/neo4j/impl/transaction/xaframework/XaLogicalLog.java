@@ -86,8 +86,8 @@ public class XaLogicalLog
     private final ByteBuffer buffer;
     private MemoryMappedLogBuffer writeBuffer = null;
     private long logVersion = 0;
-    private ArrayMap<Integer,Xid> xidIdentMap = 
-        new ArrayMap<Integer,Xid>( 4, false, true );
+    private ArrayMap<Integer,StartEntry> xidIdentMap = 
+        new ArrayMap<Integer,StartEntry>( 4, false, true );
     private Map<Integer,XaTransaction> recoveredTxMap = 
         new HashMap<Integer,XaTransaction>();
     private int nextIdentifier = 1;
@@ -98,9 +98,9 @@ public class XaLogicalLog
     private final XaCommandFactory cf;
     private final XaTransactionFactory xaTf;
     private char currentLog = CLEAN;
-    private boolean keepLogs = false;
+    private boolean keepLogs = true;
     private boolean autoRotate = true;
-    private long rotateAtSize = 10*1024*1024; // 10MB
+    private long rotateAtSize = 1*1024*1024; // 10MB
 
     XaLogicalLog( String fileName, XaResourceManager xaRm, XaCommandFactory cf,
         XaTransactionFactory xaTf )
@@ -246,10 +246,11 @@ public class XaLogicalLog
             byte globalId[] = xid.getGlobalTransactionId();
             byte branchId[] = xid.getBranchQualifier();
             int formatId = xid.getFormatId();
+            long position = writeBuffer.getFileChannelPosition();
             writeBuffer.put( TX_START ).put( (byte) globalId.length ).put(
                 (byte) branchId.length ).put( globalId ).put( branchId )
                 .putInt( xidIdent ).putInt( formatId );
-            xidIdentMap.put( xidIdent, xid );
+            xidIdentMap.put( xidIdent, new StartEntry( xid, position ) );
         }
         catch ( IOException e )
         {
@@ -262,6 +263,7 @@ public class XaLogicalLog
     private boolean readTxStartEntry() throws IOException
     {
         // get the global id
+        long position = fileChannel.position();
         buffer.clear();
         buffer.limit( 1 );
         if ( fileChannel.read( buffer ) != buffer.limit() )
@@ -315,7 +317,7 @@ public class XaLogicalLog
         int formatId = buffer.getInt();
         // re-create the transaction
         Xid xid = new XidImpl( globalId, branchId, formatId );
-        xidIdentMap.put( identifier, xid );
+        xidIdentMap.put( identifier, new StartEntry( xid, position ) );
         XaTransaction xaTx = xaTf.create( identifier );
         xaTx.setRecovered();
         recoveredTxMap.put( identifier, xaTx );
@@ -350,11 +352,12 @@ public class XaLogicalLog
         }
         buffer.flip();
         int identifier = buffer.getInt();
-        Xid xid = xidIdentMap.get( identifier );
-        if ( xid == null )
+        StartEntry entry = xidIdentMap.get( identifier );
+        if ( entry == null )
         {
             return false;
         }
+        Xid xid = entry.getXid();
         if ( xaRm.injectPrepare( xid ) )
         {
             // read only we can remove
@@ -392,11 +395,12 @@ public class XaLogicalLog
         }
         buffer.flip();
         int identifier = buffer.getInt();
-        Xid xid = xidIdentMap.get( identifier );
-        if ( xid == null )
+        StartEntry entry = xidIdentMap.get( identifier );
+        if ( entry == null )
         {
             return false;
         }
+        Xid xid = entry.getXid();
         try
         {
             xaRm.injectOnePhaseCommit( xid );
@@ -445,11 +449,12 @@ public class XaLogicalLog
         }
         buffer.flip();
         int identifier = buffer.getInt();
-        Xid xid = xidIdentMap.get( identifier );
-        if ( xid == null )
+        StartEntry entry = xidIdentMap.get( identifier );
+        if ( entry == null )
         {
             return false;
         }
+        Xid xid = entry.getXid();
         xaRm.pruneXid( xid );
         xidIdentMap.remove( identifier );
         recoveredTxMap.remove( identifier );
@@ -463,7 +468,7 @@ public class XaLogicalLog
         try
         {
             writeBuffer.put( TX_2P_COMMIT ).putInt( identifier );
-            xidIdentMap.remove( identifier );
+            writeBuffer.force();
         }
         catch ( IOException e )
         {
@@ -483,7 +488,12 @@ public class XaLogicalLog
         }
         buffer.flip();
         int identifier = buffer.getInt();
-        Xid xid = xidIdentMap.get( identifier );
+        StartEntry entry = xidIdentMap.get( identifier );
+        if ( entry == null )
+        {
+            return false;
+        }
+        Xid xid = entry.getXid();
         if ( xid == null )
         {
             return false;
@@ -497,8 +507,6 @@ public class XaLogicalLog
             throw new IOException( e );
         }
         xaRm.pruneXid( xid );
-        xidIdentMap.remove( identifier );
-        recoveredTxMap.remove( identifier );
         return true;
     }
     
@@ -656,8 +664,8 @@ public class XaLogicalLog
         }
     }*/
     
-    private void renameCurrentLogFileAndIncrementVersion( String logFileName )
-        throws IOException
+    private void renameCurrentLogFileAndIncrementVersion( String logFileName, 
+        long endPosition ) throws IOException
     {
         WeakReference<MappedByteBuffer> bufferWeakRef = releaseCurrentLogFile();
         File file = new File( logFileName );
@@ -712,10 +720,24 @@ public class XaLogicalLog
             {
             } // at least we tried...
         }
-
+        
         if ( !renamed )
         {
             throw new IOException( "Failed to rename log to: " + newName );
+        }
+        else
+        {
+            try
+            {
+                FileChannel channel = new RandomAccessFile( newName, 
+                    "rw" ).getChannel();
+                channel.truncate( endPosition );
+            }
+            catch ( Exception e )
+            {
+                log.log( Level.WARNING, 
+                    "Failed to truncate log at correct size", e );
+            }
         }
     }
     
@@ -849,6 +871,7 @@ public class XaLogicalLog
 
     public synchronized void close() throws IOException
     {
+        long endPosition = writeBuffer.getFileChannelPosition();
         if ( xidIdentMap.size() > 0 )
         {
             log.info( "Active transactions: " + xidIdentMap.size() );
@@ -868,7 +891,7 @@ public class XaLogicalLog
         else
         {
             renameCurrentLogFileAndIncrementVersion( fileName + "." + 
-                currentLog );
+                currentLog, endPosition );
         }
         setActiveLog( CLEAN );
     }
@@ -912,11 +935,6 @@ public class XaLogicalLog
                 + " prepared 2PC transactions." );
         }
         recoveredTxMap.clear();
-    }
-
-    void removeNonPreparedTx( int identifier )
-    {
-        xidIdentMap.remove( identifier );
     }
 
     // for testing, do not use!
@@ -1035,12 +1053,12 @@ public class XaLogicalLog
         private final XaTransactionFactory xaTf;
         private final XaResourceManager xaRm;
         private final XaCommandFactory xaCf;
-        private final ArrayMap<Integer,Xid> xidIdentMap;
+        private final ArrayMap<Integer,StartEntry> xidIdentMap;
         private final Map<Integer,XaTransaction> recoveredTxMap;
         
         LogApplier( ReadableByteChannel byteChannel, ByteBuffer buffer, 
             XaTransactionFactory xaTf, XaResourceManager xaRm, 
-            XaCommandFactory xaCf, ArrayMap<Integer,Xid> xidIdentMap, 
+            XaCommandFactory xaCf, ArrayMap<Integer,StartEntry> xidIdentMap, 
             Map<Integer,XaTransaction> recoveredTxMap )
         {
             this.byteChannel = byteChannel;
@@ -1143,7 +1161,7 @@ public class XaLogicalLog
             int formatId = buffer.getInt();
             // re-create the transaction
             Xid xid = new XidImpl( globalId, branchId, formatId );
-            xidIdentMap.put( identifier, xid );
+            xidIdentMap.put( identifier, new StartEntry( xid, -1 ) );
             XaTransaction xaTx = xaTf.create( identifier );
             xaTx.setRecovered();
             recoveredTxMap.put( identifier, xaTx );
@@ -1161,11 +1179,12 @@ public class XaLogicalLog
             }
             buffer.flip();
             int identifier = buffer.getInt();
-            Xid xid = xidIdentMap.get( identifier );
-            if ( xid == null )
+            StartEntry entry = xidIdentMap.get( identifier );
+            if ( entry == null )
             {
                 throw new IOException( "Unable to read tx prepeare entry" );
             }
+            Xid xid = entry.getXid();
             if ( xaRm.injectPrepare( xid ) )
             {
                 // read only we can remove
@@ -1185,11 +1204,12 @@ public class XaLogicalLog
             }
             buffer.flip();
             int identifier = buffer.getInt();
-            Xid xid = xidIdentMap.get( identifier );
-            if ( xid == null )
+            StartEntry entry = xidIdentMap.get( identifier );
+            if ( entry == null )
             {
-                throw new IOException( "Unable to read tx 1PC entry" );
+                throw new IOException( "Unable to read tx prepeare entry" );
             }
+            Xid xid = entry.getXid();
             try
             {
                 xaRm.commit( xid, true );
@@ -1211,11 +1231,12 @@ public class XaLogicalLog
             }
             buffer.flip();
             int identifier = buffer.getInt();
-            Xid xid = xidIdentMap.get( identifier );
-            if ( xid == null )
+            StartEntry entry = xidIdentMap.get( identifier );
+            if ( entry == null )
             {
-                throw new IOException( "Unable to read tx 2PC entry" );
+                throw new IOException( "Unable to read tx prepeare entry" );
             }
+            Xid xid = entry.getXid();
             try
             {
                 xaRm.commit( xid, true );
@@ -1224,8 +1245,6 @@ public class XaLogicalLog
             {
                 throw new IOException( e );
             }
-            xidIdentMap.remove( identifier );
-            recoveredTxMap.remove( identifier );
         }
 
         private void readCommandEntry() throws IOException
@@ -1259,11 +1278,12 @@ public class XaLogicalLog
             }
             buffer.flip();
             int identifier = buffer.getInt();
-            Xid xid = xidIdentMap.get( identifier );
-            if ( xid == null )
+            StartEntry entry = xidIdentMap.get( identifier );
+            if ( entry == null )
             {
-                return false;
+                throw new IOException( "Unable to read tx prepeare entry" );
             }
+            Xid xid = entry.getXid();
             xaRm.pruneXidIfExist( xid );
             xidIdentMap.remove( identifier );
             recoveredTxMap.remove( identifier );
@@ -1340,21 +1360,10 @@ public class XaLogicalLog
             throw new IllegalStateException( "Copy log file: " + oldCopy + 
                 " already exist" );
         }
+        long endPosition = writeBuffer.getFileChannelPosition();
         writeBuffer.force();
         FileChannel newLog = new RandomAccessFile( 
             newLogFile, "rw" ).getChannel();
-        FileChannel copyLog = null;
-        if ( keepLogs ) 
-        {
-            copyLog = new RandomAccessFile( 
-                fileName + ".copy", "rw" ).getChannel();
-            buffer.clear();
-            buffer.putLong( currentVersion ).flip();
-            if ( copyLog.write( buffer ) != 8 )
-            {
-                throw new IOException( "Unable to write log version to copy" );
-            }
-        }
         buffer.clear();
         buffer.putLong( currentVersion + 1 ).flip();
         if ( newLog.write( buffer ) != 8 )
@@ -1375,6 +1384,10 @@ public class XaLogicalLog
             throw new IOException( "Verification of log version failed, " + 
                 " expected " + currentVersion + " got " + verification );
         }
+        if ( xidIdentMap.size() > 0 )
+        {
+            fileChannel.position( getFirstStartEntry( endPosition ) );
+        }
         buffer.clear();
         buffer.limit( 1 );
         boolean emptyHit = false;
@@ -1385,22 +1398,22 @@ public class XaLogicalLog
             switch ( entry )
             {
                 case TX_START:
-                    readAndWriteTxStartEntry( copyLog, newLog );
+                    readAndWriteTxStartEntry( newLog );
                     break;
                 case TX_PREPARE:
-                    readAndWriteTxPrepareEntry( copyLog, newLog );
+                    readAndWriteTxPrepareEntry( newLog );
                     break;
                 case TX_1P_COMMIT:
-                    readAndWriteTxOnePhaseCommit( copyLog, newLog );
+                    readAndWriteTxOnePhaseCommit( newLog );
                     break;
                 case TX_2P_COMMIT:
-                    readAndWriteTxTwoPhaseCommit( copyLog );
+                    readAndWriteTxTwoPhaseCommit( newLog );
                     break;
                 case COMMAND:
-                    readAndWriteCommandEntry( copyLog, newLog );
+                    readAndWriteCommandEntry( newLog );
                     break;
                 case DONE:
-                    readAndWriteDoneEntry( copyLog );
+                    readAndWriteDoneEntry();
                     break;
                 case EMPTY:
                     emptyHit = true;
@@ -1413,20 +1426,37 @@ public class XaLogicalLog
             buffer.limit( 1 );
         }
         newLog.force( false );
-        if ( copyLog != null )
-        {
-            copyLog.force( false );
-            copyLog.close();
-            renameCopyToVersion( fileName + ".copy", oldCopy );
-        }
         setActiveLog( newActiveLog );
-        if ( xaTf.getAndSetNewVersion() != currentVersion )
+        if ( keepLogs )
+        {
+            renameCurrentLogFileAndIncrementVersion( currentLogFile, 
+                endPosition );
+        }
+        else
+        {
+            deleteCurrentLogFile( currentLogFile );
+            xaTf.getAndSetNewVersion();
+        }
+        if ( xaTf.getCurrentVersion() != ( currentVersion + 1 ) )
         {
             throw new IllegalStateException( "version change failed" );
         }
-        deleteCurrentLogFile( currentLogFile );
         fileChannel = newLog;
         writeBuffer = new MemoryMappedLogBuffer( fileChannel );
+    }
+    
+    private long getFirstStartEntry( long endPosition )
+    {
+        long firstEntryPosition = endPosition;
+        for ( StartEntry entry : xidIdentMap.values() )
+        {
+            if ( entry.getStartPosition() < firstEntryPosition )
+            {
+                assert entry.getStartPosition() > 0; 
+                firstEntryPosition = entry.getStartPosition();
+            }
+        }
+        return firstEntryPosition;
     }
 
     private void setActiveLog( char c ) throws IOException
@@ -1456,8 +1486,8 @@ public class XaLogicalLog
     }
 
     // [COMMAND][identifier][COMMAND_DATA]
-    private void readAndWriteCommandEntry( FileChannel copyLog, 
-        FileChannel newLog ) throws IOException
+    private void readAndWriteCommandEntry( FileChannel newLog ) 
+        throws IOException
     {
         buffer.clear();
         buffer.put( COMMAND );
@@ -1469,7 +1499,7 @@ public class XaLogicalLog
         buffer.flip();
         buffer.position( 1 );
         int identifier = buffer.getInt();
-        FileChannel writeToLog = copyLog;
+        FileChannel writeToLog = null;
         if ( xidIdentMap.get( identifier ) != null )
         {
             writeToLog = newLog;
@@ -1489,7 +1519,7 @@ public class XaLogicalLog
         }
     }
 
-    private void readAndWriteDoneEntry( FileChannel copyLog ) 
+    private void readAndWriteDoneEntry() 
         throws IOException
     {
         buffer.clear();
@@ -1502,7 +1532,7 @@ public class XaLogicalLog
         buffer.flip();
         buffer.position( 1 );
         int identifier = buffer.getInt();
-        FileChannel writeToLog = copyLog;
+        FileChannel writeToLog = null;
         if ( xidIdentMap.get( identifier ) != null )
         {
             throw new IllegalStateException( identifier + 
@@ -1516,8 +1546,8 @@ public class XaLogicalLog
     }
 
     // [TX_1P_COMMIT][identifier]
-    private void readAndWriteTxOnePhaseCommit( FileChannel copyLog, 
-        FileChannel newLog ) throws IOException
+    private void readAndWriteTxOnePhaseCommit( FileChannel newLog ) 
+        throws IOException
     {
         buffer.clear();
         buffer.limit( 1 + 4 );
@@ -1529,7 +1559,7 @@ public class XaLogicalLog
         buffer.flip();
         buffer.position( 1 );
         int identifier = buffer.getInt();
-        FileChannel writeToLog = copyLog;
+        FileChannel writeToLog = null;
         if ( xidIdentMap.get( identifier ) != null )
         {
             writeToLog = newLog;
@@ -1541,7 +1571,7 @@ public class XaLogicalLog
         }
     }
 
-    private void readAndWriteTxTwoPhaseCommit( FileChannel copyLog ) 
+    private void readAndWriteTxTwoPhaseCommit( FileChannel newLog ) 
         throws IOException
     {
         buffer.clear();
@@ -1554,11 +1584,12 @@ public class XaLogicalLog
         buffer.flip();
         buffer.position( 1 );
         int identifier = buffer.getInt();
-        FileChannel writeToLog = copyLog;
+        FileChannel writeToLog = null;
         if ( xidIdentMap.get( identifier ) != null )
         {
-            throw new IllegalStateException( identifier + 
-                " 2PC found but still active" );
+//            throw new IllegalStateException( identifier + 
+//                " 2PC found but still active" );
+            writeToLog = newLog;
         }
         buffer.position( 0 );
         if ( writeToLog != null && writeToLog.write( buffer ) != 5 )
@@ -1567,8 +1598,8 @@ public class XaLogicalLog
         }
     }
     
-    private void readAndWriteTxPrepareEntry( FileChannel copyLog,
-        FileChannel newLog ) throws IOException
+    private void readAndWriteTxPrepareEntry( FileChannel newLog ) 
+        throws IOException
     {
         // get the neo tx identifier
         buffer.clear();
@@ -1581,7 +1612,7 @@ public class XaLogicalLog
         buffer.flip();
         buffer.position( 1 );
         int identifier = buffer.getInt();
-        FileChannel writeToLog = copyLog;
+        FileChannel writeToLog = null;
         if ( xidIdentMap.get( identifier ) != null )
         {
             writeToLog = newLog;
@@ -1594,8 +1625,8 @@ public class XaLogicalLog
     }
 
     // [TX_START][xid[gid.length,bid.lengh,gid,bid]][identifier][format id]
-    private void readAndWriteTxStartEntry( FileChannel copyLog, 
-        FileChannel newLog ) throws IOException
+    private void readAndWriteTxStartEntry( FileChannel newLog ) 
+        throws IOException
     {
         // get the global id
         buffer.clear();
@@ -1620,7 +1651,7 @@ public class XaLogicalLog
         buffer.flip();
         buffer.position( 3 + xidLength );
         int identifier = buffer.getInt();
-        FileChannel writeToLog = copyLog;
+        FileChannel writeToLog = null;
         if ( xidIdentMap.get( identifier ) != null )
         {
             writeToLog = newLog;
@@ -1661,5 +1692,32 @@ public class XaLogicalLog
     public long getLogicalLogTargetSize()
     {
         return this.rotateAtSize;
+    }
+    
+    private static class StartEntry
+    {
+        private final Xid xid;
+        private long startEntryPosition;
+        
+        StartEntry( Xid xid, long startPosition )
+        {
+            this.xid = xid;
+            this.startEntryPosition = startPosition;
+        }
+        
+        Xid getXid()
+        {
+            return xid;
+        }
+        
+        long getStartPosition()
+        {
+            return startEntryPosition;
+        }
+        
+        void setStartPosition( long newPosition )
+        {
+            startEntryPosition = newPosition;
+        }
     }
 }
