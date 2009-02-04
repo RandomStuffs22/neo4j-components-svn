@@ -1362,14 +1362,8 @@ public class XaLogicalLog
             logEntriesFound++;
         }
         byteChannel.close();
-        if ( xidIdentMap.size() > 0 )
-        {
-            throw new IllegalStateException( 
-                "There are active transactions after apply of log version " 
-                + logVersion + ". Backup is corrupt and needs to be "
-                + "recreated." );
-        }
         xaTf.getAndSetNewVersion();
+        xaRm.reset();
         log.info( "Log version " + logVersion + " applied successfully." );
     }
     
