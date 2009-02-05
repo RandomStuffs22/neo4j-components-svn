@@ -513,7 +513,6 @@ public class XaLogicalLog
         {
             throw new IOException( e );
         }
-        xaRm.pruneXid( xid );
         return true;
     }
     
@@ -1687,9 +1686,11 @@ public class XaLogicalLog
         buffer.position( 3 + xidLength );
         int identifier = buffer.getInt();
         FileChannel writeToLog = null;
-        if ( xidIdentMap.get( identifier ) != null )
+        StartEntry entry = xidIdentMap.get( identifier );
+        if ( entry != null )
         {
             writeToLog = newLog;
+            entry.setStartPosition( newLog.position() );
         }
         buffer.position( 0 );
         if ( writeToLog != null && 
