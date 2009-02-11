@@ -84,7 +84,7 @@ public class XaLogicalLog
     private static final char LOG2 = '2';
 
     private FileChannel fileChannel = null;
-    private ByteBuffer buffer;
+    private final ByteBuffer buffer;
     private MemoryMappedLogBuffer writeBuffer = null;
     private long logVersion = 0;
     private ArrayMap<Integer,StartEntry> xidIdentMap = 
@@ -202,7 +202,6 @@ public class XaLogicalLog
                 throw new IllegalStateException( "Unkown active log: " + c );
             }
         }
-        buffer = null;
         writeBuffer = new MemoryMappedLogBuffer( fileChannel );
     }
     
@@ -424,6 +423,10 @@ public class XaLogicalLog
     // [DONE][identifier]
     public synchronized void done( int identifier ) throws XAException
     {
+        if ( backupSlave )
+        {
+            return;
+        }
         assert xidIdentMap.get( identifier ) != null;
         try
         {
@@ -1232,7 +1235,7 @@ public class XaLogicalLog
             Xid xid = entry.getXid();
             if ( xaRm.injectPrepare( xid ) )
             {
-                // read only we can remove
+                // read only, we can remove
                 xidIdentMap.remove( identifier );
                 recoveredTxMap.remove( identifier );
             }
@@ -1326,7 +1329,7 @@ public class XaLogicalLog
             StartEntry entry = xidIdentMap.get( identifier );
             if ( entry == null )
             {
-                throw new IOException( "Unable to read tx prepeare entry" );
+                throw new IOException( "Unable to read tx done entry" );
             }
             Xid xid = entry.getXid();
             xaRm.pruneXidIfExist( xid );
@@ -1378,8 +1381,6 @@ public class XaLogicalLog
     public synchronized void rotate() throws IOException
     {
         xaTf.flushAll();
-        buffer = ByteBuffer.allocateDirect( 9 + Xid.MAXGTRIDSIZE
-            + Xid.MAXBQUALSIZE * 10 );
         String newLogFile = fileName + ".2";
         String currentLogFile = fileName + ".1";
         char newActiveLog = LOG2;
@@ -1487,7 +1488,6 @@ public class XaLogicalLog
             throw new IOException( "version change failed" );
         }
         fileChannel = newLog;
-        buffer = null;
         writeBuffer = new MemoryMappedLogBuffer( fileChannel );
     }
     

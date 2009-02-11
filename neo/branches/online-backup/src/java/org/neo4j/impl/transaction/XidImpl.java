@@ -170,18 +170,25 @@ public class XidImpl implements Xid
     public String toString()
     {
         StringBuffer buf = new StringBuffer( "GlobalId[" );
-        for ( int i = 0; i < INSTANCE_ID.length - 1; i++ )
+        if ( globalId.length == (INSTANCE_ID.length + 8 + 8) )
         {
-            buf.append( (char) globalId[i] );
+            for ( int i = 0; i < INSTANCE_ID.length - 1; i++ )
+            {
+                buf.append( (char) globalId[i] );
+            }
+            ByteBuffer byteBuf = ByteBuffer.wrap( globalId );
+            byteBuf.position( INSTANCE_ID.length );
+            long time = byteBuf.getLong();
+            long sequence = byteBuf.getLong();
+            buf.append( '|' );
+            buf.append( time );
+            buf.append( '|' );
+            buf.append( sequence );
         }
-        ByteBuffer byteBuf = ByteBuffer.wrap( globalId );
-        byteBuf.position( INSTANCE_ID.length );
-        long time = byteBuf.getLong();
-        long sequence = byteBuf.getLong();
-        buf.append( '|' );
-        buf.append( time );
-        buf.append( '|' );
-        buf.append( sequence );
+        else
+        {
+            buf.append( "UNKNOWN_ID" );
+        }
         buf.append( "], BranchId[ " );
         for ( int i = 0; i < branchId.length; i++ )
         {
