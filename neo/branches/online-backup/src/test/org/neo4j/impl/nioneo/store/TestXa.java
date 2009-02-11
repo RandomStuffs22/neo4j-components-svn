@@ -31,10 +31,13 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
+
 import junit.framework.Test;
 import junit.framework.TestSuite;
+
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
 import org.neo4j.api.core.RelationshipType;
@@ -44,8 +47,8 @@ import org.neo4j.impl.core.PropertyIndex;
 import org.neo4j.impl.event.EventManager;
 import org.neo4j.impl.nioneo.xa.NeoStoreXaConnection;
 import org.neo4j.impl.nioneo.xa.NeoStoreXaDataSource;
-import org.neo4j.impl.nioneo.xa.XidImpl;
 import org.neo4j.impl.transaction.LockManager;
+import org.neo4j.impl.transaction.XidImpl;
 
 public class TestXa extends AbstractNeoTestCase
 {

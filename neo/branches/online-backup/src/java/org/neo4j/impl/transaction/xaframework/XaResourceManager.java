@@ -396,15 +396,8 @@ public class XaResourceManager
             }
             txStatus.markCommitStarted();
             xaTransaction.commit();
-            if ( !xaTransaction.isRecovered() )
-            {
-                log.done( xaTransaction.getIdentifier() );
-            }
         }
-        else if ( !xaTransaction.isRecovered() )
-        {
-            log.done( xaTransaction.getIdentifier() );
-        }
+        log.done( xaTransaction.getIdentifier() );
         xidMap.remove( xid );
         if ( xaTransaction.isRecovered() )
         {
@@ -557,17 +550,6 @@ public class XaResourceManager
                 {
                     logger.info( "Marking 1PC [" + name + "] tx "
                         + identifier + " as done" );
-//                    try
-//                    {
-//                        xaTransaction.commit();
-//                    }
-//                    catch ( XAException e )
-//                    {
-//                        e.printStackTrace();
-//                        throw new IOException(
-//                            "Unable to commit one-phase transaction "
-//                                + identifier + ", " + e );
-//                    }
                     log.doneInternal( identifier );
                     xidMap.remove( xid );
                     recoveredTxCount--;
@@ -582,7 +564,8 @@ public class XaResourceManager
                 }
                 else
                 {
-                    System.out.println( "[" + name + "] " + txStatus );
+                    logger.info( "2PC tx [" + name + "] " + txStatus + 
+                        " txIdent[" + identifier + "]" );
                 }
             }
         }

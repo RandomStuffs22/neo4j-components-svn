@@ -38,6 +38,7 @@ import java.util.logging.Logger;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 
+import org.neo4j.impl.transaction.XidImpl;
 import org.neo4j.impl.util.ArrayMap;
 
 /**
@@ -83,7 +84,7 @@ public class XaLogicalLog
     private static final char LOG2 = '2';
 
     private FileChannel fileChannel = null;
-    private final ByteBuffer buffer;
+    private ByteBuffer buffer;
     private MemoryMappedLogBuffer writeBuffer = null;
     private long logVersion = 0;
     private ArrayMap<Integer,StartEntry> xidIdentMap = 
@@ -201,6 +202,7 @@ public class XaLogicalLog
                 throw new IllegalStateException( "Unkown active log: " + c );
             }
         }
+        buffer = null;
         writeBuffer = new MemoryMappedLogBuffer( fileChannel );
     }
     
@@ -904,15 +906,16 @@ public class XaLogicalLog
 
     private void doInternalRecovery( String logFileName ) throws IOException
     {
-        log.info( "Logical log is dirty, this means Neo hasn't been "
-            + "shutdown properly. Recovering..." );
+        log.info( "Logical log is dirty[" + logFileName + 
+            "], this means data source hasn't been shutdown properly. " + 
+            "Recovering..." );
         // get log creation time
         buffer.clear();
         buffer.limit( 8 );
         if ( fileChannel.read( buffer ) != 8 )
         {
             log.info( "Unable to read timestamp information, "
-                + "asuming no records in logical log." );
+                + "no records in logical log." );
             fileChannel.close();
             boolean success = new File( logFileName ).renameTo( new File( 
                 logFileName + "_unkown_timestamp_" + 
@@ -933,12 +936,18 @@ public class XaLogicalLog
         scanIsComplete = true;
         log.fine( "Internal recovery completed, scanned " + logEntriesFound
             + " log entries." );
-        log.fine( xidIdentMap.size() + " uncompleted transactions found " );
+        log.info( "[" + logFileName + "] " + xidIdentMap.size() + 
+            " uncompleted transactions found " );
         xaRm.checkXids();
         if ( xidIdentMap.size() > 0 )
         {
-            log.info( "Found " + xidIdentMap.size()
+            log.info( "[" + logFileName + "] Found " + xidIdentMap.size()
                 + " prepared 2PC transactions." );
+            for ( StartEntry entry : xidIdentMap.values() )
+            {
+                log.info( "[" + logFileName + "] 2PC xid[" + 
+                    entry.getXid() + "]" );
+            }
         }
         recoveredTxMap.clear();
     }
@@ -1369,6 +1378,8 @@ public class XaLogicalLog
     public synchronized void rotate() throws IOException
     {
         xaTf.flushAll();
+        buffer = ByteBuffer.allocateDirect( 9 + Xid.MAXGTRIDSIZE
+            + Xid.MAXBQUALSIZE * 10 );
         String newLogFile = fileName + ".2";
         String currentLogFile = fileName + ".1";
         char newActiveLog = LOG2;
@@ -1476,6 +1487,7 @@ public class XaLogicalLog
             throw new IOException( "version change failed" );
         }
         fileChannel = newLog;
+        buffer = null;
         writeBuffer = new MemoryMappedLogBuffer( fileChannel );
     }
     
