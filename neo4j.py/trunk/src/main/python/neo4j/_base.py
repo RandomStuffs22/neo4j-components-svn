@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008 "Neo Technology,"
+# Copyright (c) 2008-2009 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -17,20 +17,27 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Hooks into other systems, for automatically exporting Neo4j.py as persistence
-backend for various systems.
+This module defines the basic behaviour for all Neo4j.py objects.
 
 
-Copyright (c) 2008 "Neo Technology,"
+Copyright (c) 2008-2009 "Neo Technology,"
     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
-# Try to add Neo as a backend for RDFLib
-try:
-    from rdflib import plugin
-    from rdflib.store import Store
-    import _rdf # assert that the RDF subsystem is available
-except: # requirements failed, don't register the hook
-    pass
-else: # register the hook
-    plugin.register('Neo', Store, 'neo4j.rdflib', 'NeoRdfStore')
+class Neo4jObject(object):
+    """This class is the base class of all Neo4j.py objects."""
+    def __init__(self, neo=None, node=None, relationship=None):
+        self.__neo4j__neo = neo
+        self.__neo4j__node = node
+        self.__neo4j__relationship = relationship
+def primitives(obj):
+    """Circumvent name mangling to get internals."""
+    return obj._Neo4jObject__neo4j__neo,\
+        obj._Neo4jObject__neo4j__node,\
+        obj._Neo4jObject__neo4j__relationship
+def node(obj):
+    """Circumvent name mangling to get node."""
+    return obj._Neo4jObject__neo4j__node
+def relationship(obj):
+    """Circumvent name mangling to get relationship."""
+    return obj._Neo4jObject__neo4j__relationship

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008 "Neo Technology,"
+# Copyright (c) 2008-2009 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -17,11 +17,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Mappings into the RDF layers for Neo4j.
+Hooks into other systems, for automatically exporting Neo4j.py as persistence
+backend for various systems.
 
 
-Copyright (c) 2008 "Neo Technology,"
+Copyright (c) 2008-2009 "Neo Technology,"
     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
-raise ImportError('Mapping for Neo RDF backend is not implemented yet')
+def initialize(parameters):
+    # Try to add Neo as a backend for RDFLib
+    try:
+        from rdflib import plugin
+        from rdflib.store import Store
+        import neo4j._rdf # assert that the RDF subsystem is available
+    except: # requirements failed, don't register the hook
+        pass
+    else: # register the hook
+        plugin.register('Neo', Store, 'neo4j._hooks.rdflib', 'NeoRdfStore')
