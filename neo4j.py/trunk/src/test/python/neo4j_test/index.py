@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import with_statement
+
 from neo4j_test._support import perform, define_verify_test, SkipTest
 from datetime import datetime
 

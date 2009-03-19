@@ -31,7 +31,8 @@ def load_neo(resource_uri, parameters):
         NotFoundError, NotInTransactionError, Traversal,\
         Incoming, Outgoing, Undirected, BREADTH_FIRST, DEPTH_FIRST,\
         RETURN_ALL_NODES, RETURN_ALL_BUT_START_NODE,\
-        STOP_AT_END_OF_GRAPH, StopAtDepth        
+        STOP_AT_END_OF_GRAPH, StopAtDepth
+    import neo4j
     import neo4j._backend as backend
     import neo4j._primitives as primitives
     import neo4j._traverse as traversals
@@ -71,8 +72,8 @@ def load_neo(resource_uri, parameters):
     def load_neo(resource_uri, parameters):
         return NeoService(resource_uri)
     # Define the implementation
-    class NeoService(Neo4jObject):
-        """TODO: Documentation"""
+    # --- <NeoService> ---
+    class NeoService(Neo4jObject): # Use same name everywhere for name mangling
         def __init__(self, resource_uri):
             neo = backend.load_neo(resource_uri)
             Neo4jObject.__init__(self, neo=neo)
@@ -80,34 +81,27 @@ def load_neo(resource_uri, parameters):
             self.__nodes = NodeFactory(self, neo)
             self.__relationships = RelationshipLookup(self, neo)
             self.__index = indexes.IndexService(self, neo)
+            self.__transaction = lambda: TransactionContext(neo)
             atexit.register(self.shutdown)
-        @property
-        def transaction(self):
-            """TODO: Documentation"""
-            return TransactionContext(self.__neo)
-        def index(self, name, create=False, **options):
-            """TODO: Documentation"""
-            return self.__index.get(name, options, create)
-        @property
-        def node(self):
-            """TODO: Documentation"""
-            return self.__nodes
-        @property
-        def relationship(self):
-            """TODO: Documentation"""
-            return self.__relationships
-        @property
-        def reference_node(self):
-            """TODO: Documentation"""
-            return Node(self, self.__neo.getReferenceNode())
-        reference = reference_node
-        def shutdown(self):
-            """TODO: Documentation"""
-            if self.__index is not None:
-                self.__index.shutdown()
-            if self.__neo is not None:
-                self.__neo.shutdown()
-        close = shutdown
+        def __getattr__(self, attr):
+            if attr.lower() in ('ref', 'reference',
+                                'referencenode', 'reference_node'):
+                return self.reference_node
+            else:
+                raise AttributeError("NeoService has no attribute '%s'" % attr)
+    body = {'__doc__': neo4j.NeoService.__doc__}
+    for name in dir(neo4j.NeoService):
+        if not name.startswith('_'):
+            member = getattr(neo4j.NeoService, name)
+            if isinstance(member, property):
+                pass
+            elif hasattr(member, 'im_func'):
+                member = member.im_func
+            elif hasattr(member, '__func__'):
+                member = member.__func__
+            body[name] = member
+    NeoService = type("NeoService", (NeoService,), body)
+    # --- </NeoService> ---
     tx_join = backend.implementation.tx_join\
         if hasattr(backend.implementation, 'tx_join')\
         else None
@@ -156,6 +150,9 @@ def load_neo(resource_uri, parameters):
             for key, value in attributes.items():
                 node[key] = value
             return node
+        @property
+        def reference(self):
+            return Node(self.__neo, self.__backend.getReferenceNode())
     class RelationshipLookup(object):
         def __init__(self, neo, backend):
             self.__neo = neo

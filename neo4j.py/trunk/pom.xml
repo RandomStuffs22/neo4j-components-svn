@@ -71,4 +71,32 @@
     </dependency>
     -->
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+          <execution>
+            <phase>pre-site</phase>
+	    <goals><goal>exec</goal></goals>
+            <configuration>
+	      <executable>python</executable>
+	      <arguments>
+		<argument>src/script/generate-apt.py</argument>
+		<argument>src/main/python</argument>
+		<argument>src/site/apt</argument>
+		<argument>index neo4j</argument>
+		<argument>apidoc/neo-service neo4j.NeoService</argument>
+		<argument>apidoc/primitives neo4j._primitives</argument>
+		<argument>apidoc/traverse neo4j._traverse</argument>
+	      </arguments>
+	    </configuration>
+	  </execution>
+	</executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>

@@ -17,17 +17,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-The traversal part of the Neo4j.py api.
+Neo4j.py Traversal API
 
-Traversers are objects that iterates over the nodes in the nodespace, starting
-at a given node, according to two evaluator functions(/objects). The two
-evaluators are one that prunes the network (decides wheter the traverser should
-stop at a given position or continue) and one that decides which nodes should
-be yielded by the traverser.
+ Traversers are objects that iterates over the nodes in the nodespace, starting
+ at a given node, according to two evaluator functions(/objects). The two
+ evaluators are one that prunes the network (decides wheter the traverser should
+ stop at a given position or continue) and one that decides which nodes should
+ be yielded by the traverser.
 
 
-Copyright (c) 2008-2009 "Neo Technology,"
-    Network Engine for Objects in Lund AB [http://neotechnology.com]
+ Copyright (c) 2008-2009 "Neo Technology,"
+    Network Engine for Objects in Lund AB {{http://neotechnology.com}}
 """
 
 from neo4j._base import primitives

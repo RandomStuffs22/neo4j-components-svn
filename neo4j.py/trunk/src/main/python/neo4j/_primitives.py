@@ -17,17 +17,25 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-This module defines the primitive objects in Neo4j.
+Primitive elements in Neo4j.py
+
+ There are two main datatypes in Neo4j, Nodes and Relationships.
+
+ Both Nodes and Relationships can have properties. Properties are mappings
+ from a string key to a value. The value can be a number, a string, an array
+ of numbers or an array of strings.
+
+ The properties of both nodes and relationships are accessed as if the
+ node/relationship was a dict in Neo4j.py. Not all methods of the dict
+ type are implemented, but all protocols that the dict support are
+ implemented.
 
 
-Copyright (c) 2008-2009 "Neo Technology,"
-    Network Engine for Objects in Lund AB [http://neotechnology.com]
+ Copyright (c) 2008-2009 "Neo Technology,"
+    Network Engine for Objects in Lund AB {{http://neotechnology.com}}
 """
 
-from neo4j._base import Neo4jObject,\
-    node as get_node, relationship as get_relationship
-
-class PropertyDict(object): # NOTE: Should this inherit from dict?
+class _PropertyDict(object): # NOTE: Should this inherit from dict?
     """An implementation of the dict interface for storeing properties.
     This is the base class for Node and Relation."""
     def __init__(self, owner):
@@ -40,6 +48,7 @@ class PropertyDict(object): # NOTE: Should this inherit from dict?
         self.__id   = owner.getId
     @property
     def id(self):
+        """The native id of this primitive."""
         return self.__id()
 
     def __getitem__(self,item):
@@ -64,24 +73,14 @@ class PropertyDict(object): # NOTE: Should this inherit from dict?
         return len( self.keys() )
     
     def get(self,key,*args,**kwargs):
-        """s.get(p[,d]) -> s[p] if p in s else d."""
+        """<<<s.get(p[,d]) -> s[p] if p in s else d.>>>"""
         hasDefault, default = getDefaultValueFrom(args,kwargs)
         if key in self:
             return self[key]
         elif hasDefault:
             return default
         else:
-            raise KeyError        
-    def clear(self):
-        """Remove all properties from this Node/Relationship."""
-        for key in self.keys():
-            del self[key]
-    def copy(self): # TODO: should this perhaps return a copy as a dict?
-        """Not Implemented."""
-        raise SystemError("Copying of Neo4j object is not supported.")
-    def has_key(self,key):
-        """s.has_key(p) -> True if s has a property p, else False."""
-        return self.__has(key)
+            raise KeyError
 
     def items(self):
         """s.items() -> list of s's property (key, value) pairs, as 2-tuples."""
@@ -103,27 +102,6 @@ class PropertyDict(object): # NOTE: Should this inherit from dict?
     def itervalues(self):
         """s.itervalues() -> an iterator over the property values in s."""
         return iter(self.__vals())
-
-    def pop(self,key,*args,**kwargs):
-        """s.pop(k[,d]) -> v, remove the property specified by key and return
-        the corresponding value. If key is not found, d is returned if given,
-        otherwise KeyError is raised."""
-        hasDefault, default = getDefaultValueFrom(args,kwargs)
-        if key in self:
-            return self.__del(key)
-        elif hasDefault:
-            return default
-        else:
-            raise KeyError
-
-    def popitem(self):
-        """s.popitem() -> (k, v), remove and return some property (key, value)
-        pair as a 2-tuple; raise KeyError if D is empty."""
-        try:
-            key = iter(self).next()
-            return key, self.pop(key)
-        except:
-            raise KeyError
 
     def setdefault(self,key,*args,**kwargs):
         """s.setdefault(k[,d]) -> s.get(k,d), also set s[k]=d if k not in s"""
@@ -175,26 +153,101 @@ def getDefaultValueFrom(args, kwargs):
     else:
         return False, None
 
+
+class Node(_PropertyDict):
+    """Represents a Node...
+
+ The properties of a node are accessed using subscript, like so:
+
+------------------------------------------
+property_value = node['property key']
+node['property key'] = 'a string value'
+node['other key']    = 42
+del node['some key'] # remove the property
+------------------------------------------
+
+ Relationships are accessed using attributes:
+
+--------------------------------------------------------
+for relationship in node.SOME_RELATIONSHIP_TYPE:
+    # do something
+
+single_relationship = node.SOME_RELATIONSHIP_TYPE.single
+--------------------------------------------------------
+
+ Creating relationships is done by simply invoking the relationship accessor:
+
+----------------------------------------------------------
+new_relationship = node.SOME_RELATIONSHIP_TYPE(other_node)
+
+# it is also possible to specify relationship properties:
+new = node.knows(other, time=14, time_unit="days")
+----------------------------------------------------------
+
+ Single relationships can also be created by assigning a node:
+
+-----------------------------------------------
+node.SOME_RELATIONSHIP_TYPE.single = other_node
+-----------------------------------------------
+
+ This does not allow for the addition of properties, but since there
+ is only a single relationship it is easy accessed, or even removed:
+
+-------------------------------------------------
+the_relation = node.SOME_RELATIONSHIP_TYPE.single
+the_relation['property i forgot'] = 17
+del node.SOME_OTHER_RELATIONSHIP_TYPE.single
+-------------------------------------------------
+
+ Normally when accessing relationships both incoming and outgoing
+ relationships are accessed, to restrict this the <<<incoming>>> and
+ <<<outgoing>>> modifiers can be used:
+
+------------------------------------------------
+for outgoing_relation in node.REL_TYPE.outgoing:
+    # do stuff
+for incoming_relation in node.REL_TYPE.incoming:
+    # do other stuff
+
+single_incoming = node.REL_TYPE.incoming.single
+------------------------------------------------
+"""
+    def relationships(self, *types):
+        """Return all relationships of any of the specified types.
+
+ <<Usage:>>
+
+---------------------------------------------------------------
+for relationship in node.relationships('TYPE_ONE', 'TYPE_TWO'):
+    # do something with the relationship
+---------------------------------------------------------------
+"""
+
 def initialize(backend):
     global Node, Relationship
     INCOMING = backend.INCOMING
     OUTGOING = backend.OUTGOING
     BOTH = backend.BOTH
     RelationshipType = backend.RelationshipType
-    class Node(Neo4jObject, PropertyDict):
+    from neo4j._base import Neo4jObject,\
+        node as get_node, relationship as get_relationship
+    class Node(_PropertyDict, Neo4jObject):
+        __doc__ = Node.__doc__
         def __init__(self, neo, node):
             Neo4jObject.__init__(self, neo=neo, node=node)
-            PropertyDict.__init__(self, node)
+            _PropertyDict.__init__(self, node)
             self.__neo = neo
             self.__node = node
         def __getattr__(self, attr):
             return self.relationships(attr)
         def relationships(self, *types):
+            """Documentation for this is on module level - keep API in sync."""
             rel_types = []
             for type in types:
                 rel_types.append(RelationshipType(type))
-            return RelationshipFactory(self.__neo, self.__node, BOTH,
-                                       rel_types)
+                return RelationshipFactory(self.__neo, self.__node, BOTH,
+                                           rel_types)
+        relationships.__doc__ = Node.relationships.__doc__
     
     class RelationshipFactory(object):
         def __init__(self, neo, node, dir, types):
@@ -269,21 +322,38 @@ def initialize(backend):
             return RelationshipFactory(self.__neo, self.__node,
                                        self.__type, OUTGOING)
     
-    class Relationship(Neo4jObject, PropertyDict):
+    class Relationship(Relationship, Neo4jObject):
         def __init__(self, neo, relationship):
             Neo4jObject.__init__(self, neo=neo, relationship=relationship)
-            PropertyDict.__init__(self, relationship)
+            _PropertyDict.__init__(self, relationship)
             self.__relationship = relationship
             self.__neo = neo
-        @property
-        def start(self):
-            return Node(self.__neo, self.__relationship.getStartNode())
-        @property
-        def end(self):
-            return Node(self.__neo, self.__relationship.getEndNode())
-        @property
-        def type(self):
-            return self.__relationship.getType().name()
         def getOtherNode(self, node):
+            """Documentation for this is on module level - keep API in sync."""
             node = get_node(node)
             return Node(self.__neo, self.__relationship.getOtherNode(node))
+        getOtherNode.__doc__ = Relationship.getOtherNode.__doc__
+
+class Relationship(_PropertyDict):
+    """Represents a Relationship..."""
+    @property
+    def start(self):
+        """The start node of the relationship."""
+        return Node(self.__neo, self.__relationship.getStartNode())
+    @property
+    def end(self):
+        """The end node of the relationship."""
+        return Node(self.__neo, self.__relationship.getEndNode())
+    @property
+    def type(self):
+        """The type of the relationship (as a string)."""
+        return self.__relationship.getType().name()
+    def getOtherNode(self, node):
+        """Given one node that participates in a relationship, return the other.
+
+ <<Usage:>>
+
+----------------------------------------------------
+other = node.SOME_RELATION.single.getOtherNode(node)
+----------------------------------------------------
+"""

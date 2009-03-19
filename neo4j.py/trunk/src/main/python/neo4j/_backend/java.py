@@ -40,7 +40,7 @@ def import_api():
 
 def initialize(classpath, parameters):
     global RelationshipType, Evaluator, StopAtDepth, IndexService,\
-        array, to_java, to_python,
+        array, to_java, to_python
     # Import implementation
     try:
         Stop, Returnable, Type = import_api()
