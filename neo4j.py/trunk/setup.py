@@ -177,7 +177,7 @@ def main():
     args = dict(cmdclass=dict(build_ext=build_extensions, test=test),
                 # The source structure is not defined in the pom, define it here
                 packages=['neo4j','neo4j.classes',
-                          'neo4j._backend','neo4j.model',],
+                          'neo4j._backend','neo4j.model','neo4j._hooks'],
                 package_dir={'neo4j':'src/main/python/neo4j',
                              'neo4j.classes':DEPEND},
                 # Include the runtime dependencies

@@ -43,7 +43,7 @@ def load_neo(resource_uri, parameters):
     if 'classpath' not in parameters:
         parameters['classpath'] = classpath = []
         if os.path.isdir(class_base):
-            for file in os.listdir(base):
+            for file in os.listdir(class_base):
                 classpath.append(os.path.join(class_base, file))
     if 'ext_dirs' not in parameters: # JPype cannot have jars on classpath
         if os.path.isdir(class_base):

@@ -34,9 +34,10 @@ def initialize(classpath, parameters):
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH, StopAtDepth,\
         array, to_java, to_python, tx_join
     jvm = parameters.get('jvm', jpype.getDefaultJVMPath())
-    args = ['-ea', '-Djava.class.path=' + ':'.join(classpath)]
+    args = []
     if 'ext_dirs' in parameters:
         args.append('-Djava.ext.dirs=' + ':'.join(parameters['ext_dirs']))
+    args.append('-Djava.class.path=' + ':'.join(classpath))
     jpype.startJVM(jvm, *args)
     neo4j = jpype.JPackage('org').neo4j
     core = neo4j.api.core
