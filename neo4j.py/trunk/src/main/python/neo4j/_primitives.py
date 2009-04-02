@@ -125,7 +125,7 @@ class _PropertyDict(object): # NOTE: Should this inherit from dict?
             s[k] = F[k]
         """
         if not len(args) in (0,1):
-            raise TypeError("To many arguments.")
+            raise TypeError("Too many arguments.")
         if args:
             for key,value in args[0].iteritems():
                 self[key] = value
