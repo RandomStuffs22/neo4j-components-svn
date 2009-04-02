@@ -1,0 +1,6 @@
+== Differences in this branch vs the trunk ==
+
+In the verbose quad representation (VerboseQuadStore) the literal value
+on a literal node uses the predicate of the statement as the property key.
+In the trunk the "value" key is used instead. Which solution is the
+best is up for discussion
