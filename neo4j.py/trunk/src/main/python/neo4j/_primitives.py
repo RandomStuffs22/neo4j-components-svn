@@ -139,7 +139,7 @@ def getDefaultValueFrom(args, kwargs):
     Returns False and None if there is no default value.
     (Note that the default value could be None...)"""
     if not (len(args)+len(kwargs)) in (0,1):
-        raise TypeError("To many arguments.")
+        raise TypeError("Too many arguments.")
     elif kwargs and 'defaultValue' not in kwargs:
         raise TypeError("Unknown argument '%s'" % kwargs.keys()[0])
     elif args:
