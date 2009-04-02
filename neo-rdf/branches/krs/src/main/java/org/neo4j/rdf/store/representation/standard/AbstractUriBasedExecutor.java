@@ -427,8 +427,7 @@ public abstract class AbstractUriBasedExecutor implements RepresentationExecutor
         String predicate = ( String ) abstractNode.getSingleExecutorInfo(
             VerboseQuadStrategy.EXECUTOR_INFO_PREDICATE );
         Object value = abstractNode.properties().get(
-            AbstractUriBasedExecutor.LITERAL_VALUE_KEY ).iterator().next();
-//        debugCreateNode( node, "(literal)" );
+            predicate ).iterator().next();
         indexLiteral( node, new Uri( predicate ), value );
         return node;
     }

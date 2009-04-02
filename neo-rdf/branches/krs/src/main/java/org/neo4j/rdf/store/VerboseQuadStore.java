@@ -341,8 +341,7 @@ public class VerboseQuadStore extends RdfStoreImpl
         }
         else
         {
-            Object value = objectNode.getProperty(
-                AbstractUriBasedExecutor.LITERAL_VALUE_KEY );
+            Object value = objectNode.getProperty( predicate );
             String datatype = ( String ) objectNode.getProperty(
                 VerboseQuadExecutor.LITERAL_DATATYPE_KEY, null );
             String language = ( String ) objectNode.getProperty(

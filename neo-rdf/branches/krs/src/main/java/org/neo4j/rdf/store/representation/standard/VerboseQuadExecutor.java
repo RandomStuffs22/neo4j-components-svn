@@ -565,8 +565,7 @@ public class VerboseQuadExecutor extends UriBasedExecutor
         disconnectMiddle( middleNode, middleToLiteral, literalNode,
             subjectNode, subjectToMiddle );
         String predicate = middleToLiteral.getRelationshipTypeName();
-        Object value = literalNode.getProperty(
-            AbstractUriBasedExecutor.LITERAL_VALUE_KEY );
+        Object value = literalNode.getProperty( predicate );
         deleteLiteralNode( literalNode, predicate, value );
     }
 

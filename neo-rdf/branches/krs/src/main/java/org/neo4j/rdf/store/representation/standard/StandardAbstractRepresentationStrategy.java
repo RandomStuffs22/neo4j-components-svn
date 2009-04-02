@@ -263,7 +263,7 @@ abstract class StandardAbstractRepresentationStrategy
         Object literalNodeKey = formTripleNodeKey( statement );
         AbstractNode literalNode = getOrCreateNode( representation, null,
             literalNodeKey );
-        literalNode.addProperty( UriBasedExecutor.LITERAL_VALUE_KEY,
+        literalNode.addProperty( AbstractUriBasedExecutor.LITERAL_VALUE_KEY,
             ( ( Literal ) statement.getObject() ).getValue() );
         literalNode.addExecutorInfo( UriBasedExecutor.EXEC_INFO_IS_LITERAL_NODE,
             true );
