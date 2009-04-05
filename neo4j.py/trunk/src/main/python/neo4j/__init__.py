@@ -84,11 +84,11 @@ sudo jython setup.py install
  Jython (in 2.5b3 or earlier) has a problem with installing packages under
  Windows. You might get this error when installing:
 
-------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 running install_egg_info
-Creating X:\<PATH_TO>\jython-2.5b3\Lib\site-packages\
-error: X:\<PATH_TO>\jython-2.5b3\Lib\site-packages\: couldn't make directories
-------------------------------------------------------------------------------
+Creating X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\
+error: X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\: couldn't make directories
+---------------------------------------------------------------------------
 
  If the install output ends like that when installing under Windows,
  don't panic.
