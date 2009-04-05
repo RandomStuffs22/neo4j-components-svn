@@ -51,29 +51,49 @@ def download(source, target):
     finally:
         source.close()
 
-def download_dependency(target_dir, group, artifact, version):
-    if not path.exists(target_dir):
-        os.mkdir(target_dir)
-    url = '/'.join(group.split('.')
-                   + [artifact, version, "%s-%s.%%s" % (artifact,version)])
-    jar = path.join(target_dir, "%s.jar" % artifact)
-    pom = path.join(target_dir, "%s.pom" % artifact)
+def maven_download(target_dir, group, artifact, version, real_version, pattern,
+                   *types):
+    url = '/'.join(group.split('.') +
+                   [artifact, version, pattern % {'artifact': artifact,
+                                                  'version':  real_version}])
+    files = [(url+'.'+type, path.join(target_dir, "%s.%s" % (artifact, type)))
+             for type in types]
     for repo in REPOSITORIES:
         try:
-            download(repo + url%'jar', jar)
-            download(repo + url%'pom', pom)
+            for source, target in files:
+                download(repo + source, target)
         except:
             continue
         else:
             break
     else:
         raise ValueError("Could not find artifact %s/%s-%s" % (
-                group,artifact,version))
-    return jar, pom
+                group, artifact, version))
+    return tuple(target for source, target in files)
+
+def download_dependency(target_dir, group, artifact, version, real_version):
+    if not path.exists(target_dir):
+        os.mkdir(target_dir)
+    return maven_download(target_dir, group, artifact, version, real_version,
+                          "%(artifact)s-%(version)s", 'jar', 'pom')
+
+def get_latest_version(target_dir, group, artifact, version):
+    tree = ElementTree()
+    tree.parse(
+        "%s" % maven_download(target_dir, group, artifact, version, version,
+                              "maven-metadata", 'xml'))
+    timestamp = tree.find('versioning/snapshot/timestamp').text
+    buildNumber = tree.find('versioning/snapshot/buildNumber').text
+    return version.replace("SNAPSHOT", "%s-%s" % (timestamp, buildNumber))
 
 def download_dependencies(target_dir, pom):
     for group,artifact,version,include in pom.dependencies():
-        jar, pom_file = download_dependency(target_dir,group,artifact,version)
+        if version.endswith('SNAPSHOT'):
+            realver = get_latest_version(target_dir, group, artifact, version)
+        else:
+            realver = version
+        jar, pom_file = download_dependency(target_dir, group, artifact,
+                                            version, realver)
         yield jar, include
         for jar, include in download_dependencies(target_dir, Pom(pom_file)):
             yield jar, include
