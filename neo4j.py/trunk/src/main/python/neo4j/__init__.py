@@ -66,6 +66,9 @@ svn export https://svn.neo4j.org/components/neo4j.py/trunk neo4j.py
 sudo python setup.py install
 ----------------------------
 
+ This requires connection to the internet since it will download the
+ required java libraries.
+
 ** With Jython
 
  Check out and install as with CPython:
@@ -75,6 +78,35 @@ svn export https://svn.neo4j.org/components/neo4j.py/trunk neo4j.py
 cd neo4j.py
 sudo jython setup.py install
 -------------------------------------------------------------------
+
+** Windows installation issues
+
+ Jython (in 2.5b3 or earlier) has a problem with installing packages under
+ Windows. You might get this error when installing:
+
+------------------------------------------------------------------------------
+running install_egg_info
+Creating X:\<PATH_TO>\jython-2.5b3\Lib\site-packages\
+error: X:\<PATH_TO>\jython-2.5b3\Lib\site-packages\: couldn't make directories
+------------------------------------------------------------------------------
+
+ If the install output ends like that when installing under Windows,
+ don't panic.
+
+ All of Neo4j.py has already been installed at this point. This can be
+ verified by checking that
+ <<X:\<PATH_TO>\jython-2.5b3\Lib\site-packages\neo4j>> contains some
+ directories, Python source files and bytecode compiled files. You can also
+ verify that
+ <<X:\<PATH_TO>\jython-2.5b3\Lib\site-packages\neo4j\classes>> contains the
+ required jar-files. What the install script has failed to do is to write
+ the package information. This may cause trouble when installing a new
+ version of neo4j.py, the fix for this is to manually remove neo4j.py
+ before installing a new version.
+
+ This issue has been reported at {{https://trac.neo4j.org/ticket/156}} and
+ {{http://bugs.jython.org/issue1110}}. We have fixed this for the next
+ release of Jython.
 
 ** Starting Neo
 

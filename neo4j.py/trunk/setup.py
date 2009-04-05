@@ -38,6 +38,7 @@ class Pom(object):
                    scope is None or scope.text == 'runtime',)
 
 REPOSITORIES = ["http://m2.neo4j.org/",
+                "http://repo1.maven.org/maven2/",
                 "http://mirrors.ibiblio.org/pub/mirrors/maven2/",
                 ]
 
@@ -45,7 +46,7 @@ def download(source, target):
     if path.exists(target): return # Don't download existing files
     source = urllib2.urlopen(source)
     try:
-        with open(target,'w') as target:
+        with open(target,'wb') as target:
             target.write(source.read())
     finally:
         source.close()
