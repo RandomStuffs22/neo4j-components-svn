@@ -108,6 +108,11 @@ public class NeoSailConnection implements NeoRdfSailConnection
         log( "connection created" );
     }
     
+    int getIdentifier()
+    {
+        return this.identifier;
+    }
+    
     private void log( String msg )
     {
         if ( transaction != null )
@@ -231,6 +236,7 @@ public class NeoSailConnection implements NeoRdfSailConnection
         finally
         {
             log( "connection closed" );
+            ( ( NeoSail ) this.sail ).connectionEnded( this.identifier, this );
             transaction = null;
             if ( otherTx != null )
             {
