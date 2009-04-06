@@ -72,8 +72,6 @@ def maven_download(target_dir, group, artifact, version, real_version, pattern,
     return tuple(target for source, target in files)
 
 def download_dependency(target_dir, group, artifact, version, real_version):
-    if not path.exists(target_dir):
-        os.mkdir(target_dir)
     return maven_download(target_dir, group, artifact, version, real_version,
                           "%(artifact)s-%(version)s", 'jar', 'pom')
 
@@ -87,6 +85,8 @@ def get_latest_version(target_dir, group, artifact, version):
     return version.replace("SNAPSHOT", "%s-%s" % (timestamp, buildNumber))
 
 def download_dependencies(target_dir, pom):
+    if not path.exists(target_dir):
+        os.mkdir(target_dir)
     for group,artifact,version,include in pom.dependencies():
         if version.endswith('SNAPSHOT'):
             realver = get_latest_version(target_dir, group, artifact, version)
