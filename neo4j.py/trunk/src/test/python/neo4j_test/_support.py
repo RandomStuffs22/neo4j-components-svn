@@ -9,6 +9,11 @@ class SkipTest(Exception):
     def __init__(self, msg=None):
         super(SkipTest,self).__init__(msg)
 
+def timestamp(dt=None):
+    if dt is None: dt = datetime.now()
+    return "%s-%s-%s_%s-%s-%s" % (
+        dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
+
 def perform(neo, test, **opt):
     try:
         test(neo, opt)
@@ -25,7 +30,7 @@ def perform(neo, test, **opt):
 
 def define_verify_test(name, define, verify):
     def test(neo, opt):
-        time = datetime.now().isoformat()
+        time = timestamp()
         with neo.transaction:
             getattr(neo.reference_node, name)(define(neo,**opt),
                                               test=name, time=time)

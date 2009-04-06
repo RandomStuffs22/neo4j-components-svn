@@ -2,8 +2,7 @@
 
 from __future__ import with_statement
 
-from neo4j_test._support import perform, define_verify_test, SkipTest
-from datetime import datetime
+from neo4j_test._support import perform, define_verify_test, SkipTest, timestamp
 
 def single_index_association(neo, options):
     name = options['name']
@@ -47,6 +46,6 @@ def multiple_index_associations(neo, options):
         assert count == 6, "Wrong count"
 
 def run(neo, **options):
-    postfix = datetime.now().isoformat()
+    postfix = timestamp()
     perform(neo, single_index_association, name='single'+postfix, **options)
     perform(neo, multiple_index_associations, name='multi'+postfix, **options)
