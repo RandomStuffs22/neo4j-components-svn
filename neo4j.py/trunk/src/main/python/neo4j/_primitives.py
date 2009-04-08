@@ -247,6 +247,8 @@ def initialize(backend):
                 rel_types.append(RelationshipType(type))
                 return RelationshipFactory(self.__neo, self.__node, BOTH,
                                            rel_types)
+        def delete(self):
+            self.__node.delete()
         relationships.__doc__ = Node.relationships.__doc__
     
     class RelationshipFactory(object):
@@ -332,6 +334,8 @@ def initialize(backend):
             """Documentation for this is on module level - keep API in sync."""
             node = get_node(node)
             return Node(self.__neo, self.__relationship.getOtherNode(node))
+        def delete(self):
+            self.__relationship.delete()
         getOtherNode.__doc__ = Relationship.getOtherNode.__doc__
 
 class Relationship(_PropertyDict):
