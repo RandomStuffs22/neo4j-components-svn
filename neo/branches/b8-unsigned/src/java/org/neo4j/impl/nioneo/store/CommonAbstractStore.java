@@ -291,7 +291,7 @@ public abstract class CommonAbstractStore
      * 
      * @return The number of bytes memory mapped windows this store has
      */
-    protected int getMappedMem()
+    protected long getMappedMem()
     {
         if ( getConfig() != null )
         {
@@ -301,7 +301,7 @@ public abstract class CommonAbstractStore
             String mem = (String) getConfig().get( realName + ".mapped_memory" );
             if ( mem != null )
             {
-                int multiplier = 1;
+                long multiplier = 1;
                 if ( mem.endsWith( "M" ) )
                 {
                     multiplier = 1024 * 1024;
@@ -310,6 +310,11 @@ public abstract class CommonAbstractStore
                 else if ( mem.endsWith( "k" ) )
                 {
                     multiplier = 1024;
+                    mem = mem.substring( 0, mem.length() - 1 );
+                }
+                else if ( mem.endsWith( "G" ) )
+                {
+                    multiplier = 1024*1024*1024;
                     mem = mem.substring( 0, mem.length() - 1 );
                 }
                 try

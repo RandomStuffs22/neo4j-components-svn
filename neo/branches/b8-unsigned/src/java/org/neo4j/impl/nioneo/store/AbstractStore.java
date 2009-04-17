@@ -170,7 +170,7 @@ public abstract class AbstractStore extends CommonAbstractStore
      * @param id
      *            The high id
      */
-    protected void setHighId( long id )
+    public void setHighId( int id )
     {
         super.setHighId( id );
     }

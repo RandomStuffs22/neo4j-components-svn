@@ -380,7 +380,7 @@ public abstract class AbstractDynamicStore extends CommonAbstractStore
         {
             Buffer buf = window.getBuffer();
             // NOTE: skip of header in offset
-            int offset = (int) ( blockId & 0xFFFFFFFFL - 
+            int offset = (int) ((blockId & 0xFFFFFFFFL) - 
                 buf.position()) * getBlockSize() + BLOCK_HEADER_SIZE;
             buf.setOffset( offset );
             byte bytes[] = new byte[record.getLength()];
