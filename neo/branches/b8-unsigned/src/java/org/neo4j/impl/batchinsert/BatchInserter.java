@@ -515,4 +515,9 @@ public class BatchInserter
         }
         return store;
     }
+    
+    public String getStore()
+    {
+        return storeDir;
+    }
 }
