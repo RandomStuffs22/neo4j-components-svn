@@ -1,6 +1,7 @@
 Neo4j apoc
 
 	Apoc means A Package Of Components.
+	
 	It is a meta package containing the most used Neo4j libraries,
 	intended to enable adding these as a single {{{http://maven.apache.org/}Maven}}
 	dependency to your projects. By using APOC you also make sure that that
