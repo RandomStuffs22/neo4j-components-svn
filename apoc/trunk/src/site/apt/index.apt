@@ -8,16 +8,16 @@ Neo4j apoc
 	you always use component versions that fit together.
 	
 Included components	
-		
-*----+------+
-| {{{../neo/}neo}} | neo4j graph database engine |
-*----+------+
-| {{{../index-util/}index-util}} | indexing and data structures |
-*----+------+
-| {{{../shell/}shell}} | command shell |
-*----+------+
-| {{{../remote-neo/}remote-neo}} | introspection tool |
-*----+------+
+
+*----+------+------+
+| {{{../neo/}neo}} | neo4j graph database engine | the core of neo4j |
+*----+------+------+
+| {{{../index-util/}index-util}} | indexing and data structures | enables you to lookup nodes and relationships by property values |
+*----+------+------+
+| {{{../shell/}shell}} | command shell |  enables you to browse the node space from potentially another JVM |
+*----+------+------+
+| {{{../remote-neo/}remote-neo}} | introspection tool | enables you to connect to a running neo instance from another JVM |
+*----+------+------+
 
 Usage
     
