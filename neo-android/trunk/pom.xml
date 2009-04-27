@@ -134,11 +134,6 @@ as networks rather than tables. For more information, please see neo4j.org.
 	</build>
 
 	<dependencies>
-  		<dependency>
-			<groupId>javax.transaction</groupId>
-			<artifactId>jta</artifactId>
-			<version>1.1</version>
-		</dependency>
 		<dependency> 
 			<groupId>org.neo4j</groupId>
 			<artifactId>shell</artifactId>
