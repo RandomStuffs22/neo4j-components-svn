@@ -2,7 +2,7 @@
   <parent>
     <groupId>org.neo4j</groupId>
     <artifactId>parent-pom</artifactId>
-    <version>2</version>
+    <version>3</version>
     <relativePath>../../pom.xml</relativePath>    		
   </parent>
   
@@ -15,28 +15,12 @@
   <description>
     Neo4j.py is the Python bindings project for the Neo4j graph database.
   </description>
-  <url>http://components.neo4j.org/${project.artifactId}/</url>
   
   <scm>
     <connection>
       scm:svn:https://svn.neo4j.org/components/${project.artifactId}/trunk/
     </connection>
-    <url>https://trac.neo4j.org/browser/components/${project.artifactId}</url>
   </scm>
-	
-  <issueManagement>
-    <system>Trac</system>
-    <url>https://trac.neo4j.org/query?status=assigned&amp;status=new&amp;status=reopened&amp;component=${project.artifactId}</url>
-  </issueManagement>
-
-  <licenses>
-    <license>
-      <name>GNU Affero General Public License, Version 3</name>
-      <url>
-	https://svn.neo4j.org/components/${project.artifactId}/trunk/LICENSE.txt
-      </url>
-    </license>
-  </licenses>
 	
   <developers>
     <developer>
