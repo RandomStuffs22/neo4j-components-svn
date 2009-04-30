@@ -10,21 +10,21 @@ import java.util.NoSuchElementException;
  * Basically the {@link #hasNext()} method will look up the next object and
  * cache it with {@link #setPrefetchedNext(Object)}. The cached object is
  * then set to null in {@link #next()}.
- * 
- * @author mattiasp
  */
 public abstract class PrefetchingIterator<T> implements Iterator<T>
 {
+    private boolean hasFetchedNext;
 	private T nextObject;
 	
 	public boolean hasNext()
 	{
-		if ( getPrefetchedNextOrNull() != null )
+		if ( hasFetchedNext )
 		{
-			return true;
+		    return getPrefetchedNextOrNull() != null;
 		}
 		
 		T nextOrNull = fetchNextOrNull();
+        hasFetchedNext = true;
 		if ( nextOrNull != null )
 		{
 			setPrefetchedNext( nextOrNull );
@@ -40,6 +40,7 @@ public abstract class PrefetchingIterator<T> implements Iterator<T>
 		}
 		T result = getPrefetchedNextOrNull();
 		setPrefetchedNext( null );
+		hasFetchedNext = false;
 		return result;
 	}
 	
