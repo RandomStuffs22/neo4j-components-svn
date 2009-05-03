@@ -16,10 +16,7 @@
 		</links>
 		<menu name="Neo4j ${project.artifactId}">
 			<item name="Introduction" href="index.html" />
-			<!--
-				<item name="Wiki"
-				href="http://wiki.neo4j.org/content/${project.artifactId}" />
-			-->
+			<item name="Wiki" href="http://wiki.neo4j.org/content/Getting_Started_With_Apoc" />
 			<!--
 				<item name="JavaDocs" href="apidocs/index.html" />
 			-->

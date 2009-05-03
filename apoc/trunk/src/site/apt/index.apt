@@ -1,20 +1,20 @@
-Neo4j apoc
+Neo4j Apoc
 
-	Apoc means A Package Of Components.
+	Apoc is A Package Of Components.
 	
-	It is a meta package containing the most used Neo4j libraries,
-	intended to enable adding these as a single {{{http://maven.apache.org/}Maven}}
-	dependency to your projects. By using APOC you also make sure that that
-	you always use component versions that fit together.
+	It is a meta package containing the most commonly used Neo4j libraries,
+    which means that it enabesl you to add these as a single {{{http://maven.apache.org/}Maven}}
+    dependency in your projects. With Apoc, you're also sure that you use
+    component versions that fit together.
 	
 Included components	
 
 *----+------+------+
-| {{{../neo/}neo}} | neo4j graph database engine | the core of neo4j |
+| {{{../neo/}neo}} | the neo4j kernel | the neo4j graph database engine |
 *----+------+------+
 | {{{../index-util/}index-util}} | indexing and data structures | enables you to lookup nodes and relationships by property values |
 *----+------+------+
-| {{{../shell/}shell}} | command shell |  enables you to browse the node space from potentially another JVM |
+| {{{../shell/}shell}} | text command shell | enables you to browse the node space from a local or remote JVM |
 *----+------+------+
 | {{{../remote-neo/}remote-neo}} | introspection tool | enables you to connect to a running neo instance from another JVM |
 *----+------+------+
@@ -36,7 +36,7 @@ Usage
     </repositories>
 ---
 
-    And the dependency on APOC to add:
+    And then add the dependency on Apoc:
     
 ---
     <dependencies>
@@ -44,7 +44,7 @@ Usage
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>apoc</artifactId>
-            <version>1.0-b8-SNAPSHOT</version>
+            <version>someversion</version> <!-- for example 0.1 or 0.2-SNAPSHOT -->
             <type>pom</type>
         </dependency>
     </dependencies>
