@@ -10,7 +10,7 @@
 	<artifactId>apoc</artifactId>
 	<packaging>pom</packaging>
 	<name>A Package Of Components</name>
-	<version>0.1-SNAPSHOT</version>
+	<version>0.1</version>
 	<url>http://components.neo4j.org/${project.artifactId}/</url>
 	<description>A meta package containing the most used Neo4j libraries. Intended use: as a Maven dependency.</description>
 
