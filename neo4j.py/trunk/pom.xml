@@ -40,20 +40,18 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo</artifactId>
-      <version>1.0-b8-2009-01-05</version>
+      <version>1.0-b8</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>index-util</artifactId>
-      <version>0.6-2009-01-05</version>
+      <version>0.6</version>
     </dependency>
-    <!-- Add this when it is not in snapshot state any more
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>remote-neo</artifactId>
       <version>0.1</version>
     </dependency>
-    -->
   </dependencies>
 
   <build>

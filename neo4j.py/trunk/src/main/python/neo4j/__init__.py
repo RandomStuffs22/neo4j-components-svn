@@ -184,6 +184,89 @@ neo = NeoService("/neo/db/path",
     [STOP_AT_END_OF_GRAPH ] Defines a traversal to traverse the entire
                             subgraph.
 
+* Nodes, Relationships and Properties
+
+ Creating a node:
+
+---
+n = neo.node()
+---
+
+ Specify properties for new node:
+
+---
+n = neo.node(color="Red", widht=16, height=32)
+---
+
+ Accessing node by id:
+
+---
+n17 = neo.node[14]
+---
+
+ Accessing properties:
+
+---
+value = e['key'] # get property value
+e['key'] = value # set property value
+del e['key']     # remove property value
+---
+
+ Create relationship:
+
+---
+n1.Knows(n2)
+---
+
+ Any name that does not mean anything for the node class can be used as
+ relationship type:
+
+---
+n1.some_reltionship_type(n2)
+n1.CASE_MATTERS(n2)
+---
+
+ Specify properties for new relationships:
+
+---
+n1.Knows(n2, since=123456789,
+             introduced_at="Christmas party")
+---
+
+* Indexes
+
+ Get index:
+
+---
+index = neo.index("index name")
+---
+
+ Create index:
+
+---
+index = neo.index("some index", create=True)
+---
+
+ If an index is created that already exists, the existing index will not be
+ replaced, and the existing index will be returned. The create flag is a
+ measure to help finding spelling errors in index names.
+
+ Using indexes:
+
+---
+index['value'] = node
+node = index['value']
+del index['value']
+---
+
+ Using indexes as multi value indexes:
+
+---
+multiIndex.add('value', node)
+for node in multiIndex.nodes('value'):
+    doStuffWith(node)
+---
+
 * Traversals
 
  Traversals are defined by creating a class that extends
