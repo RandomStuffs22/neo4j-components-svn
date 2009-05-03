@@ -33,7 +33,7 @@
 		<dependency>
 			<groupId>org.neo4j</groupId>
 			<artifactId>remote-neo</artifactId>
-			<version>0.1-SNAPSHOT</version>
+			<version>0.1</version>
 		</dependency>
 	</dependencies>
 
