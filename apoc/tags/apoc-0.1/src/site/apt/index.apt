@@ -1,0 +1,52 @@
+Neo4j Apoc
+
+	Apoc is A Package Of Components.
+	
+	It is a meta package containing the most commonly used Neo4j libraries,
+    which means that it enables you to add these as a single {{{http://maven.apache.org/}Maven}}
+    dependency in your projects. With Apoc, you're also sure that you use
+    component versions that fit together.
+	
+Included components	
+
+*----+------+------+
+| {{{../neo/}neo}} | the neo4j kernel | the neo4j graph database engine |
+*----+------+------+
+| {{{../index-util/}index-util}} | indexing and data structures | enables you to lookup nodes and relationships by property values |
+*----+------+------+
+| {{{../shell/}shell}} | text command shell | enables you to browse the node space from a local or remote JVM |
+*----+------+------+
+| {{{../remote-neo/}remote-neo}} | introspection tool | enables you to connect to a running neo instance from another JVM |
+*----+------+------+
+
+Usage
+    
+    To use Apoc, add the following repository to your POM.xml file:
+    
+---
+    <repositories>
+        <repository>
+            <id>neo4j-public-repository</id>
+            <name>Publically available Maven 2 repository for Neo4j</name>
+            <url>http://m2.neo4j.org</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+---
+
+    And then add the dependency on Apoc:
+    
+---
+    <dependencies>
+        <dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>apoc</artifactId>
+            <version>someversion</version> <!-- for example 0.1 or 0.2-SNAPSHOT -->
+            <type>pom</type>
+        </dependency>
+    </dependencies>
+---
+    
