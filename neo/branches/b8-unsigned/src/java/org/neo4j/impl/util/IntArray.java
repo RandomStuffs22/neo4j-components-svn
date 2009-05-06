@@ -138,14 +138,21 @@ public class IntArray
                 int value = newArray.get( i );
                 if ( set.contains( value ) )
                 {
-                    for ( int j = newArray.length() - 1; j > i + 1; j--)
+                    boolean swapSuccessful = false;
+                    for ( int j = newArray.length() - 1; j >= i + 1; j--)
                     {
                         int backValue = newArray.get( j );
                         newArray.arrayCount--;
                         if ( !set.contains( backValue) )
                         {
                             newArray.getArray()[i] = backValue;
+                            swapSuccessful = true;
+                            break;
                         }
+                    }
+                    if ( !swapSuccessful ) // all elements from pos in remove
+                    {
+                        newArray.arrayCount--;
                     }
                 }
             }

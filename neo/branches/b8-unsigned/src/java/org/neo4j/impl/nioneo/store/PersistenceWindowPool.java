@@ -137,7 +137,7 @@ class PersistenceWindowPool
                 miss++;
                 brickMiss++;
                 
-                PersistenceRow dpw = activeRowWindows.get( position ); 
+                PersistenceRow dpw = activeRowWindows.get( (int) position ); 
                 
                 if ( dpw == null )
                 {
