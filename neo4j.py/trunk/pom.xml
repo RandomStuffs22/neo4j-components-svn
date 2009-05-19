@@ -1,27 +1,30 @@
-<project>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.neo4j</groupId>
     <artifactId>parent-pom</artifactId>
     <version>4</version>
-    <relativePath>../../pom.xml</relativePath>    		
+    <relativePath>../../pom.xml</relativePath>
   </parent>
-  
-  <modelVersion>4.0.0</modelVersion>	
+
+  <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
   <artifactId>neo4j.py</artifactId>
   <version>0.1-SNAPSHOT</version>
   <name>Neo4j.py</name>
   <packaging>pom</packaging>
   <description>
-    Neo4j.py is the Python bindings project for the Neo4j graph database.
+    Neo4j.py is the Python bindings project for the Neo4j graph
+    database.
   </description>
-  
+
   <scm>
     <connection>
       scm:svn:https://svn.neo4j.org/components/${project.artifactId}/trunk/
     </connection>
   </scm>
-	
+
   <developers>
     <developer>
       <id>tobias</id>
@@ -29,9 +32,9 @@
       <email>tobias.ivarsson [at] neotechnology.com</email>
       <timezone>+1</timezone>
       <roles>
-	<role>Author</role>
-	<role>Maintainer</role>
-	<role>Developer</role>
+        <role>Author</role>
+        <role>Maintainer</role>
+        <role>Developer</role>
       </roles>
     </developer>
   </developers>
@@ -63,21 +66,23 @@
         <executions>
           <execution>
             <phase>pre-site</phase>
-	    <goals><goal>exec</goal></goals>
+            <goals>
+              <goal>exec</goal>
+            </goals>
             <configuration>
-	      <executable>python</executable>
-	      <arguments>
-		<argument>src/script/generate-apt.py</argument>
-		<argument>src/main/python</argument>
-		<argument>src/site/apt</argument>
-		<argument>index neo4j</argument>
-		<argument>apidoc/neo-service neo4j.NeoService</argument>
-		<argument>apidoc/primitives neo4j._primitives</argument>
-		<argument>apidoc/traverse neo4j._traverse</argument>
-	      </arguments>
-	    </configuration>
-	  </execution>
-	</executions>
+              <executable>python</executable>
+              <arguments>
+                <argument>src/script/generate-apt.py</argument>
+                <argument>src/main/python</argument>
+                <argument>src/site/apt</argument>
+                <argument>index neo4j</argument>
+                <argument>apidoc/neo-service neo4j.NeoService</argument>
+                <argument>apidoc/primitives neo4j._primitives</argument>
+                <argument>apidoc/traverse neo4j._traverse</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

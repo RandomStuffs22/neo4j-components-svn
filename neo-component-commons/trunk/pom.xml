@@ -1,48 +1,45 @@
-<project>
-	<parent>
-		<groupId>org.neo4j</groupId>
-		<artifactId>parent-pom</artifactId>
-		<version>4</version>
-	</parent>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.neo4j</groupId>
+    <artifactId>parent-pom</artifactId>
+    <version>4</version>
+  </parent>
 
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.neo4j</groupId>
-	<artifactId>neo-component-commons</artifactId>
-	<version>0.1-SNAPSHOT</version>
-	<name>Neo Component Commons</name>
-	<description>A collection of common classes to use in neo (and other) components</description>
-	<url>http://components.neo4j.org/${project.artifactId}/</url>
-	
-	<scm>
-		<connection>
-			scm:svn:https://svn.neo4j.org/components/${project.artifactId}/trunk/
-		</connection>
-		<url>https://trac.neo4j.org/browser/components/${project.artifactId}
-		</url>
-	</scm>
-	
-	<issueManagement>
-		<system>Trac</system>
-		<url>https://trac.neo4j.org/query?status=assigned&amp;status=new&amp;status=reopened&amp;component=${project.artifactId}</url>
-	</issueManagement>
-	
-	<licenses>
-		<license>
-			<name>GNU Affero General Public License, Version 3</name>
-			<url>https://svn.neo4j.org/components/${project.artifactId}/trunk/LICENSE.txt
-			</url>
-		</license>
-	</licenses>
-	
-	<developers>
-		<developer>
-			<id>mattias</id>
-			<name>Mattias Persson</name>
-			<email>mattias [at] neotechnology.com</email>
-			<timezone>+1</timezone>
-			<roles>
-				<role>Developer</role>
-			</roles>
-		</developer>
-	</developers>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.neo4j</groupId>
+  <artifactId>neo-component-commons</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <name>Neo Component Commons</name>
+  <description>A collection of common classes to use in neo (and other) components</description>
+  <url>http://components.neo4j.org/${project.artifactId}/</url>
+
+  <scm>
+    <connection>
+            scm:svn:https://svn.neo4j.org/components/${project.artifactId}/trunk/
+        </connection>
+    <url>https://trac.neo4j.org/browser/components/${project.artifactId}
+        </url>
+  </scm>
+
+  <licenses>
+    <license>
+      <name>GNU Affero General Public License, Version 3</name>
+      <url>https://svn.neo4j.org/components/${project.artifactId}/trunk/LICENSE.txt
+            </url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>mattias</id>
+      <name>Mattias Persson</name>
+      <email>mattias [at] neotechnology.com</email>
+      <timezone>+1</timezone>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
+  </developers>
 </project>
