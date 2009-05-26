@@ -10,7 +10,8 @@ public class IteratorUtil
         if ( iterator.hasNext() )
         {
             throw new IllegalArgumentException( "More than one item in " +
-                iterator + ". First is " + value );
+                iterator + ". First value is '" + value +
+                "' and the second value is '" + iterator.next() + "'" );
         }
         return value;
     }
