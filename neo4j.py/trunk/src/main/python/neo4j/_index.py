@@ -73,6 +73,7 @@ def initialize(backend):
         # Single values
         def __getitem__(self, key):
             node = self.__index.getSingleNode(self.__key, key)
+            if node is None: return None # XXX: or should this raise KeyError?
             return Node(self.__neo, node)
         def __setitem__(self, key, node):
             node = get_node(node)

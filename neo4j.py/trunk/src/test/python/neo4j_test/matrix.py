@@ -49,18 +49,18 @@ def verify(thomas,verbose=False):
     for friend in Friends(thomas):
         friends[friend['name']] = friend.depth
         if verbose:
-            print "Friend: At depth %s => %s" % (friend.depth, friend['name'])
+            print("Friend: At depth %s => %s" % (friend.depth, friend['name']))
     assert friends == {'Trinity':1,
                        'Morpheus':1,
                        'Cypher':2,
                        'Agent Smith':3,
-                       }, "Found wrong friends: %s" % friends
+                       }, "Found wrong friends: %s" % (friends,)
     hackers = {}
     for hacker in Hackers(thomas):
         hackers[hacker['name']] = hacker.depth
         if verbose:
-            print "Hacker: At depth %s => %s" % (hacker.depth, hacker['name'])
-    assert hackers == {'The Architect':4}, "Found wrong hackers: %s" % hackers
+            print("Hacker: At depth %s => %s" % (hacker.depth, hacker['name']))
+    assert hackers == {'The Architect':4}, "Found wrong hackers: %s"%(hackers,)
 
 def run(neo, **options):
     perform(neo, define_verify_test(__name__, define, verify), **options)

@@ -45,9 +45,13 @@ def load_neo(resource_uri, parameters):
         if os.path.isdir(class_base):
             for file in os.listdir(class_base):
                 classpath.append(os.path.join(class_base, file))
+    elif isinstance(parameters['classpath'], basestring):
+        parameters['classpath'] = parameters['classpath'].split(os.pathsep)
     if 'ext_dirs' not in parameters: # JPype cannot have jars on classpath
         if os.path.isdir(class_base):
             parameters['ext_dirs'] = [class_base]
+    elif isinstance(parameters['ext_dirs'], basestring):
+        parameters['ext_dirs'] = parameters['ext_dirs'].split(os.pathsep)
     # Load the backend and the Neo4j classes
     backend.initialize(**parameters)
     # Initialize subsystems
@@ -70,6 +74,15 @@ def load_neo(resource_uri, parameters):
     StopAtDepth               = backend.implementation.StopAtDepth
     # Define replacement load function for use when the initial load is done
     def load_neo(resource_uri, parameters):
+        if parameters.get('start_server', False):
+            server_path = parameters.get('server_path', resource_uri)
+            if '://' in server_path:
+                if server_path.startswith('file://'):
+                    server_path = server_path[7:]
+                else:
+                    server_path = None
+            if server_path is not None:
+                backend.start_server(resource_uri, server_path)
         return NeoService(resource_uri)
     # Define the implementation
     # --- <NeoService> ---
@@ -102,9 +115,10 @@ def load_neo(resource_uri, parameters):
             body[name] = member
     NeoService = type("NeoService", (NeoService,), body)
     # --- </NeoService> ---
-    tx_join = backend.implementation.tx_join\
-        if hasattr(backend.implementation, 'tx_join')\
-        else None
+    if hasattr(backend.implementation, 'tx_join'):
+        tx_join = backend.implementation.tx_join
+    else:
+        tx_join = None
     class TransactionContext(object):
         def __init__(self, neo):
             self.__neo = neo
@@ -162,4 +176,4 @@ def load_neo(resource_uri, parameters):
                                 self.__backend.getRelationshipById(id))
     import neo4j._hooks as hooks
     hooks.initialize(parameters)
-    return NeoService(resource_uri)
+    return load_neo(resource_uri, parameters)

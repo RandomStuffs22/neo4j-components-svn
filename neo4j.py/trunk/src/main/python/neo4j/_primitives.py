@@ -245,8 +245,7 @@ def initialize(backend):
             rel_types = []
             for type in types:
                 rel_types.append(RelationshipType(type))
-                return RelationshipFactory(self.__neo, self.__node, BOTH,
-                                           rel_types)
+            return RelationshipFactory(self.__neo, self.__node, BOTH, rel_types)
         def delete(self):
             self.__node.delete()
         relationships.__doc__ = Node.relationships.__doc__
@@ -318,11 +317,11 @@ def initialize(backend):
         @property
         def incoming(self):
             return RelationshipFactory(self.__neo, self.__node,
-                                       self.__type, INCOMING)
+                                       INCOMING, self.__types)
         @property
         def outgoing(self):
             return RelationshipFactory(self.__neo, self.__node,
-                                       self.__type, OUTGOING)
+                                       OUTGOING, self.__types)
     
     class Relationship(Relationship, Neo4jObject):
         def __init__(self, neo, relationship):

@@ -368,6 +368,14 @@ neo = NeoService("/path/to/node_store/", **options)
 
     [jvm      ] The path to the Java virtual machine to use.
 
+    [username ] The username to use when connecting to a remote server.
+
+    [password ] The password to use when connecting to a remote server.
+
+    [start_server] True if attempts should be made to start remote server.
+
+    [server_path ] The path to where the server db is stored.
+
     The classpath or ext_dirs options are used for finding the Java
     implementation of Neo4j. If they are not specified it defaults to
     the jar files that are disributed with this package.
@@ -468,3 +476,11 @@ ref_node = neo.reference_node
             return core.load_neo(resource_uri, params)
         cls.__new__ = __new__
         return neo
+
+def transactional(accessor):
+    global transactional
+    try:
+        from neo4j._util import transactional
+    except:
+        raise NotImplementedError("@transactional requires Python >= 2.5.")
+    return transactional(accessor)

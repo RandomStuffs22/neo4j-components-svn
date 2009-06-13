@@ -18,15 +18,15 @@ def perform(neo, test, **opt):
     try:
         test(neo, opt)
     except SkipTest, message:
-        print "SKIPPED:", test.__name__, "--", message
+        print("SKIPPED: %s -- %s" % (test.__name__, message))
     except AssertionError, err:
-        print "FAILURE:", test.__name__
-        print "   ", err
+        print("FAILURE: %s" % (test.__name__,))
+        print("    %s" % (err,))
     except:
-        print "ERROR:  ", test.__name__
+        print("ERROR:   %s" % (test.__name__,))
         traceback.print_exc()
     else:
-        print "PASSED: ", test.__name__
+        print("PASSED:  %s" % (test.__name__,))
 
 def define_verify_test(name, define, verify):
     def test(neo, opt):

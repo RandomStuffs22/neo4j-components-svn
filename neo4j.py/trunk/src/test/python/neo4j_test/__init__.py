@@ -6,7 +6,7 @@ import neo4j, os.path, traceback
 
 class Log(object):
     def error(self, message, *args):
-        print message % args
+        print(message % args)
 
 def test(exe, store, *classpath):
     import os.path
@@ -24,10 +24,10 @@ def test(exe, store, *classpath):
         for name in os.listdir(os.path.dirname(__file__)):
             if name.endswith('.py') and not name.startswith('_'):
                 try:
-                    exec('import neo4j_test.%s as test' % name[:-3])
+                    exec('import neo4j_test.%s as test' % (name[:-3],))
                     test.run(neo)
                 except:
-                    print "FAIL: '%s' is not a proper test module." % name
+                    print("FAIL: '%s' is not a proper test module." % (name,))
                     traceback.print_exc()
     finally:
         neo.shutdown()

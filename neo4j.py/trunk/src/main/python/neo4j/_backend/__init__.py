@@ -27,7 +27,7 @@ import traceback
 
 def initialize(classpath, **params):
     import sys
-    global implementation, load_neo
+    global implementation, load_neo, start_server
     log = params.get('log', None)
     try: # Native implementation
         if 'java' in sys.platform.lower():
@@ -63,3 +63,5 @@ def initialize(classpath, **params):
             raise RuntimeError("Cannot connect to Neo instance at '%s'." %
                                (resource_uri,))
         return impl(resource_uri)
+    def start_server(resource_uri, server_path):
+        pass
