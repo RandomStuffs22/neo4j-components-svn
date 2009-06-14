@@ -32,13 +32,20 @@ except:
         return []
 else:
     def extension_modules(packages, dependencies):
-        packages.append('_neo4jcc')
+        #packages.append('_neo4jcc')
         return [
             JCCExtension('_neo4jcc',
                          classpath=dependencies,
-                         classes=["org.neo4j.api.core.EmbeddedNeo",],
+                         classes=["org.neo4j.api.core.EmbeddedNeo",
+                                  "org.neo4j.remote.RemoteNeo",
+                                  "org.neo4j.util.index.LuceneIndexService",
+                                  "org.neo4j.util.index.NeoIndexService",
+                                  "org.neo4j.remote.RemoteIndexService",
+                                  "org.neo4j.util.timeline.Timeline",],
                          packages=["org.neo4j.api.core",
-                                   "java.lang", "java.util",],
+                                   "java.lang", "java.util",
+                                   "org.neo4j.remote","org.neo4j.remote.sites",
+                                   ],
                          )
             ]
 
@@ -61,13 +68,13 @@ CPython implementation of the Python 3 series.
     except:
         return
     if impl == 'CPython':
-        #parameters['setup_requires'] = ['jcc'] # TODO: implement JCC-support
+        parameters['setup_requires'] = ['jcc'] # TODO: implement JCC-support
         #parameters['install_requires'] = ['jpype']
-        warnings.warn("""Neo4j.py requires JPype.
-Neo4j.py depends on JPype (found here: http://jpype.sourceforge.net) for
-Java integration. JPype is not installable through easy-install, which means
-that you will have to install it manually.
-""")
+#        warnings.warn("""Neo4j.py requires JPype.
+#Neo4j.py depends on JPype (found here: http://jpype.sourceforge.net) for
+#Java integration. JPype is not installable through easy-install, which means
+#that you will have to install it manually.
+#""")
 
 class test(Command):
     description = "Execute unit tests."
