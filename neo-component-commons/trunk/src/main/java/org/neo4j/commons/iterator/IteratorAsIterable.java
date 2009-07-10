@@ -1,4 +1,4 @@
-package org.neo4j.util;
+package org.neo4j.commons.iterator;
 
 import java.util.Iterator;
 
