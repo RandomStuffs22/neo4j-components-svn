@@ -5,7 +5,7 @@
   <artifactId>parent-pom</artifactId>
   <name>Neo4j parent POM</name>
   <packaging>pom</packaging>
-  <version>4</version>
+  <version>5</version>
 
   <url>http://components.neo4j.org/</url>
   <organization>
@@ -109,6 +109,21 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <version>1.4.3</version>
+        <configuration>
+          <instructions>
+            <Bundle-Version>${pom.version}</Bundle-Version>
+            <Export-Package>!${bundle.namespace}.internal.*,${bundle.namespace}.*;version="${pom.version}"</Export-Package>
+            <Private-Package>${bundle.namespace}.internal.*</Private-Package>
+            <_include>-osgi.bnd</_include>
+        </instructions>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
