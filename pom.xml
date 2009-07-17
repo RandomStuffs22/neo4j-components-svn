@@ -119,6 +119,10 @@
             <Bundle-Version>${pom.version}</Bundle-Version>
             <Export-Package>!${bundle.namespace}.internal.*,${bundle.namespace}.*;version="${pom.version}"</Export-Package>
             <Private-Package>${bundle.namespace}.internal.*</Private-Package>
+            <!-- Allow each bundle to override these settings by creating a file named osgi.bnd
+                 in the same directory as the component's pom.xml. See components/neo/trunk/osgi.bnd
+                 for an example.
+            -->
             <_include>-osgi.bnd</_include>
         </instructions>
         </configuration>
