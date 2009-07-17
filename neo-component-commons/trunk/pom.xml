@@ -4,16 +4,22 @@
   <parent>
     <groupId>org.neo4j</groupId>
     <artifactId>parent-pom</artifactId>
-    <version>4</version>
+    <version>5</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
   <artifactId>neo-component-commons</artifactId>
   <version>0.2-SNAPSHOT</version>
-  <name>Neo Component Commons</name>
+  <name>Neo4j - Component Commons</name>
   <description>A collection of common classes to use in neo (and other) components</description>
   <url>http://components.neo4j.org/${project.artifactId}/</url>
+
+  <properties>
+    <bundle.namespace>org.neo4j.commons</bundle.namespace>
+  </properties>
+
+  <packaging>bundle</packaging>
 
   <scm>
     <connection>
