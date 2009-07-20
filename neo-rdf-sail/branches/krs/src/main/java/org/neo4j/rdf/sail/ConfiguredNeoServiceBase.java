@@ -8,6 +8,7 @@ import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.Relationship;
+import org.neo4j.api.core.RelationshipType;
 import org.neo4j.api.core.Transaction;
 
 public class ConfiguredNeoServiceBase implements NeoService
@@ -75,4 +76,15 @@ public class ConfiguredNeoServiceBase implements NeoService
     {
         return neo().getReferenceNode();
     }    
+
+    public Iterable<RelationshipType> getRelationshipTypes()
+    {
+        return neo().getRelationshipTypes();
+    }
+    
+    public Iterable<Node> getAllNodes()
+    {
+        return neo().getAllNodes();
+    }
+
 }

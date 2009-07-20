@@ -31,7 +31,7 @@ import org.neo4j.rdf.sail.utils.SailConnectionTripleSource;
 import org.neo4j.rdf.store.RdfStore;
 import org.neo4j.rdf.store.RdfStoreImpl;
 import org.neo4j.rdf.util.TemporaryLogger;
-import org.neo4j.util.CombiningIterable;
+import org.neo4j.commons.iterator.CombiningIterable;
 import org.neo4j.util.NeoUtil;
 import org.openrdf.model.Literal;
 import org.openrdf.model.Namespace;
