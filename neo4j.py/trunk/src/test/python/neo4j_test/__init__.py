@@ -5,8 +5,11 @@ Setup the classpath, create neo instance and dispatch to each test module.
 import neo4j, os.path, traceback
 
 class Log(object):
-    def error(self, message, *args):
+    def error(self, message, *args, **kwargs):
         print(message % args)
+        if kwargs.get('exc_info', False):
+            traceback.print_exc()
+    warn = info = debug = error
 
 def test(exe, store, *classpath):
     import os.path

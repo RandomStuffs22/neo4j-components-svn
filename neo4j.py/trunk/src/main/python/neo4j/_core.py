@@ -38,6 +38,7 @@ def load_neo(resource_uri, parameters):
     import neo4j._traverse as traversals
     import neo4j._index as indexes
     import os.path, atexit
+    log = parameters.get('log', None)
     # Setup the parameters
     class_base = os.path.join(os.path.dirname(__file__), 'classes')
     if 'classpath' not in parameters:
@@ -52,6 +53,9 @@ def load_neo(resource_uri, parameters):
             parameters['ext_dirs'] = [class_base]
     elif isinstance(parameters['ext_dirs'], basestring):
         parameters['ext_dirs'] = parameters['ext_dirs'].split(os.pathsep)
+    if log:
+        log.debug("classpath is: %s", parameters['classpath'])
+        log.debug("ext_dirs is:  %s", parameters['ext_dirs'])
     # Load the backend and the Neo4j classes
     backend.initialize(**parameters)
     # Initialize subsystems
@@ -74,6 +78,7 @@ def load_neo(resource_uri, parameters):
     StopAtDepth               = backend.implementation.StopAtDepth
     # Define replacement load function for use when the initial load is done
     def load_neo(resource_uri, parameters):
+        log = parameters.get('log', None)
         if parameters.get('start_server', False):
             server_path = parameters.get('server_path', resource_uri)
             if '://' in server_path:
@@ -82,12 +87,15 @@ def load_neo(resource_uri, parameters):
                 else:
                     server_path = None
             if server_path is not None:
+                if log: log.info("Starting Neo4j server for "
+                                 "resource_uri=%r at server_path=%r",
+                                 resource_uri, server_path)
                 backend.start_server(resource_uri, server_path)
-        return NeoService(resource_uri)
+        return NeoService(resource_uri, log)
     # Define the implementation
     # --- <NeoService> ---
     class NeoService(Neo4jObject): # Use same name everywhere for name mangling
-        def __init__(self, resource_uri):
+        def __init__(self, resource_uri, log):
             neo = backend.load_neo(resource_uri)
             Neo4jObject.__init__(self, neo=neo)
             self.__neo = neo
@@ -95,6 +103,7 @@ def load_neo(resource_uri, parameters):
             self.__relationships = RelationshipLookup(self, neo)
             self.__index = indexes.IndexService(self, neo)
             self.__transaction = lambda: TransactionContext(neo)
+            self.__log = log
             atexit.register(self.shutdown)
         def __getattr__(self, attr):
             if attr.lower() in ('ref', 'reference',
@@ -116,6 +125,8 @@ def load_neo(resource_uri, parameters):
     NeoService = type("NeoService", (NeoService,), body)
     # --- </NeoService> ---
     if hasattr(backend.implementation, 'tx_join'):
+        log.debug("Transaction joining in effect "
+                  "(mechanism used to discover threads).")
         tx_join = backend.implementation.tx_join
     else:
         tx_join = None

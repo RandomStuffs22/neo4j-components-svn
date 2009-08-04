@@ -95,14 +95,14 @@ error: X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\: couldn't make director
 
  All of Neo4j.py has already been installed at this point. This can be
  verified by checking that
- <<X:\<PATH_TO>\jython-2.5b3\Lib\site-packages\neo4j>> contains some
+ <<X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\neo4j>> contains some
  directories, Python source files and bytecode compiled files. You can also
  verify that
- <<X:\<PATH_TO>\jython-2.5b3\Lib\site-packages\neo4j\classes>> contains the
- required jar-files. What the install script has failed to do is to write
- the package information. This may cause trouble when installing a new
- version of neo4j.py, the fix for this is to manually remove neo4j.py
- before installing a new version.
+ <<X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\neo4j\\classes>>
+ contains the required jar-files. What the install script has failed to do
+ is to write the package information. This may cause trouble when
+ installing a new version of neo4j.py, the fix for this is to manually
+ remove neo4j.py before installing a new version.
 
  This issue has been reported at {{https://trac.neo4j.org/ticket/156}} and
  {{http://bugs.jython.org/issue1110}}. We have fixed this for the next

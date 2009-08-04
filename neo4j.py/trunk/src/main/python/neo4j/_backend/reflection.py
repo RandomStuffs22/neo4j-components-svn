@@ -33,7 +33,9 @@ def initialize(classpath, parameters):
         RelationshipType, Evaluator, IndexService,\
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH, StopAtDepth,\
         array, to_java, to_python, tx_join
-    jvm = parameters.get('jvm', jpype.getDefaultJVMPath())
+    jvm = parameters.get('jvm', None)
+    if jvm is None:
+        jvm = jpype.getDefaultJVMPath()
     args = []
     if 'ext_dirs' in parameters:
         args.append('-Djava.ext.dirs=' + ':'.join(parameters['ext_dirs']))

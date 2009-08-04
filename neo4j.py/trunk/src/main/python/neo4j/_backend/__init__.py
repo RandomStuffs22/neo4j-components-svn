@@ -23,31 +23,39 @@ Copyright (c) 2008-2009 "Neo Technology,"
     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
-import traceback
-
 def initialize(classpath, **params):
     import sys
     global implementation, load_neo, start_server
     log = params.get('log', None)
     try: # Native implementation
         if 'java' in sys.platform.lower():
+            if log: log.debug("Trying Jython backend.")
             from neo4j._backend import java as implementation
             embedded, remote = implementation.initialize(classpath, params)
+            if log: log.debug("Using Jython backend.")
         elif 'cli' in sys.platform.lower():
+            if log: log.debug("Trying IronPython backend.")
             from neo4j._backend import cli as implementation
             embedded, remote = implementation.initialize(classpath, params)
+            if log: log.debug("Using IronPython backend.")
         else:
             try: # JCC
+                if log: log.debug("Trying JCC backend.")
                 from neo4j._backend import jcc as implementation
                 embedded, remote = implementation.initialize(classpath, params)
+                if log: log.debug("Using JCC backend.")
             except: # Fall back to JPype
+                if log: log.debug("Trying JPype backend.")
                 from neo4j._backend import reflection as implementation
                 embedded, remote = implementation.initialize(classpath, params)
+                if log: log.debug("Using JPype backend.")
     except:
-        if log: log.error(traceback.format_exc())
+        if log: log.error("Importing native backends failed.", exc_info=True)
         try: # Falling back to pure python implementation
+            if log: log.debug("Trying pure Python backend.")
             from neo4j._backend import pure as implementation
             embedded, remote = implementation.initialize(classpath, params)
+            if log: log.debug("Using pure Python backend.")
         except: # FAIL.
             raise ImportError("No applicable backend found.")
     # Define load function
