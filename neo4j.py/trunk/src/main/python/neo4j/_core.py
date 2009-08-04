@@ -125,8 +125,8 @@ def load_neo(resource_uri, parameters):
     NeoService = type("NeoService", (NeoService,), body)
     # --- </NeoService> ---
     if hasattr(backend.implementation, 'tx_join'):
-        log.debug("Transaction joining in effect "
-                  "(mechanism used to discover threads).")
+        if log: log.debug("Transaction joining in effect "
+                          "(mechanism used to discover threads).")
         tx_join = backend.implementation.tx_join
     else:
         tx_join = None
