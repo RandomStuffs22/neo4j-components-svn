@@ -241,6 +241,10 @@ public class NeoSailConnection implements NeoRdfSailConnection
 
     public synchronized void close() throws SailException
     {
+        if ( !open )
+        {
+            return;
+        }
         open = false;
         if ( commands.size() != 0 )
         {
