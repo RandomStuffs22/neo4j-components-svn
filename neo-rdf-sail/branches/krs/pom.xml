@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.neo4j</groupId>
     <artifactId>neo-rdf-sail</artifactId>
-    <version>0.3-krs</version>
+    <version>0.4-krs</version>
     <name>Neo RDF SAIL</name>
     <description>A Neo RDF Sesame Storage and Inference Layer</description>
     <url>http://components.neo4j.org/${project.artifactId}/</url>
@@ -96,6 +96,11 @@
             <groupId>org.neo4j</groupId>
             <artifactId>neo-rdf</artifactId>
             <version>0.4-krs</version>
+        </dependency>
+        <dependency>
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo-component-commons</artifactId>
+            <version>0.2-krs</version>
         </dependency>
         <dependency>
             <groupId>org.openrdf.sesame</groupId>

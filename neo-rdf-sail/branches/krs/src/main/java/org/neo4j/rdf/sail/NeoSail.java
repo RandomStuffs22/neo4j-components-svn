@@ -72,9 +72,18 @@ public class NeoSail implements Sail {
             this.activeConnections.entrySet() )
         {
             String logString = "NeoSailConnection[" +
-                entry.getKey() + "] still open when shutting down sail";
+                entry.getKey() + "] still open when shutting down sail, closing";
             TemporaryLogger.getLogger().warn( logString );
             MutatingLogger.getLogger().warn( logString );
+            try
+            {
+                entry.getValue().close();
+            }
+            catch ( Exception e )
+            {
+                TemporaryLogger.getLogger().warn( e );
+                MutatingLogger.getLogger().warn( e );
+            }
         }
     }
 
