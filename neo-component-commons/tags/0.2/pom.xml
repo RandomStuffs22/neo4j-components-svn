@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
   <artifactId>neo-component-commons</artifactId>
-  <version>0.3-SNAPSHOT</version>
+  <version>0.2</version>
   <name>Neo4j - Component Commons</name>
   <description>A collection of common classes to use in neo (and other) components</description>
   <url>http://components.neo4j.org/${project.artifactId}/</url>
