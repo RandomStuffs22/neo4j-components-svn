@@ -11,7 +11,7 @@
   <artifactId>apoc</artifactId>
   <packaging>pom</packaging>
   <name>A Package Of Components</name>
-  <version>0.1</version>
+  <version>0.2</version>
   <url>http://components.neo4j.org/${project.artifactId}/</url>
   <description>A meta package containing the most used Neo4j libraries. Intended use: as a Maven dependency.</description>
 
@@ -19,22 +19,22 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo</artifactId>
-      <version>1.0-b8</version>
+      <version>1.0-b9</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>index-util</artifactId>
-      <version>0.6</version>
+      <version>0.7</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>shell</artifactId>
-      <version>1.0-b8</version>
+      <version>1.0-b9</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>remote-neo</artifactId>
-      <version>0.1</version>
+      <version>0.2</version>
     </dependency>
   </dependencies>
 
