@@ -90,7 +90,7 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo</artifactId>
-            <version>1.0-b8</version>
+            <version>1.0-b8u1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.neo4j</groupId>
@@ -100,7 +100,7 @@
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo-component-commons</artifactId>
-            <version>0.2-krs</version>
+            <version>0.2</version>
         </dependency>
         <dependency>
             <groupId>org.openrdf.sesame</groupId>
