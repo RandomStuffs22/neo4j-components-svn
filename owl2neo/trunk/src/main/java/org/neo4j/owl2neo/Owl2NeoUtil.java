@@ -224,8 +224,32 @@ class Owl2NeoUtil
 	
 	private String getOntologyUri( String entireOntologyAsString )
 	{
-		String lookFor = "xmlns=\"";
-		int startIndex = entireOntologyAsString.indexOf( lookFor );
+		String lookFor = "xmlns";
+		int startIndex = -1;
+		for ( int tempIndex = 0; true; )
+		{
+	        tempIndex = entireOntologyAsString.indexOf( lookFor, tempIndex );
+	        if ( tempIndex == -1 )
+	        {
+	            break;
+	        }
+	        else
+	        {
+	            char consecutiveChar = entireOntologyAsString.charAt(
+	                tempIndex + lookFor.length() );
+	            if ( consecutiveChar == ':' )
+	            {
+	                continue;
+	            }
+                startIndex = tempIndex + lookFor.length();
+	            while ( " =".indexOf(
+	                entireOntologyAsString.charAt( startIndex ) ) != -1 )
+	            {
+	                startIndex++;
+	            }
+	            break;
+	        }
+		}
 		if ( startIndex == -1 )
 		{
 			throw new RuntimeException( "Missing '" + lookFor + "'" );
@@ -1004,7 +1028,7 @@ class Owl2NeoUtil
 		public void visit( OWLEquivalentClassesAxiom value )
 		{
 			// TODO
-			throw new UnsupportedOperationException();
+//			throw new UnsupportedOperationException();
 		}
 
 		@Override

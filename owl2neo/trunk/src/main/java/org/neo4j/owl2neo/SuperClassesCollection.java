@@ -4,13 +4,14 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import org.neo4j.meta.model.MetaModel;
 import org.neo4j.meta.model.MetaModelClass;
 import org.neo4j.util.AbstractNeoSet;
 
 /**
  * A utility {@link Collection} which redirects all calls to the neo meta model
- * {@link MetaManager} so that the actual hierarchy gets persistent, using the
- * {@link NodeType}s.
+ * {@link MetaModel} so that the actual hierarchy gets persistent, using the
+ * {@link MetaModelClass}s.
  */
 public class SuperClassesCollection extends AbstractNeoSet<AbstractOwlThingie>
 {

@@ -38,7 +38,7 @@ public class OwlModel
 	/**
 	 * Represents a range for a property. Value be one of:
 	 * {@link Collection} when the range is an <owl:DataRange>.
-	 * {@link NodeType} when the range is a node type, (non-literal).
+	 * {@link MetaModelClass} when the range is a node type, (non-literal).
 	 * {@link Class} when the range is a data type (literal).
 	 * {@link URI} when the range is an instance of an object.
 	 */
@@ -101,7 +101,7 @@ public class OwlModel
 	}
 
 	/**
-	 * @param nodeType the {@link NodeType} the returned {@link OwlClass}
+	 * @param nodeType the {@link MetaModelClass} the returned {@link OwlClass}
 	 * instance represents.
 	 * @return the {@link OwlClass} instance representing <code>nodeType</code>.
 	 */
@@ -213,7 +213,7 @@ public class OwlModel
 	 * is in <code>propertyUri</code>'s domain (recursively).  
 	 * 
 	 * @param propertyUri the URI of the {@link OwlProperty}.
-	 * @param nodeTypes all the {@link NodeType}s.
+	 * @param nodeTypes all the {@link MetaModelClass}s.
 	 * @return <code>true</code> if <code>propertyUri</code> is allowed in any
 	 * of the classes in <code>nodeTypes</code>.
 	 */

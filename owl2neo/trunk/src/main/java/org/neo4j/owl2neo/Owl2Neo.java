@@ -27,7 +27,7 @@ public class Owl2Neo
 		new HashSet<OntologyChangeHandler>();
 
 	/**
-	 * @param metaManager the {@link MetaManager} to use for storing
+	 * @param metaManager the {@link MetaModel} to use for storing
 	 * information about the ontologies.
 	 */
 	public Owl2Neo( NeoService neo, MetaModel metaManager )
@@ -47,7 +47,7 @@ public class Owl2Neo
 	}
 	
 	/**
-	 * @return the {@link MetaManager} received in the constructor.
+	 * @return the {@link MetaModel} received in the constructor.
 	 */
 	public MetaModel getMetaManager()
 	{
@@ -74,11 +74,12 @@ public class Owl2Neo
 	}
 
 	/**
-	 * A utility for getting/creating a {@link NodeType} with a certain name.
-	 * @param name the name of the {@link NodeType} to return/create.
+	 * A utility for getting/creating a {@link MetaModelClass} with a
+	 * certain name.
+	 * @param name the name of the {@link MetaModelClass} to return/create.
 	 * @param createIfNotExists whether or not to create the node type if
 	 * it doesn't exist.
-	 * @return the {@link NodeType} by the name {@code name}.
+	 * @return the {@link MetaModelClass} by the name {@code name}.
 	 */
 	public MetaModelClass getNodeType( String name,
 	    boolean createIfNotExists )

@@ -32,8 +32,8 @@ public class OwlClass extends AbstractOwlThingie
 	
 	/**
 	 * @return a {@link SuperClassesCollection} which redirects its calls to
-	 * the neometa model, making the changes persistent between {@link NodeType}
-	 * instances.
+	 * the neometa model, making the changes persistent between
+	 * {@link MetaModelClass} instances.
 	 */
 	@Override
 	public Collection<AbstractOwlThingie> supers()
@@ -68,7 +68,7 @@ public class OwlClass extends AbstractOwlThingie
 	}
 	
 	/**
-	 * @return the {@link NodeType} which this class represents.
+	 * @return the {@link MetaModelClass} which this class represents.
 	 */
 	public MetaModelClass getNodeType()
 	{
