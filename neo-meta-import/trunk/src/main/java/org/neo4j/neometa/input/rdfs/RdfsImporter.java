@@ -7,19 +7,19 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.neo4j.api.core.Transaction;
-import org.neo4j.neometa.structure.DataRange;
-import org.neo4j.neometa.structure.DatatypeClassRange;
-import org.neo4j.neometa.structure.MetaStructure;
-import org.neo4j.neometa.structure.MetaStructureClass;
-import org.neo4j.neometa.structure.MetaStructureClassRange;
-import org.neo4j.neometa.structure.MetaStructureImpl;
-import org.neo4j.neometa.structure.MetaStructureNamespace;
-import org.neo4j.neometa.structure.MetaStructureProperty;
-import org.neo4j.neometa.structure.MetaStructureRestrictable;
-import org.neo4j.neometa.structure.MetaStructureThing;
-import org.neo4j.neometa.structure.PropertyRange;
-import org.neo4j.neometa.structure.RdfDatatypeRange;
-import org.neo4j.neometa.structure.RdfUtil;
+import org.neo4j.meta.model.ClassRange;
+import org.neo4j.meta.model.DataRange;
+import org.neo4j.meta.model.DatatypeClassRange;
+import org.neo4j.meta.model.MetaModel;
+import org.neo4j.meta.model.MetaModelClass;
+import org.neo4j.meta.model.MetaModelImpl;
+import org.neo4j.meta.model.MetaModelNamespace;
+import org.neo4j.meta.model.MetaModelProperty;
+import org.neo4j.meta.model.MetaModelRestrictable;
+import org.neo4j.meta.model.MetaModelThing;
+import org.neo4j.meta.model.PropertyRange;
+import org.neo4j.meta.model.RdfDatatypeRange;
+import org.neo4j.meta.model.RdfUtil;
 import org.ontoware.aifbcommons.collection.ClosableIterator;
 import org.ontoware.rdf2go.model.Model;
 import org.ontoware.rdf2go.model.Statement;
@@ -38,12 +38,12 @@ import org.ontoware.rdf2go.vocabulary.RDFS;
  */
 public class RdfsImporter
 {
-	private MetaStructure meta;
+	private MetaModel meta;
 	
 	/**
-	 * @param meta the {@link MetaStructure} instance to use.
+	 * @param meta the {@link MetaModel} instance to use.
 	 */
-	public RdfsImporter( MetaStructure meta )
+	public RdfsImporter( MetaModel meta )
 	{
 		this.meta = meta;
 	}
@@ -53,7 +53,7 @@ public class RdfsImporter
 	 * here's a method for that namespace.
 	 * @return the global namespace.
 	 */
-	protected MetaStructureNamespace meta()
+	protected MetaModelNamespace meta()
 	{
 		return this.meta.getGlobalNamespace();
 	}
@@ -66,7 +66,7 @@ public class RdfsImporter
 	public void doImport( File file ) throws IOException
 	{
 		Model model = RdfHelper.readModel( file );
-		Transaction tx = ( ( MetaStructureImpl ) meta ).neo().beginTx();
+		Transaction tx = ( ( MetaModelImpl ) meta ).neo().beginTx();
 		try
 		{
 			readFrom( model );
@@ -91,7 +91,7 @@ public class RdfsImporter
 		readRestrictions( model );
 	}
 	
-	private void trySetLabelAndComment( MetaStructureThing thing,
+	private void trySetLabelAndComment( MetaModelThing thing,
 		Model model, Resource resource )
 	{
 		trySetFromLiteral( thing, model, resource,
@@ -104,7 +104,7 @@ public class RdfsImporter
 			RDFS.isDefinedBy.toString(), "isDefinedBy" );
 	}
 	
-	private void trySetFromLiteral( MetaStructureThing thing, Model model,
+	private void trySetFromLiteral( MetaModelThing thing, Model model,
 		Resource resource, String property, String key )
 	{
 		String value = RdfHelper.tryGetLiteral( model, resource, property );
@@ -115,7 +115,7 @@ public class RdfsImporter
 		}
 	}
 	
-	private void trySetFromResource( MetaStructureThing thing, Model model,
+	private void trySetFromResource( MetaModelThing thing, Model model,
 		Resource resource, String property, String key )
 	{
 		Node node = RdfHelper.subNode( model, resource, property );
@@ -127,7 +127,7 @@ public class RdfsImporter
 		}
 	}
 
-	private abstract class ThingReader<T extends MetaStructureThing>
+	private abstract class ThingReader<T extends MetaModelThing>
 	{
 		abstract T get( String name );
 		
@@ -136,19 +136,19 @@ public class RdfsImporter
 		abstract void couple( String superName, String subName );
 	}
 	
-	private class ClassReader extends ThingReader<MetaStructureClass>
+	private class ClassReader extends ThingReader<MetaModelClass>
 	{
 		@Override
-		MetaStructureClass get( String name )
+		MetaModelClass get( String name )
 		{
 			return meta().getMetaClass( name, true );
 		}
 		
 		@Override
-		MetaStructureClass readThing( Model model, Resource resource,
+		MetaModelClass readThing( Model model, Resource resource,
 			String name )
 		{
-			MetaStructureClass metaClass = get( name );
+			MetaModelClass metaClass = get( name );
 			trySetLabelAndComment( metaClass, model, resource );
 			return metaClass;
 		}
@@ -160,19 +160,19 @@ public class RdfsImporter
 		}
 	}
 	
-	private class PropertyReader extends ThingReader<MetaStructureProperty>
+	private class PropertyReader extends ThingReader<MetaModelProperty>
 	{
 		@Override
-		MetaStructureProperty get( String name )
+		MetaModelProperty get( String name )
 		{
 			return meta().getMetaProperty( name, true );
 		}
 		
 		@Override
-		MetaStructureProperty readThing( Model model, Resource resource,
+		MetaModelProperty readThing( Model model, Resource resource,
 			String name )
 		{
-			MetaStructureProperty metaProperty = get( name );
+			MetaModelProperty metaProperty = get( name );
 			trySetLabelAndComment( metaProperty, model, resource );
 			trySetPropertyDomain( metaProperty, model, resource );
 			trySetPropertyRange( metaProperty, model, resource );
@@ -187,7 +187,7 @@ public class RdfsImporter
 		}
 	}
 
-	private <T extends MetaStructureThing> void readThings( Model model,
+	private <T extends MetaModelThing> void readThings( Model model,
 		org.ontoware.rdf2go.model.node.URI type, ThingReader<T> reader )
 	{
 		ClosableIterator<? extends Statement> itr =
@@ -215,7 +215,7 @@ public class RdfsImporter
 		}
 	}
 	
-	private <T extends MetaStructureThing> void coupleThings( Model model,
+	private <T extends MetaModelThing> void coupleThings( Model model,
 		org.ontoware.rdf2go.model.node.URI type, ThingReader<T> reader )
 	{
 		ClosableIterator<? extends Statement> itr = model.findStatements(
@@ -267,7 +267,7 @@ public class RdfsImporter
 		coupleThings( model, RDFS.subPropertyOf, reader );
 	}
 	
-	private void trySetPropertyDomain( MetaStructureProperty metaProperty,
+	private void trySetPropertyDomain( MetaModelProperty metaProperty,
 		Model model, Resource property )
 	{
 		for ( Node domainNode :
@@ -284,10 +284,10 @@ public class RdfsImporter
 		}
 	}
 	
-	private MetaStructureClass[] nodesToClasses( Collection<Node> classNodes )
+	private MetaModelClass[] nodesToClasses( Collection<Node> classNodes )
 	{
-		MetaStructureClass[] classes =
-			new MetaStructureClass[ classNodes.size() ];
+		MetaModelClass[] classes =
+			new MetaModelClass[ classNodes.size() ];
 		int i = 0;
 		for ( Node classNode : classNodes )
 		{
@@ -316,20 +316,20 @@ public class RdfsImporter
 			result = new DataRange( newDataRange.getRdfDatatype(),
 				values.toArray() );
 		}
-		else if ( newRange instanceof MetaStructureClassRange )
+		else if ( newRange instanceof ClassRange )
 		{
-			MetaStructureClassRange previousMetaRange =
-				( MetaStructureClassRange ) previousRange;
-			MetaStructureClassRange newMetaRange =
-				( MetaStructureClassRange ) newRange;
-			Collection<MetaStructureClass> classes =
-				new ArrayList<MetaStructureClass>();
+			ClassRange previousMetaRange =
+				( ClassRange ) previousRange;
+			ClassRange newMetaRange =
+				( ClassRange ) newRange;
+			Collection<MetaModelClass> classes =
+				new ArrayList<MetaModelClass>();
 			classes.addAll( Arrays.asList(
 				previousMetaRange.getRangeClasses() ) );
 			classes.addAll( Arrays.asList(
 				newMetaRange.getRangeClasses() ) );
-			result = new MetaStructureClassRange(
-				classes.toArray( new MetaStructureClass[ classes.size() ] ) );
+			result = new ClassRange(
+				classes.toArray( new MetaModelClass[ classes.size() ] ) );
 		}
 		else
 		{
@@ -368,7 +368,7 @@ public class RdfsImporter
 		{
 			Collection<Node> classNodes =
 				RdfHelper.getClassOrUnionOfClasses( model, resource );
-			propertyRange = new MetaStructureClassRange(
+			propertyRange = new ClassRange(
 				nodesToClasses( classNodes ) );
 		}
 		else
@@ -393,7 +393,7 @@ public class RdfsImporter
 				( Literal ) rangeNode );
 		}
 		
-		MetaStructureClass metaClass =
+		MetaModelClass metaClass =
 			meta().getMetaClass( rangeType, false );
 		if ( rangeNode instanceof Literal ||
 			RdfUtil.recognizesDatatype( rangeType ) )
@@ -417,7 +417,7 @@ public class RdfsImporter
 		}
 		else if ( metaClass != null )
 		{
-			propertyRange = new MetaStructureClassRange( metaClass );
+			propertyRange = new ClassRange( metaClass );
 		}
 		else if ( RdfHelper.smartMatchThese( rangeType,
 			RDFS.Container.toString(), RDF.Seq.toString(),
@@ -460,7 +460,7 @@ public class RdfsImporter
 		return propertyRange;
 	}
 	
-	private void trySetPropertyRange( MetaStructureRestrictable restrictable,
+	private void trySetPropertyRange( MetaModelRestrictable restrictable,
 		Model model, Resource property )
 	{
 		PropertyRange propertyRange = null;
@@ -478,15 +478,15 @@ public class RdfsImporter
 			debug( "\trange: " + propertyRange );
 		}
 		
-		if ( restrictable instanceof MetaStructureProperty )
+		if ( restrictable instanceof MetaModelProperty )
 		{
 			trySetPropertyFunctionality( model, property,
-				( MetaStructureProperty ) restrictable );
+				( MetaModelProperty ) restrictable );
 		}
 	}
 	
 	private void trySetPropertyFunctionality( Model model, Resource property,
-		MetaStructureProperty metaProperty )
+		MetaModelProperty metaProperty )
 	{
 		String propertyFunctionality = null;
 		if ( RdfHelper.resourceIsType( model, property,
@@ -510,7 +510,7 @@ public class RdfsImporter
 		}
 	}
 	
-	private void trySetPropertyInverseOf( MetaStructureProperty metaProperty,
+	private void trySetPropertyInverseOf( MetaModelProperty metaProperty,
 		Model model, Resource property )
 	{
 		for ( Node inverseOfNode :
@@ -542,11 +542,11 @@ public class RdfsImporter
 				Resource ownerClass = statement.getSubject();
 				Resource onProperty = RdfHelper.subNode( model, restriction,
 					OWL.onProperty.toString() ).asResource();
-				MetaStructureClass metaClass = meta().getMetaClass(
+				MetaModelClass metaClass = meta().getMetaClass(
 					RdfHelper.resourceUri( ownerClass ), true );
-				MetaStructureProperty metaProperty = meta().getMetaProperty(
+				MetaModelProperty metaProperty = meta().getMetaProperty(
 					RdfHelper.resourceUri( onProperty ), true );
-				MetaStructureRestrictable restrictable =
+				MetaModelRestrictable restrictable =
 					metaClass.getRestriction( metaProperty, true );
 				debug( "Created a restriction " + metaClass +
 					" ----> " + metaProperty );
@@ -589,7 +589,7 @@ public class RdfsImporter
 		return null;
 	}
 	
-	private void trySetCardinality( MetaStructureRestrictable restrictable,
+	private void trySetCardinality( MetaModelRestrictable restrictable,
 		Model model, Resource restriction )
 	{
 		Integer cardinality = tryGetInteger( model, restriction,

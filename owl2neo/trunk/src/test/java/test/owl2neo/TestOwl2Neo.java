@@ -9,8 +9,9 @@ import junit.framework.TestCase;
 
 import org.neo4j.api.core.EmbeddedNeo;
 import org.neo4j.api.core.NeoService;
-import org.neo4j.meta.MetaManager;
-import org.neo4j.meta.NodeType;
+import org.neo4j.meta.model.MetaModel;
+import org.neo4j.meta.model.MetaModelClass;
+import org.neo4j.meta.model.MetaModelImpl;
 import org.neo4j.owl2neo.Owl2Neo;
 import org.neo4j.owl2neo.OwlClass;
 import org.neo4j.owl2neo.OwlModel;
@@ -42,7 +43,7 @@ public class TestOwl2Neo extends TestCase
 	{
 		clearNeoDirectory();
 		neo = new EmbeddedNeo( directory.getAbsolutePath() );
-		MetaManager metaManager = new MetaManager( neo );
+		MetaModel metaManager = new MetaModelImpl( neo );
 		owl2Neo = new Owl2Neo( neo, metaManager );
 	}
 
@@ -59,10 +60,12 @@ public class TestOwl2Neo extends TestCase
 	public void testOwlModel()
 	{
 		OwlModel model = owl2Neo.getOwlModel();
-		MetaManager metaManager = owl2Neo.getMetaManager();
+		MetaModel metaManager = owl2Neo.getMetaManager();
 		
-		NodeType t1 = metaManager.createNodeType( "t1" );
-		NodeType t2 = metaManager.createNodeType( "t2" );
+		MetaModelClass t1 = metaManager.getGlobalNamespace().getMetaClass(
+		    "t1", true );
+		MetaModelClass t2 = metaManager.getGlobalNamespace().getMetaClass(
+		    "t2", true );
 		OwlClass c1 = model.getOwlClass( t1 );
 		OwlClass c2 = model.getOwlClass( t2 );
 		c2.supers().add( c1 );
@@ -94,8 +97,9 @@ public class TestOwl2Neo extends TestCase
 		String domainTestValue = "domain";
 		r1.set( OwlModel.DOMAIN, domainTestValue );
 		
-		Collection<NodeType> nodeTypes = new ArrayList<NodeType>(
-			Arrays.asList( new NodeType[] { t2 } ) );
+		Collection<MetaModelClass> nodeTypes =
+		    new ArrayList<MetaModelClass>( 
+		        Arrays.asList( new MetaModelClass[] { t2 } ) );
 		assertEquals( nameRangeValue, model.findPropertyValue(
 			middleName.getRdfAbout(), OwlModel.RANGE, nodeTypes ) );
 		

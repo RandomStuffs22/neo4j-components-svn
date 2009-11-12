@@ -3,11 +3,11 @@ package org.neo4j.neometa.input.rdfs;
 import java.io.File;
 
 import org.neo4j.api.core.Transaction;
-import org.neo4j.neometa.structure.MetaStructure;
-import org.neo4j.neometa.structure.MetaStructureClass;
-import org.neo4j.neometa.structure.MetaStructureImpl;
-import org.neo4j.neometa.structure.MetaStructureNamespace;
-import org.neo4j.neometa.structure.MetaStructureProperty;
+import org.neo4j.meta.model.MetaModel;
+import org.neo4j.meta.model.MetaModelClass;
+import org.neo4j.meta.model.MetaModelImpl;
+import org.neo4j.meta.model.MetaModelNamespace;
+import org.neo4j.meta.model.MetaModelProperty;
 
 /**
  * Tests to import some graphs and verifies the contents in the meta model
@@ -27,31 +27,31 @@ public class TestImport extends MetaTestCase
 	 */
 	public void testSomeImport() throws Exception
 	{
-		MetaStructure meta = new MetaStructureImpl( neo() );
+		MetaModel meta = new MetaModelImpl( neo() );
 		new RdfsImporter( meta ).doImport( new File( "test.rdfs" ) );
 		
 		Transaction tx = neo().beginTx();
 		try
 		{
 			String baseName = "http://test.org#";
-			MetaStructureNamespace global = meta.getGlobalNamespace();
-			MetaStructureClass cPerson =
+			MetaModelNamespace global = meta.getGlobalNamespace();
+			MetaModelClass cPerson =
 				global.getMetaClass( baseName + "Person", false );
-			MetaStructureClass cStudent =
+			MetaModelClass cStudent =
 				global.getMetaClass( baseName + "Student", false );
-			MetaStructureClass cTeacher =
+			MetaModelClass cTeacher =
 				global.getMetaClass( baseName + "Teacher", false );
-			MetaStructureClass cCourse =
+			MetaModelClass cCourse =
 				global.getMetaClass( baseName + "Course", false );
-			MetaStructureProperty pTeacher =
+			MetaModelProperty pTeacher =
 				global.getMetaProperty( baseName + "teacher", false );
-			MetaStructureProperty pStudents =
+			MetaModelProperty pStudents =
 				global.getMetaProperty( baseName + "students", false );
-			MetaStructureProperty pName =
+			MetaModelProperty pName =
 				global.getMetaProperty( baseName + "name", false );
-			MetaStructureProperty pGivenName =
+			MetaModelProperty pGivenName =
 				global.getMetaProperty( baseName + "givenName", false );
-			MetaStructureProperty pBirthDate =
+			MetaModelProperty pBirthDate =
 				global.getMetaProperty( baseName + "birthDate", false );
 			assertAllNotNull( cPerson, cStudent, cTeacher, cCourse,
 				pTeacher, pStudents, pName, pGivenName, pBirthDate );
@@ -118,7 +118,7 @@ public class TestImport extends MetaTestCase
 	private void doImport( String file ) throws Exception
 	{
 		System.out.println( "=========================" );
-		MetaStructure meta = new MetaStructureImpl( neo() );
+		MetaModel meta = new MetaModelImpl( neo() );
 		new RdfsImporter( meta ).doImport( new File( file ) );
 		
 		Transaction tx = neo().beginTx();

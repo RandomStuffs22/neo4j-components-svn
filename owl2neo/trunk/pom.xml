@@ -11,7 +11,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
   <artifactId>owl2neo</artifactId>
-  <version>0.2-SNAPSHOT</version>
+  <version>0.3-SNAPSHOT</version>
   <name>OWL to Neo</name>
   <description>Utility for creating a neo representation of ontologies
     from OWL.</description>
@@ -55,17 +55,17 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo</artifactId>
-      <version>1.0-b8-SNAPSHOT</version>
+      <version>1.0-b11-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo-utils</artifactId>
-      <version>1.0-b8-SNAPSHOT</version>
+      <version>1.0-b11-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo-meta</artifactId>
-      <version>0.2-SNAPSHOT</version>
+      <version>0.7-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>net.sourceforge.owlapi</groupId>

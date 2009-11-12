@@ -4,8 +4,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+
 import org.neo4j.api.core.Transaction;
-import org.neo4j.meta.NodeType;
+import org.neo4j.meta.model.MetaModelClass;
 
 /**
  * A class representing an <owl:Class> object in an ontology. An
@@ -16,12 +17,12 @@ import org.neo4j.meta.NodeType;
 public class OwlClass extends AbstractOwlThingie
 {
 	private Owl2Neo owl2Neo;
-	private NodeType nodeType;
+	private MetaModelClass nodeType;
 	private Map<OwlProperty, Collection<OwlRestriction>> restrictions =
 		new HashMap<OwlProperty, Collection<OwlRestriction>>();
 	private Collection<AbstractOwlThingie> supers;
 	
-	OwlClass( Owl2Neo owl2Neo, OwlModel model, NodeType nodeType )
+	OwlClass( Owl2Neo owl2Neo, OwlModel model, MetaModelClass nodeType )
 	{
 		super( model, nodeType.getName() );
 		this.owl2Neo = owl2Neo;
@@ -31,7 +32,7 @@ public class OwlClass extends AbstractOwlThingie
 	
 	/**
 	 * @return a {@link SuperClassesCollection} which redirects its calls to
-	 * the neometa model, making the changes persisten between {@link NodeType}
+	 * the neometa model, making the changes persistent between {@link NodeType}
 	 * instances.
 	 */
 	@Override
@@ -69,7 +70,7 @@ public class OwlClass extends AbstractOwlThingie
 	/**
 	 * @return the {@link NodeType} which this class represents.
 	 */
-	public NodeType getNodeType()
+	public MetaModelClass getNodeType()
 	{
 		return nodeType;
 	}
@@ -96,9 +97,9 @@ public class OwlClass extends AbstractOwlThingie
 			for ( AbstractOwlThingie superThingie : owlClass.supers() )
 			{
 				OwlClass superClass = ( OwlClass ) superThingie;
-				NodeType superType = superClass.getNodeType();
+				MetaModelClass superType = superClass.getNodeType();
 				if ( this.equals( superClass ) ||
-					superType.isSubTypeOf( getNodeType() ) )
+					superType.isSubOf( getNodeType() ) )
 				{
 					result = true;
 					break;

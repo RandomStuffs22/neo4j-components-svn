@@ -4,8 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import org.neo4j.meta.MetaManager;
-import org.neo4j.meta.NodeType;
+import org.neo4j.meta.model.MetaModelClass;
 import org.neo4j.util.AbstractNeoSet;
 
 /**
@@ -30,9 +29,9 @@ public class SuperClassesCollection extends AbstractNeoSet<AbstractOwlThingie>
 		this.owlClass = owlClass;
 	}
 	
-	private Collection<NodeType> supers()
+	private Collection<MetaModelClass> supers()
 	{
-		return owlClass.getNodeType().directSuperTypes();
+		return owlClass.getNodeType().getDirectSupers();
 	}
 	
 	public boolean add( AbstractOwlThingie o )
@@ -72,7 +71,8 @@ public class SuperClassesCollection extends AbstractNeoSet<AbstractOwlThingie>
 	
 	public boolean retainAll( Collection<?> o )
 	{
-		Collection<NodeType> nodeTypes = new HashSet<NodeType>();
+		Collection<MetaModelClass> nodeTypes =
+		    new HashSet<MetaModelClass>();
 		for ( Object item : o )
 		{
 			nodeTypes.add( owl2Neo.getNodeType(
@@ -83,10 +83,10 @@ public class SuperClassesCollection extends AbstractNeoSet<AbstractOwlThingie>
 
 	public Object[] toArray()
 	{
-		Collection<NodeType> supers = supers();
+		Collection<MetaModelClass> supers = supers();
 		Object[] result = new Object[ supers.size() ];
 		int i = 0;
-		for ( NodeType nodeType : supers )
+		for ( MetaModelClass nodeType : supers )
 		{
 			result[ i++ ] = owlClass.getModel().getOwlClass( nodeType );
 		}
@@ -95,9 +95,9 @@ public class SuperClassesCollection extends AbstractNeoSet<AbstractOwlThingie>
 
 	public <R> R[] toArray( R[] array )
 	{
-		Collection<NodeType> supers = supers();
+		Collection<MetaModelClass> supers = supers();
 		int i = 0;
-		for ( NodeType nodeType : supers )
+		for ( MetaModelClass nodeType : supers )
 		{
 			array[ i++ ] = ( R ) owlClass.getModel().getOwlClass( nodeType );
 		}
@@ -106,7 +106,7 @@ public class SuperClassesCollection extends AbstractNeoSet<AbstractOwlThingie>
 	
 	private class SuperIterator implements Iterator<AbstractOwlThingie>
 	{
-		private Iterator<NodeType> sourceIterator;
+		private Iterator<MetaModelClass> sourceIterator;
 		
 		private SuperIterator()
 		{

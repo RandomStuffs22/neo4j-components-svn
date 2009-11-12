@@ -20,8 +20,7 @@ import java.util.Set;
 import org.neo4j.api.core.Node;
 import org.neo4j.api.core.RelationshipType;
 import org.neo4j.api.core.Transaction;
-import org.neo4j.meta.MetaManager;
-import org.neo4j.meta.NodeType;
+import org.neo4j.meta.model.MetaModelClass;
 import org.neo4j.util.NeoStringSet;
 import org.neo4j.util.NeoUtil;
 import org.semanticweb.owl.apibinding.OWLManager;
@@ -375,7 +374,8 @@ class Owl2NeoUtil
 	
 	private void syncClass( OWLOntology ontology, OWLClass owlClass )
 	{
-		NodeType nodeType = getNodeType( owlClass.getURI().toString() );
+		MetaModelClass nodeType =
+		    getNodeType( owlClass.getURI().toString() );
 		OwlClass modelClass = getOwlModel().getOwlClass( nodeType );
 		TheVisitor visitor = new TheVisitor( modelClass );
 		for ( OWLClassAxiom axiom : ontology.getAxioms( owlClass ) )
@@ -410,7 +410,7 @@ class Owl2NeoUtil
 		}
 	}
 
-	private NodeType getNodeType( String uri )
+	private MetaModelClass getNodeType( String uri )
 	{
 		return this.owl2Neo.getNodeType( uri, true );
 	}
@@ -425,7 +425,8 @@ class Owl2NeoUtil
 		return getOwlModel().getOwlProperty( uri );
 	}
 
-	private NodeType getNodeTypeForClassOrUnion( OWLDescription description )
+	private MetaModelClass getNodeTypeForClassOrUnion(
+	    OWLDescription description )
 	{
 		if ( !description.isAnonymous() )
 		{
@@ -485,10 +486,12 @@ class Owl2NeoUtil
 		return classes;
 	}
 
-	private NodeType getOrCreateNodeTypeForUnion( Set<String> classes )
+	private MetaModelClass getOrCreateNodeTypeForUnion(
+	    Set<String> classes )
 	{
-		NodeType result = null;
-		for ( NodeType nodeType : this.owl2Neo.getMetaManager().getNodeTypes() )
+		MetaModelClass result = null;
+		for ( MetaModelClass nodeType : this.owl2Neo
+		    .getMetaManager().getGlobalNamespace().getMetaClasses() )
 		{
 			if ( typeMatches( nodeType, classes ) )
 			{
@@ -505,15 +508,16 @@ class Owl2NeoUtil
 		return result;
 	}
 	
-	private boolean typeMatches( NodeType typeToTest, Set<String> classes )
+	private boolean typeMatches( MetaModelClass typeToTest,
+	    Set<String> classes )
 	{
-		Collection<NodeType> subTypes = typeToTest.directSubTypes();
+		Collection<MetaModelClass> subTypes = typeToTest.getDirectSubs();
 		if ( subTypes.size() != classes.size() )
 		{
 			return false;
 		}
 		
-		for ( NodeType subType : subTypes )
+		for ( MetaModelClass subType : subTypes )
 		{
 			if ( !classes.contains( subType.getName() ) )
 			{
@@ -523,7 +527,7 @@ class Owl2NeoUtil
 		return true;
 	}
 
-	private NodeType createUnionSuperType( Set<String> classes )
+	private MetaModelClass createUnionSuperType( Set<String> classes )
 	{
 		String name = "";
 		for ( String className : classes )
@@ -536,10 +540,10 @@ class Owl2NeoUtil
 		}
 		name = "Union[" + name + "]";
 		
-		NodeType type = getNodeType( name );
+		MetaModelClass type = getNodeType( name );
 		for ( String cls : classes )
 		{
-			type.directSubTypes().add( this.owl2Neo.getNodeType( cls, true ) );
+			type.getDirectSubs().add( this.owl2Neo.getNodeType( cls, true ) );
 		}
 		return type;
 	}
@@ -641,7 +645,7 @@ class Owl2NeoUtil
 		private void visitAllRestriction( String propertyUri,
 			OWLDescription filler )
 		{
-			NodeType nodeType = getNodeTypeForClassOrUnion( filler );
+			MetaModelClass nodeType = getNodeTypeForClassOrUnion( filler );
 			set( propertyUri, OwlModel.RANGE, nodeType );
 		}
 		
@@ -883,7 +887,7 @@ class Owl2NeoUtil
 		public void visit( OWLObjectPropertyRangeAxiom value )
 		{
 			OWLDescription range = value.getRange();
-			NodeType rangeValue = getNodeTypeForClassOrUnion( range );
+			MetaModelClass rangeValue = getNodeTypeForClassOrUnion( range );
 			String propertyUri = getPropertyUri( value.getProperty() );
 			set( propertyUri, OwlModel.RANGE, rangeValue );
 		}

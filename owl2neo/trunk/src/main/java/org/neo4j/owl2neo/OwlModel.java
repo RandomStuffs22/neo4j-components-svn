@@ -9,7 +9,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.neo4j.meta.NodeType;
+import org.neo4j.meta.model.MetaModelClass;
 import org.semanticweb.owl.vocab.OWLXMLVocabulary;
 
 /**
@@ -76,7 +76,8 @@ public class OwlModel
 	 */
 	public static final String DATA_TYPE = "data_type";
 
-	private Map<NodeType, OwlClass> classes = new HashMap<NodeType, OwlClass>();
+	private Map<MetaModelClass, OwlClass> classes =
+	    new HashMap<MetaModelClass, OwlClass>();
 	private Map<String, OwlProperty> properties =
 		new HashMap<String, OwlProperty>();
 	private Owl2Neo owl2Neo;
@@ -104,7 +105,7 @@ public class OwlModel
 	 * instance represents.
 	 * @return the {@link OwlClass} instance representing <code>nodeType</code>.
 	 */
-	public OwlClass getOwlClass( NodeType nodeType )
+	public OwlClass getOwlClass( MetaModelClass nodeType )
 	{
 		OwlClass owlClass = classes.get( nodeType );
 		if ( owlClass == null )
@@ -173,11 +174,11 @@ public class OwlModel
 	 * its node types.
 	 */
 	public Object findPropertyValue( String propertyUri, String key,
-		Iterable<NodeType> nodeTypes )
+		Iterable<MetaModelClass> nodeTypes )
 	{
 		OwlProperty property = getOwlProperty( propertyUri );
 		Object result = null;
-		for ( NodeType nodeType : nodeTypes )
+		for ( MetaModelClass nodeType : nodeTypes )
 		{
 			OwlClass owlClass = getOwlClass( nodeType );
 			Object value = tryGetFromRestrictions( owlClass, property, key );
@@ -217,7 +218,7 @@ public class OwlModel
 	 * of the classes in <code>nodeTypes</code>.
 	 */
 	public boolean propertyIsAllowedOnInstance( String propertyUri,
-		Iterable<NodeType> nodeTypes )
+		Iterable<MetaModelClass> nodeTypes )
 	{
 		ensureInitialized();
 		if ( !hasOwlProperty( propertyUri ) )
@@ -226,7 +227,7 @@ public class OwlModel
 		}
 		
 		OwlProperty owlProperty = getOwlProperty( propertyUri );
-		for ( NodeType nodeType : nodeTypes )
+		for ( MetaModelClass nodeType : nodeTypes )
 		{
 			OwlClass owlClass = getOwlClass( nodeType );
 			if ( getPropertiesRegardingClass(

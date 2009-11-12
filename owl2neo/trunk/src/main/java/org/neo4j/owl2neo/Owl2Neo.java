@@ -6,8 +6,8 @@ import java.util.HashSet;
 
 import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Transaction;
-import org.neo4j.meta.MetaManager;
-import org.neo4j.meta.NodeType;
+import org.neo4j.meta.model.MetaModel;
+import org.neo4j.meta.model.MetaModelClass;
 
 /**
  * Owl2Neo reads one or more ontologies and stores that data in neo as nodes
@@ -20,7 +20,7 @@ import org.neo4j.meta.NodeType;
 public class Owl2Neo
 {
 	private NeoService neo;
-	private MetaManager metaManager;
+	private MetaModel metaManager;
 	private OwlModel owlModel;
 	private Owl2NeoUtil util;
 	private Collection<OntologyChangeHandler> changeHandlers =
@@ -30,7 +30,7 @@ public class Owl2Neo
 	 * @param metaManager the {@link MetaManager} to use for storing
 	 * information about the ontologies.
 	 */
-	public Owl2Neo( NeoService neo, MetaManager metaManager )
+	public Owl2Neo( NeoService neo, MetaModel metaManager )
 	{
 		this.neo = neo;
 		this.metaManager = metaManager;
@@ -49,7 +49,7 @@ public class Owl2Neo
 	/**
 	 * @return the {@link MetaManager} received in the constructor.
 	 */
-	public MetaManager getMetaManager()
+	public MetaModel getMetaManager()
 	{
 		return this.metaManager;
 	}
@@ -80,24 +80,14 @@ public class Owl2Neo
 	 * it doesn't exist.
 	 * @return the {@link NodeType} by the name {@code name}.
 	 */
-	public NodeType getNodeType( String name, boolean createIfNotExists )
+	public MetaModelClass getNodeType( String name,
+	    boolean createIfNotExists )
 	{
 		Transaction tx = getNeo().beginTx();
 		try
 		{
-			if ( getMetaManager().hasNodeTypeByName( name ) )
-			{
-				return getMetaManager().getNodeTypeByName( name );
-			}
-			else if ( !createIfNotExists )
-			{
-				throw new RuntimeException( "Node type not found '" +
-					name + "'" );
-			}
-			
-			NodeType nodeType = metaManager.createNodeType( name );
-			tx.success();
-			return nodeType;
+	        return metaManager.getGlobalNamespace().getMetaClass( name,
+	            createIfNotExists );
 		}
 		finally
 		{
