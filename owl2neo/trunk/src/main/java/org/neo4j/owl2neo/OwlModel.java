@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.neo4j.meta.model.MetaModelClass;
+import org.neo4j.meta.model.MetaModelProperty;
 import org.semanticweb.owl.vocab.OWLXMLVocabulary;
 
 /**
@@ -78,8 +79,8 @@ public class OwlModel
 
 	private Map<MetaModelClass, OwlClass> classes =
 	    new HashMap<MetaModelClass, OwlClass>();
-	private Map<String, OwlProperty> properties =
-		new HashMap<String, OwlProperty>();
+	private Map<MetaModelProperty, OwlProperty> properties =
+		new HashMap<MetaModelProperty, OwlProperty>();
 	private Owl2Neo owl2Neo;
 	
 	private boolean initialized;
@@ -123,32 +124,29 @@ public class OwlModel
 	 */
 	public boolean hasOwlProperty( String propertyUri )
 	{
-		return properties.containsKey( propertyUri );
+//		return properties.containsKey( propertyUri );
+	    return owl2Neo.getMetaManager().getGlobalNamespace().getMetaProperty(
+	        propertyUri, false ) != null;
 	}
 	
-	/**
-	 * @param propertyUri the URI of the {@link OwlProperty} to look for.
-	 * @return the {@link OwlProperty} instance corresponding to URI
-	 * <code>propertyUri</code>. If no property was found, it will be created.
-	 */
-	public OwlProperty getOwlProperty( String propertyUri )
+	public OwlProperty getOwlProperty( MetaModelProperty property )
 	{
-		OwlProperty property = properties.get( propertyUri );
-		if ( property == null )
+		OwlProperty owlProperty = properties.get( property );
+		if ( owlProperty == null )
 		{
-			property = new OwlProperty( this, propertyUri );
-			properties.put( propertyUri, property );
+			owlProperty = new OwlProperty( owl2Neo, this, property );
+			properties.put( property, owlProperty );
 		}
-		return property;
+		return owlProperty;
 	}
 	
 	/**
 	 * @return all the property URIs which exists in this model.
 	 */
-	public String[] getOwlPropertyUris()
+	public OwlProperty[] getOwlPropertyUris()
 	{
 		return this.properties.keySet().toArray(
-			new String[ this.properties.size() ] );
+			new OwlProperty[ this.properties.size() ] );
 	}
 	
 	/**
@@ -166,7 +164,6 @@ public class OwlModel
 	 * 3. If it wasn't found on the property either then return
 	 *    <code>null</code>.
 	 * 
-	 * @param propertyUri the URI of the {@link OwlProperty}.
 	 * @param key the value key to look for, f.ex. {@link #MAX_CARDINALITY}.
 	 * @param nodeTypes all the node types to get the {@link OwlClass}
 	 * instances from.
@@ -176,12 +173,14 @@ public class OwlModel
 	public Object findPropertyValue( String propertyUri, String key,
 		Iterable<MetaModelClass> nodeTypes )
 	{
-		OwlProperty property = getOwlProperty( propertyUri );
+		OwlProperty owlProperty = getOwlProperty(
+		    owl2Neo.getMetaManager().getGlobalNamespace().getMetaProperty(
+		        propertyUri, false ) );
 		Object result = null;
 		for ( MetaModelClass nodeType : nodeTypes )
 		{
 			OwlClass owlClass = getOwlClass( nodeType );
-			Object value = tryGetFromRestrictions( owlClass, property, key );
+			Object value = tryGetFromRestrictions( owlClass, owlProperty, key );
 			if ( value != null )
 			{
 				result = value;
@@ -190,7 +189,7 @@ public class OwlModel
 		}
 		if ( result == null )
 		{
-			result = property.get( key );
+			result = owlProperty.get( key );
 		}
 		return result;
 	}
@@ -212,21 +211,20 @@ public class OwlModel
 	 * Returns <code>true</code> if any class in <code>nodeTypes</code>
 	 * is in <code>propertyUri</code>'s domain (recursively).  
 	 * 
-	 * @param propertyUri the URI of the {@link OwlProperty}.
 	 * @param nodeTypes all the {@link MetaModelClass}s.
 	 * @return <code>true</code> if <code>propertyUri</code> is allowed in any
 	 * of the classes in <code>nodeTypes</code>.
 	 */
-	public boolean propertyIsAllowedOnInstance( String propertyUri,
+	public boolean propertyIsAllowedOnInstance( MetaModelProperty property,
 		Iterable<MetaModelClass> nodeTypes )
 	{
 		ensureInitialized();
-		if ( !hasOwlProperty( propertyUri ) )
+		if ( !hasOwlProperty( property.getName() ) )
 		{
 			return false;
 		}
 		
-		OwlProperty owlProperty = getOwlProperty( propertyUri );
+		OwlProperty owlProperty = getOwlProperty( property );
 		for ( MetaModelClass nodeType : nodeTypes )
 		{
 			OwlClass owlClass = getOwlClass( nodeType );

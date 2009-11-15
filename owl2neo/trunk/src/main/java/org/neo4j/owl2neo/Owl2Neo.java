@@ -8,6 +8,7 @@ import org.neo4j.api.core.NeoService;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.meta.model.MetaModel;
 import org.neo4j.meta.model.MetaModelClass;
+import org.neo4j.meta.model.MetaModelProperty;
 
 /**
  * Owl2Neo reads one or more ontologies and stores that data in neo as nodes
@@ -87,13 +88,34 @@ public class Owl2Neo
 		Transaction tx = getNeo().beginTx();
 		try
 		{
-	        return metaManager.getGlobalNamespace().getMetaClass( name,
-	            createIfNotExists );
+	        MetaModelClass result =
+	            metaManager.getGlobalNamespace().getMetaClass(
+	            name, createIfNotExists );
+	        tx.success();
+	        return result;
 		}
 		finally
 		{
 			tx.finish();
 		}
+	}
+	
+	public MetaModelProperty getProperty( String name,
+	    boolean createIfNotExists )
+	{
+	    Transaction tx = getNeo().beginTx();
+	    try
+	    {
+	        MetaModelProperty result =
+	            metaManager.getGlobalNamespace().getMetaProperty(
+	            name, createIfNotExists );
+	        tx.success();
+	        return result;
+	    }
+	    finally
+	    {
+	        tx.finish();
+	    }
 	}
 	
 	public void syncOntologiesWithNeoRepresentation( File... ontologies )

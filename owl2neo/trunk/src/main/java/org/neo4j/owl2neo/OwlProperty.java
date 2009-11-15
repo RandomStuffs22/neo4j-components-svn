@@ -3,6 +3,7 @@ package org.neo4j.owl2neo;
 import java.util.Collection;
 import java.util.HashSet;
 import org.neo4j.api.core.Transaction;
+import org.neo4j.meta.model.MetaModelProperty;
 
 /**
  * Represents one <owl:DatatypeProperty>, <owl:ObjectProperty> or
@@ -10,12 +11,16 @@ import org.neo4j.api.core.Transaction;
  */
 public class OwlProperty extends AbstractOwlThingie
 {
+    private Owl2Neo owl2neo;
+    private MetaModelProperty modelProperty;
 	private Collection<AbstractOwlThingie> supers =
 		new HashSet<AbstractOwlThingie>();
 	
-	OwlProperty( OwlModel model, String rdfAbout )
+	OwlProperty( Owl2Neo owl2neo, OwlModel model, MetaModelProperty property )
 	{
-		super( model, rdfAbout );
+		super( model, property.getName() );
+		this.owl2neo = owl2neo;
+		this.modelProperty = property;
 	}
 
 	/**

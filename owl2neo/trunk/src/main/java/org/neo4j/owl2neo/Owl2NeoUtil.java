@@ -21,6 +21,7 @@ import org.neo4j.api.core.Node;
 import org.neo4j.api.core.RelationshipType;
 import org.neo4j.api.core.Transaction;
 import org.neo4j.meta.model.MetaModelClass;
+import org.neo4j.meta.model.MetaModelProperty;
 import org.neo4j.util.NeoStringSet;
 import org.neo4j.util.NeoUtil;
 import org.semanticweb.owl.apibinding.OWLManager;
@@ -444,9 +445,14 @@ class Owl2NeoUtil
 		return getOwlModel().getOwlClass( getNodeType( uri ) );
 	}
 	
+	private MetaModelProperty getProperty( String uri )
+	{
+	    return this.owl2Neo.getProperty( uri, true );
+	}
+	
 	private OwlProperty getModelProperty( String uri )
 	{
-		return getOwlModel().getOwlProperty( uri );
+		return getOwlModel().getOwlProperty( getProperty( uri ) );
 	}
 
 	private MetaModelClass getNodeTypeForClassOrUnion(
