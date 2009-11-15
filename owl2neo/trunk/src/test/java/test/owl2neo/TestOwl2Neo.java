@@ -12,6 +12,7 @@ import org.neo4j.api.core.NeoService;
 import org.neo4j.meta.model.MetaModel;
 import org.neo4j.meta.model.MetaModelClass;
 import org.neo4j.meta.model.MetaModelImpl;
+import org.neo4j.meta.model.MetaModelProperty;
 import org.neo4j.owl2neo.Owl2Neo;
 import org.neo4j.owl2neo.OwlClass;
 import org.neo4j.owl2neo.OwlModel;
@@ -71,8 +72,12 @@ public class TestOwl2Neo extends TestCase
 		c2.supers().add( c1 );
 		
 		assertFalse( model.hasOwlProperty( "something" ) );
-		OwlProperty name = model.getOwlProperty( "name" );
-		OwlProperty middleName = model.getOwlProperty( "middleName" );
+		MetaModelProperty nameProp = metaManager.getGlobalNamespace()
+		    .getMetaProperty( "name", true );
+        MetaModelProperty middleNameProp = metaManager.getGlobalNamespace()
+            .getMetaProperty( "middleName", true );
+		OwlProperty name = model.getOwlProperty( nameProp );
+		OwlProperty middleName = model.getOwlProperty( middleNameProp );
 		assertEquals( "name", name.getRdfAbout() );
 		assertEquals( "middleName", middleName.getRdfAbout() );
 		middleName.supers().add( name );
