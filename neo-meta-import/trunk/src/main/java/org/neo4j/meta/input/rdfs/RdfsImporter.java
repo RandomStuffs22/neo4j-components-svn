@@ -1,4 +1,4 @@
-package org.neo4j.neometa.input.rdfs;
+package org.neo4j.meta.input.rdfs;
 
 import java.io.File;
 import java.io.IOException;

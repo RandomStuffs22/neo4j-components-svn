@@ -1,8 +1,9 @@
-package org.neo4j.neometa.input.rdfs;
+package org.neo4j.meta.input.rdfs;
 
 import java.io.File;
 
 import org.neo4j.api.core.Transaction;
+import org.neo4j.meta.input.rdfs.RdfsImporter;
 import org.neo4j.meta.model.MetaModel;
 import org.neo4j.meta.model.MetaModelClass;
 import org.neo4j.meta.model.MetaModelImpl;
