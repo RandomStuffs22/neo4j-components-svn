@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 
-from neo4j_test._support import perform, define_verify_test
+if __name__ == '__main__':
+    import sys
+    from os.path import dirname, abspath, join
+    testdir = dirname(dirname(abspath(__file__)))
+    libdir = join(dirname(dirname(testdir)), 'main', 'python')
+    sys.path.append(libdir)
+    sys.path.append(testdir)
+    from __init__ import setup_neo
+    _neo = setup_neo(*sys.argv)
 
 import neo4j
 
@@ -62,5 +70,18 @@ def verify(thomas,verbose=False):
             print("Hacker: At depth %s => %s" % (hacker.depth, hacker['name']))
     assert hackers == {'The Architect':4}, "Found wrong hackers: %s"%(hackers,)
 
-def run(neo, **options):
-    perform(neo, define_verify_test(__name__, define, verify), **options)
+
+if __name__ == '__main__':
+    tx = _neo.transaction.begin()
+    try:
+        verify(define(_neo), verbose=True)
+        tx.success()
+    finally:
+        tx.finish()
+
+else:
+    from neo4j_test._support import perform, define_verify_test
+
+    def run(neo, **options):
+        perform(neo, define_verify_test(__name__, define, verify), **options)
+

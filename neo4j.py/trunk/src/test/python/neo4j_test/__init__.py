@@ -11,18 +11,21 @@ class Log(object):
             traceback.print_exc()
     warn = info = debug = error
 
-def test(exe, store, *classpath):
+def setup_neo(exe, store, *classpath):
     import os.path
     if classpath:
         dirs = set()
         for file in classpath:
             dirs.add(os.path.dirname(file))
-        neo = neo4j.NeoService(store,
-                               classpath=classpath,
-                               ext_dirs=list(dirs),
-                               log = Log())
+        return neo4j.NeoService(store,
+                                classpath=classpath,
+                                ext_dirs=list(dirs),
+                                log = Log())
     else:
-        neo = neo4j.NeoService(store, log = Log())
+        return neo4j.NeoService(store, log = Log())
+
+def test(exe, store, *classpath):
+    neo = setup_neo(exe, store, *classpath)
     try:
         for name in os.listdir(os.path.dirname(__file__)):
             if name.endswith('.py') and not name.startswith('_'):
