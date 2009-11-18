@@ -3,7 +3,11 @@
 if __name__ == '__main__':
     import sys
     from __init__ import setup_neo
-    _neo = setup_neo(*sys.argv)
+    try:
+        _neo = setup_neo(*sys.argv)
+    except:
+        print "USAGE: %s <path_to_neo4j_store_dir>" % (sys.argv[0],)
+        sys.exit(-1)
 
 import neo4j
 
