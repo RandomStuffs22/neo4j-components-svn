@@ -2,11 +2,6 @@
 
 if __name__ == '__main__':
     import sys
-    from os.path import dirname, abspath, join
-    testdir = dirname(dirname(abspath(__file__)))
-    libdir = join(dirname(dirname(testdir)), 'main', 'python')
-    sys.path.append(libdir)
-    sys.path.append(testdir)
     from __init__ import setup_neo
     _neo = setup_neo(*sys.argv)
 
