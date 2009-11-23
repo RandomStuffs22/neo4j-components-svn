@@ -79,6 +79,7 @@
                 <argument>apidoc/neo-service neo4j.NeoService</argument>
                 <argument>apidoc/primitives neo4j._primitives</argument>
                 <argument>apidoc/traverse neo4j._traverse</argument>
+                <argument>apidoc/transactional neo4j.transactional</argument>
               </arguments>
             </configuration>
           </execution>

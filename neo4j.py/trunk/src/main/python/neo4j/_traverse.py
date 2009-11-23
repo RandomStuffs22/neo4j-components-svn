@@ -33,8 +33,10 @@ Neo4j.py Traversal API
 from neo4j._base import primitives
 
 def initialize(backend):
-    global Traversal, Outgoing, Incoming, Undirected
+    global initialize, Traversal, Outgoing, Incoming, Undirected
+    def initialize(backend): pass # should only be done once
     from neo4j._primitives import Node, Relationship
+    from neo4j import Traversal
     RelationshipType = backend.RelationshipType
     def traverse(node, evaluator):
         # NOTE: This API is a bit ugly, but at least we hide it nicely.
@@ -54,7 +56,7 @@ def initialize(backend):
             self.traversal = traversal
             self.order = traversal.order
             types = []
-            for type in traversal.types:
+            for type in get_types(traversal):
                 types.append(RelationshipType(type.type))
                 types.append(type.direction)
             self.types = backend.array(types)
@@ -89,30 +91,14 @@ def initialize(backend):
         @property
         def previous_node(self):
             return Node(self.__neo, self.__pos.previousNode())
-    class Traversal(object):
-        class __metaclass__(type):
-            def __new__(meta, name, bases, body):
-                if body['__module__'] == __name__:
-                    return type.__new__(meta, name, bases, body)
-                else:
-                    bases = list(bases); bases.remove(Traversal)
-                    klass = type(name, (Traversal,), dict(__module__=__name__))
-                    return klass(klass, bases, body)
-        types      = ()
-        order      = backend.BREADTH_FIRST
-        stop       = backend.END_OF_GRAPH
-        returnable = backend.ALL
-        def __init__(self, type, parents, options):
-            for parent in reversed(parents):
-                for key in dir(parent):
-                    if not key.startswith('__'):
-                        setattr(type, key, getattr(self, key))
-            for key in options:
-                setattr(type, key, options[key])
-        def __call__(self, node):
-            neo, node, _ = primitives(node)
-            for position in traverse(node, Evaluator(neo, self)):
-                yield TraversalNode(neo, position)
+    def __iter__(self):
+        neo, node, _ = primitives(self._Traversal__start) # Manual mangling
+        for position in traverse(node, Evaluator(neo, self)):
+            yield TraversalNode(neo, position)
+    Traversal.__iter__ = __iter__
+    def get_types(traversal, accessor=Traversal._traversal_types_):
+        return accessor.__get__(traversal)
+    del Traversal._traversal_types_
     class DirectedType(object):
         def __init__(self, direction, type):
             self.direction = direction

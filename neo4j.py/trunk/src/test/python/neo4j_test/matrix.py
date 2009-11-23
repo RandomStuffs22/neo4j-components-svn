@@ -1,14 +1,5 @@
 # -*- coding: utf-8 -*-
 
-if __name__ == '__main__':
-    import sys
-    from __init__ import setup_neo
-    try:
-        _neo = setup_neo(*sys.argv)
-    except:
-        print "USAGE: %s <path_to_neo4j_store_dir>" % (sys.argv[0],)
-        sys.exit(-1)
-
 import neo4j
 
 class Friends(neo4j.Traversal):
@@ -71,6 +62,14 @@ def verify(thomas,verbose=False):
 
 
 if __name__ == '__main__':
+    import sys
+    from __init__ import setup_neo
+    try:
+        _neo = setup_neo(*sys.argv)
+    except:
+        print "USAGE: %s <path_to_neo4j_store_dir>" % (sys.argv[0],)
+        sys.exit(-1)
+
     tx = _neo.transaction.begin()
     try:
         verify(define(_neo), verbose=True)

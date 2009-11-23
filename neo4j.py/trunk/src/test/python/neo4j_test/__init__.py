@@ -25,15 +25,23 @@ def setup_neo(exe, store, *classpath):
         return neo4j.NeoService(store, log = Log())
 
 def test(exe, store, *classpath):
+    tests = []
+    for name in os.listdir(os.path.dirname(__file__)):
+        if name.endswith('.py') and not name.startswith('_'):
+            try:
+                exec('import neo4j_test.%s as test' % (name[:-3],))
+                tests.append(test)
+            except:
+                print("FAIL: error importing '%s'!" % (name,))
+                traceback.print_exc()
     neo = setup_neo(exe, store, *classpath)
     try:
-        for name in os.listdir(os.path.dirname(__file__)):
-            if name.endswith('.py') and not name.startswith('_'):
-                try:
-                    exec('import neo4j_test.%s as test' % (name[:-3],))
-                    test.run(neo)
-                except:
-                    print("FAIL: '%s' is not a proper test module." % (name,))
-                    traceback.print_exc()
+        for test in tests:
+            try:
+                test.run(neo)
+            except:
+                print("FAIL: '%s' is not a proper test module." % (
+                        test.__name__,))
+                traceback.print_exc()
     finally:
         neo.shutdown()

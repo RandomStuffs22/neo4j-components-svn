@@ -57,6 +57,9 @@ if __name__ == '__main__':
         if isinstance(item, type):
             parts = ["class %s\n\n %s" % (item.__name__, item.__doc__)]
             classdoc(parts, item)
+        elif callable(item):
+            parts = ["%s(%s)\n\n %s" % (
+                    item.__name__, parameters(item, start=0), item.__doc__)]
         elif '__init__' in item.__file__:
             parts = [item.__doc__]
         else:

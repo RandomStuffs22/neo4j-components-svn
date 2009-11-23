@@ -7,3 +7,5 @@ API Documentation
  * {{{primitives.html}Nodes, Relationships and Properties}}
 
  * {{{traverse.html}Traversals}}
+
+ * {{{transactional.html}Automatic transaction management}}

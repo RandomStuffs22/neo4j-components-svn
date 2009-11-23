@@ -148,7 +148,7 @@ def load_neo(resource_uri, parameters):
         def success(self):
             if self.__tx is not None:
                 self.__tx.success()
-        def failure(self):            
+        def failure(self):
             if self.__tx is not None:
                 self.__tx.failure()
         def finish(self):

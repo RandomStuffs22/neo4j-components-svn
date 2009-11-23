@@ -28,6 +28,17 @@ def perform(neo, test, **opt):
     else:
         print("PASSED:  %s" % (test.__name__,))
 
+def simple_test(function, *args, **options):
+    if options.get('transactional', False):
+        def test(neo, opt):
+            with neo.transaction:
+                function(*args)
+    else:
+        def test(neo, opt):
+            function(*args)
+    test.__name__ = options.get('name', function.__name__)
+    return test
+
 def define_verify_test(name, define, verify):
     def test(neo, opt):
         time = timestamp()

@@ -29,15 +29,15 @@ Neo4j.py   --   Python bindings for the Neo4j Graph Database
 
  The typical way to use Neo4j.py is:
 
-----------------------------------------------------------------
-    from neo4j import NeoService
-    neo = NeoService( "/neo/db/path" )
-    with neo.transaction:
-        ref_node = neo.reference_node
-        new_node = neo.node()
-        # put operations that manipulate the node space here ...
-    neo.shutdown()
-----------------------------------------------------------------
+------------------------------------------------------------
+from neo4j import NeoService
+neo = NeoService( "/neo/db/path" )
+with neo.transaction:
+    ref_node = neo.reference_node
+    new_node = neo.node()
+    # put operations that manipulate the node space here ...
+neo.shutdown()
+------------------------------------------------------------
 
 * Getting started
 
@@ -86,8 +86,8 @@ sudo jython setup.py install
 
 ---------------------------------------------------------------------------
 running install_egg_info
-Creating X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\
-error: X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\: couldn't make directories
+Creating X:\\<PATH_TO>\\jython\\Lib\\site-packages\\
+error: X:\\<PATH_TO>\\jython\\Lib\\site-packages\\: couldn't make directories
 ---------------------------------------------------------------------------
 
  If the install output ends like that when installing under Windows,
@@ -95,10 +95,10 @@ error: X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\: couldn't make director
 
  All of Neo4j.py has already been installed at this point. This can be
  verified by checking that
- <<X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\neo4j>> contains some
+ <<X:\\<PATH_TO>\\jython\\Lib\\site-packages\\neo4j>> contains some
  directories, Python source files and bytecode compiled files. You can also
  verify that
- <<X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\neo4j\\classes>>
+ <<X:\\<PATH_TO>\\jython\\Lib\\site-packages\\neo4j\\classes>>
  contains the required jar-files. What the install script has failed to do
  is to write the package information. This may cause trouble when
  installing a new version of neo4j.py, the fix for this is to manually
@@ -107,6 +107,27 @@ error: X:\\<PATH_TO>\\jython-2.5b3\\Lib\\site-packages\\: couldn't make director
  This issue has been reported at {{https://trac.neo4j.org/ticket/156}} and
  {{http://bugs.jython.org/issue1110}}. We have fixed this for the next
  release of Jython.
+
+** JPype installation issues
+
+ In some situations the JPype compilation process might not link with the
+ appropriate JNI headers, resulting in compilation errors.
+
+ The first thing to note is that JPype needs the JNI headers from a JDK
+ in order to build, it is not enough to only have a JRE installed when
+ building JPype.
+
+ If the JAVA_HOME environment variable is not set when building JPype the
+ build script (setup.py) of JPype might have problems locating the
+ appropriate JNI headers.
+
+ If you are building JPype with <<sudo python setup.py install>> you might
+ not inherit the JAVA_HOME environment variable into the sudo environment,
+ an easy warkaround is to run <<python setup.py bdist>> before install.
+
+ For more information see the following resources:
+
+ * {{http://sourceforge.net/mailarchive/forum.php?thread_name=1afed6d30907300541v74a722c0nbf9155832affd101%40mail.gmail.com&forum_name=jpype-users}}
 
 ** Starting Neo
 
@@ -141,10 +162,10 @@ neo = NeoService("/neo/db/path",
 
 * Package content
 
- Most of the content of this package is loaded lazily. When the package is
- first imported the only thing that it is guaranteed to contain is
- NeoService. When the first NeoService has been initialized the rest of the
- package is loaded.
+ Some of the content of this package is loaded lazily. When the package is
+ first imported The guaranteed content is NeoService and the API required
+ for defining Traversals, the Exceptions might not be available. When the
+ first NeoService has been initialized the rest of the package is loaded.
 
  The content of this module is:
 
@@ -347,6 +368,9 @@ for hacker_node in Hackers(traversal_start_node):
     Network Engine for Objects in Lund AB {{http://neotechnology.com}}
 """
 
+if __name__.endswith('__init__'): raise ImportError # Prohibit import as module
+__all__ = 'NeoService', 'Traversal',
+
 class NeoService(object):
     # This class defines the API and implementation but is never instantiated
     # This class is instead redefined in the _core module.
@@ -372,7 +396,7 @@ neo = NeoService("/path/to/node_store/", **options)
 
     [password ] The password to use when connecting to a remote server.
 
-    [start_server] True if attempts should be made to start remote server.
+    [start_server] True if the remote server should be started.
 
     [server_path ] The path to where the server db is stored.
 
@@ -457,6 +481,17 @@ ref_node = neo.reference_node
             STOP_AT_END_OF_GRAPH, StopAtDepth
         from neo4j import _core as core
         neo = core.load_neo(resource_uri, params)
+        # Store documentation
+        doc_Traversal                 = Traversal.__doc__
+        doc_Incoming                  = Incoming.__doc__
+        doc_Outgoing                  = Outgoing.__doc__
+        doc_Undirected                = Undirected.__doc__
+        doc_StopAtDepth               = StopAtDepth.__doc__
+        doc_BREADTH_FIRST             = BREADTH_FIRST.__doc__
+        doc_DEPTH_FIRST               = DEPTH_FIRST.__doc__
+        doc_RETURN_ALL_NODES          = RETURN_ALL_NODES.__doc__
+        doc_RETURN_ALL_BUT_START_NODE = RETURN_ALL_BUT_START_NODE.__doc__
+        doc_STOP_AT_END_OF_GRAPH      = STOP_AT_END_OF_GRAPH.__doc__
         # Define values for globals
         NotFoundError             = core.NotFoundError
         NotInTransactionError     = core.NotInTransactionError
@@ -464,12 +499,26 @@ ref_node = neo.reference_node
         Incoming                  = core.Incoming
         Outgoing                  = core.Outgoing
         Undirected                = core.Undirected
+        StopAtDepth               = core.StopAtDepth
         BREADTH_FIRST             = core.BREADTH_FIRST
         DEPTH_FIRST               = core.DEPTH_FIRST
         RETURN_ALL_NODES          = core.RETURN_ALL_NODES
         RETURN_ALL_BUT_START_NODE = core.RETURN_ALL_BUT_START_NODE
         STOP_AT_END_OF_GRAPH      = core.STOP_AT_END_OF_GRAPH
-        StopAtDepth               = core.StopAtDepth
+        # Restore documentation
+        try:
+            Traversal.__doc__                 = doc_Traversal
+            Incoming.__doc__                  = doc_Incoming
+            Outgoing.__doc__                  = doc_Outgoing
+            Undirected.__doc__                = doc_Undirected
+            StopAtDepth.__doc__               = doc_StopAtDepth
+            BREADTH_FIRST.__doc__             = doc_BREADTH_FIRST
+            DEPTH_FIRST.__doc__               = doc_DEPTH_FIRST
+            RETURN_ALL_NODES.__doc__          = doc_RETURN_ALL_NODES
+            RETURN_ALL_BUT_START_NODE.__doc__ = doc_RETURN_ALL_BUT_START_NODE
+            STOP_AT_END_OF_GRAPH.__doc__      = doc_STOP_AT_END_OF_GRAPH
+        except:
+            pass
         # Define replacement __new__
         @staticmethod
         def __new__(cls, resource_uri, **params):
@@ -477,10 +526,212 @@ ref_node = neo.reference_node
         cls.__new__ = __new__
         return neo
 
+def Traversal():
+    global Traversal # Traversal base
+    global Incoming, Outgoing, Undirected # Relationship directions
+    global BREADTH_FIRST, DEPTH_FIRST # Traversal orders
+    global RETURN_ALL_NODES, RETURN_ALL_BUT_START_NODE # Returnable conditions
+    global StopAtDepth, STOP_AT_END_OF_GRAPH # Stop conditions
+
+    class ReplaceProperty(object):
+        def __init__(self, prop, doc):
+            self.__doc__ = doc
+            if isinstance(prop, str):
+                self.__property = prop
+            else:
+                self.__getter = prop
+                self.__property = prop.__name__
+        def __get__(self, obj, cls=None):
+            return self.__getter()
+        def __getter(self):
+            return globals()[self.__property]
+        def __repr__(self):
+            return self.__property
+
+    class TraversalDirection(ReplaceProperty):
+        def __getattr__(self, attr):
+            return DirectedType(self, attr)
+
+    class DirectedType(ReplaceProperty):
+        def __init__(self, owner, attr):
+            def __getter():
+                return getattr(owner.__get__(None), attr)
+            ReplaceProperty.__init__(self, __getter, "")
+
+    # Traversal directions
+
+    Incoming = TraversalDirection('Incoming',
+        doc="""Traverse incoming relationships (of the given type) only.
+    """)
+    Outgoing = TraversalDirection('Outgoing',
+        doc="""Traverse outgoing relationships (of the given type) only.
+    """)
+    Undirected = TraversalDirection('Undirected',
+        doc="""Traverse relationships (of the given type) in any direction.
+    """)
+
+    # Traversal order
+
+    BREADTH_FIRST = ReplaceProperty('BREADTH_FIRST',
+        doc="""Breadth first traversal order.
+    """)
+    DEPTH_FIRST = ReplaceProperty('DEPTH_FIRST',
+        doc="""Depth first traversal order.
+    """)
+
+    # Returnable conditions
+
+    RETURN_ALL_NODES = ReplaceProperty('RETURN_ALL_NODES',
+        doc="""All traversed nodes are returned from the traversal.
+    """)
+    RETURN_ALL_BUT_START_NODE = ReplaceProperty('RETURN_ALL_BUT_START_NODE',
+        doc="""All nodes except the start node are returned from the traversal.
+    """)
+
+    # Stop conditions
+
+    class StopAtDepth(object):
+        """Only traverse to a certain depth."""
+        def __init__(self, depth):
+            self.depth = depth
+        def __get__(self, obj, cls=None):
+            return globals()['StopAtDepth'](self.depth)
+        def isStopNode(self, position):
+            raise RuntimeError("Neo4j has not been initialized.")
+
+    STOP_AT_END_OF_GRAPH = ReplaceProperty('STOP_AT_END_OF_GRAPH',
+        doc="""End of graph stop condition.
+    """)
+
+    # Traversal
+
+    class Traversal(object):
+        """Base class for defining traversals.
+
+ Traversals are defined as classes, with attributes defining:
+
+ * Which relationships to traverse. The <<types>> attribute.
+
+ * What order to traverse the nodes in. The <<order>> attribute.
+   (the default value is breadth first)
+
+ * When to stop traversing. Either by providing a stop evaluator as the
+   <<stop>> attribute, or by defining a <<isStopNode>> method.
+
+ * Which of the traversed nodes should be returned. Either by providing
+   a returnable evaluator as the <<returnable>> attribute or by defining
+   a <<isReturnable>> method.
+
+ <<Example:>>
+
+--------------------------------------
+class Coworkers(neo4j.Traversal):
+    types = [
+        neo4j.Undirected.works_at,
+        ]
+   order = neo4j.BREADTH_FIRST
+   stop = neo4j.StopAtDepth(2)
+   def isReturnable(self, position):
+       # the start node has depth == 0
+       # the company has depth == 1
+       # and coworkers have depth == 2
+       return position.depth == 2
+--------------------------------------
+
+ To utilize a traversal you simply instantiate the class and iterate
+ over the instance.
+
+---
+ted = get_the_node_that_represents_ted()
+for coworker in Coworkers(ted):
+    print( "Ted works with " + coworker['name'] )
+---
+        """
+        @property
+        def _traversal_types_(self):
+            for type in self.types:
+                if hasattr(type, '__get__'):
+                    yield type.__get__(self)
+                else:
+                    yield type
+        types      = ()
+        order      = BREADTH_FIRST
+        stop       = STOP_AT_END_OF_GRAPH
+        returnable = RETURN_ALL_NODES
+        def __init__(self, start):
+            self.__start = start
+        def __iter__(self):
+            raise RuntimeError("Neo4j has not been initialized.")            
+
+Traversal()
+
 def transactional(accessor):
+    """Decorates a method so that it is executed within a transaction.
+
+ The transactional function should be invoked with a single argument of a
+ descriptor that returns an instance of NeoService on __get__ (for example a
+ property). The result of the transactional function is a method decorator that
+ executes the decorated method within the context of a transaction on the
+ NeoService provided by the accessor descriptor.
+
+ <<Example:>>
+
+---------------------------------------------------------------------------
+import neo4j
+
+class MyService(object):
+    def __init__(self, neo):
+        self.__neo = neo
+        for type_rel in neo.reference_node.data_type:
+            if type_rel['type'] == 'MyEntity':
+                self.__entities = type_rel.end
+                break
+        else:
+            self.__entities = entities = neo.node()
+            neo.reference_node.data_type(entities, type='MyEntity')
+
+    @property
+    def neo(self):
+        # This is the descriptor used to get the NeoService instance
+        return self.__neo
+
+    @neo4j.transactional(neo) # Make the create_entity method transactional
+    def create_entity(self, name):
+        node = self.neo.node(name=name)
+        node.instance_of( self.__entities )
+        return MyEntity( self.__neo, node )
+
+class MyEntity(object):
+    def __init__(self, neo, node):
+        self.__neo
+        self.__node = node
+
+    @property
+    def neo(self):
+        # This is the descriptor used to get the NeoService instance
+        return self.__neo
+
+    @property
+    @neo4j.transactional(neo) # Make the name property getter transactional
+    def name(self):
+        return self.__node['name']
+
+    @name.setter
+    @neo4j.transactional(neo) # Make the name property setter transactional
+    def name(self, name):
+        self.__node['name'] = name
+---------------------------------------------------------------------------
+    """
     global transactional
-    try:
-        from neo4j._util import transactional
-    except:
-        raise NotImplementedError("@transactional requires Python >= 2.5.")
+    if transactional.__module__ == __name__:
+        doc = transactional.__doc__
+        try:
+            from neo4j._util import transactional
+        except:
+            import sys
+            raise NotImplementedError(
+                "@transactional is not supported on Python %s." % '.'.join(
+                    map(str, sys.version_info) ))
+        else:
+            transactional.__doc__ = doc
     return transactional(accessor)

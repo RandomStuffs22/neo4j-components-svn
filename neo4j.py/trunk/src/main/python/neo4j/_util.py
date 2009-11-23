@@ -17,17 +17,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-This module defines utility functions.
+Utility functions that make working with Neo4j easier in Python.
 
-The Neo4j.py utitities require Python >= 2.5
+ The available utilities are:
+
+ * A decorator for making methods and properties handle transactions
+   automatically.
 
 
 Copyright (c) 2009 "Neo Technology,"
     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
-### TODO: Documentation! ###
-from __future__ import with_statement
-from functools import partial
 
 class Transactional(object):
     def __init__(self, accessor, method):
@@ -37,9 +37,34 @@ class Transactional(object):
         method = self.method.__get__(obj, cls)
         neo = self.accessor.__get__(obj, cls)
         def result(*args, **kwargs):
-            with neo.transaction:
-                return method(*args, **kwargs)
+            tx = neo.transaction.begin()
+            try:
+                try:
+                    result = method(*args, **kwargs)
+                except:
+                    tx.failure()
+                else:
+                    tx.success()
+            finally:
+                tx.finish()
+            return result
         return result
+    def __call__(self, obj, *args):
+        return self.__get__(obj)(*args)
 
 def transactional(accessor):
-    return partial(Transactional, accessor)
+    def transactional(decorated):
+        # Make the transactional method idempotent w/ regard to property
+        if decorated is None:
+            return None
+        elif isinstance(decorated, property):
+            return property(
+                fget = transactional(decorated.fget),
+                fset = transactional(decorated.fset),
+                fdel = transactional(decorated.fdel),
+                doc = decorated.__doc__)
+        elif isinstance(decorated, Transactional):
+            if decorated.accessor == accessor:
+                return decorated
+        return Transactional(accessor, decorated)
+    return transactional
