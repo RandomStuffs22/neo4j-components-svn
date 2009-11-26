@@ -75,6 +75,7 @@ import org.semanticweb.owl.model.OWLInverseObjectPropertiesAxiom;
 import org.semanticweb.owl.model.OWLIrreflexiveObjectPropertyAxiom;
 import org.semanticweb.owl.model.OWLNegativeDataPropertyAssertionAxiom;
 import org.semanticweb.owl.model.OWLNegativeObjectPropertyAssertionAxiom;
+import org.semanticweb.owl.model.OWLObject;
 import org.semanticweb.owl.model.OWLObjectAllRestriction;
 import org.semanticweb.owl.model.OWLObjectAnnotation;
 import org.semanticweb.owl.model.OWLObjectComplementOf;
@@ -398,6 +399,7 @@ class Owl2NeoUtil
 	
 	private void syncClass( OWLOntology ontology, OWLClass owlClass )
 	{
+	    System.out.println( "class " + owlClass.getURI().toString() );
 		MetaModelClass modelClass =
 		    getMetaClass( owlClass.getURI().toString() );
 		TheVisitor visitor = new TheVisitor( modelClass );
@@ -479,15 +481,11 @@ class Owl2NeoUtil
 		}
 		else if ( description instanceof OWLObjectIntersectionOf )
 		{
-			// TODO
-			throw new UnsupportedOperationException(
-				"'intersectionOf' not implemented" );
+		    handleUnsupported( description );
 		}
 		else if ( description instanceof OWLObjectComplementOf )
 		{
-			// TODO
-			throw new UnsupportedOperationException(
-				"'complementOf' not implemented" );
+            handleUnsupported( description );
 		}
 		else if ( description instanceof OWLObjectOneOf )
 		{
@@ -500,13 +498,17 @@ class Owl2NeoUtil
 		}
 		else
 		{
-			throw new RuntimeException( "Unrecognized union type " +
-				description.getClass().getName() );
+            handleUnsupported( description );
 		}
 		return classes;
 	}
 
-	private MetaModelClass getOrCreateNodeTypeForUnion(
+	private void handleUnsupported( OWLObject construct )
+    {
+	    this.owl2Neo.getUnsupportedConstructHandler().handle( construct );
+    }
+    
+    private MetaModelClass getOrCreateNodeTypeForUnion(
 	    Set<String> classes )
 	{
 		MetaModelClass result = null;
@@ -730,22 +732,19 @@ class Owl2NeoUtil
 		@Override
 		public void visit( OWLDataAllRestriction value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDataSomeRestriction value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDataValueRestriction value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 		
 		@Override
@@ -841,22 +840,19 @@ class Owl2NeoUtil
 		@Override
 		public void visit( OWLObjectComplementOf value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLObjectIntersectionOf value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLObjectOneOf value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
@@ -869,8 +865,7 @@ class Owl2NeoUtil
 		@Override
 		public void visit( OWLObjectUnionOf value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
@@ -933,116 +928,115 @@ class Owl2NeoUtil
 		@Override
 		public void visit( OWLObjectSelfRestriction value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLAntiSymmetricObjectPropertyAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLAxiomAnnotationAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLClassAssertionAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLConstantAnnotation value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDataComplementOf value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDataOneOf value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDataProperty value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDataPropertyAssertionAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDataRangeFacetRestriction value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDataRangeRestriction value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDeclarationAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDifferentIndividualsAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDisjointClassesAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDisjointDataPropertiesAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDisjointObjectPropertiesAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLDisjointUnionAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLEntityAnnotationAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLEquivalentClassesAxiom value )
 		{
-			// TODO
-//			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
@@ -1058,27 +1052,25 @@ class Owl2NeoUtil
 //						getModelProperty( uri ) );
 //				}
 //			}
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLEquivalentObjectPropertiesAxiom value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLImportsDeclaration value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLInverseFunctionalObjectPropertyAxiom value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
@@ -1094,50 +1086,49 @@ class Owl2NeoUtil
 		@Override
 		public void visit( OWLIrreflexiveObjectPropertyAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLNegativeDataPropertyAssertionAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLNegativeObjectPropertyAssertionAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLObjectAnnotation value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLObjectProperty value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLObjectPropertyAssertionAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLObjectPropertyChainSubPropertyAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLObjectPropertyInverse value )
 		{
-			// TODO
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
@@ -1150,19 +1141,19 @@ class Owl2NeoUtil
 		@Override
 		public void visit( OWLOntologyAnnotationAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLReflexiveObjectPropertyAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLSameIndividualsAxiom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
@@ -1190,103 +1181,103 @@ class Owl2NeoUtil
 		@Override
 		public void visit( OWLDataType value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLIndividual value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLOntology value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLTypedConstant value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( OWLUntypedConstant value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLAtomConstantObject value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLAtomDVariable value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLAtomIndividualObject value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLAtomIVariable value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLBuiltInAtom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLClassAtom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLDataRangeAtom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLDataValuedPropertyAtom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLDifferentFromAtom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLObjectPropertyAtom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLRule value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 
 		@Override
 		public void visit( SWRLSameAsAtom value )
 		{
-			throw new UnsupportedOperationException();
+            handleUnsupported( value );
 		}
 	}
 }

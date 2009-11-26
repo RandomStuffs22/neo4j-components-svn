@@ -27,6 +27,7 @@ public class Owl2Neo
 	private NeoService neo;
 	private MetaModel metaModel;
 	private Owl2NeoUtil util;
+	private UnsupportedConstructHandler unsupportedConstructHandler;
 	private Collection<OntologyChangeHandler> changeHandlers =
 		new HashSet<OntologyChangeHandler>();
 
@@ -34,13 +35,20 @@ public class Owl2Neo
 	 * @param metaModel the {@link MetaModel} to use for storing
 	 * information about the ontologies.
 	 */
-	public Owl2Neo( NeoService neo, MetaModel metaModel )
+	public Owl2Neo( NeoService neo, MetaModel metaModel,
+	    UnsupportedConstructHandler unsupportedConstructHandler )
 	{
 		this.neo = neo;
 		this.metaModel = metaModel;
+		this.unsupportedConstructHandler = unsupportedConstructHandler;
 		this.util = new Owl2NeoUtil( this );
 	}
 	
+    public Owl2Neo( NeoService neo, MetaModel metaModel )
+    {
+        this( neo, metaModel, new StrictUnsupportedConstructHandler() );
+    }
+    
 	/**
 	 * @return the {@link NeoService} instance.
 	 */
@@ -55,6 +63,11 @@ public class Owl2Neo
 	public MetaModel getMetaModel()
 	{
 		return this.metaModel;
+	}
+	
+	UnsupportedConstructHandler getUnsupportedConstructHandler()
+	{
+	    return this.unsupportedConstructHandler;
 	}
 	
 	public void addOntologyChangeHandler( OntologyChangeHandler handler )
