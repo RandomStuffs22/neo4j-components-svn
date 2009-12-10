@@ -69,7 +69,7 @@ def initialize(backend):
         def remove(self, key, *nodes):
             for node in nodes:
                 node = get_node(node)
-                self.__index.removeNode(node, self.__key, key)
+                self.__index.removeIndex(node, self.__key, key)
         # Single values
         def __getitem__(self, key):
             node = self.__index.getSingleNode(self.__key, key)

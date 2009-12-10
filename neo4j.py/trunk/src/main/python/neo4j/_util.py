@@ -43,6 +43,7 @@ class Transactional(object):
                     result = method(*args, **kwargs)
                 except:
                     tx.failure()
+                    raise
                 else:
                     tx.success()
             finally:

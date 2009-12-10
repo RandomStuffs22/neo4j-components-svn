@@ -238,6 +238,10 @@ def initialize(backend):
             _PropertyDict.__init__(self, node)
             self.__neo = neo
             self.__node = node
+        def __repr__(self):
+            return '<Node id=%s>' % (self.id,)
+        def __hash__(self):
+            return self.id
         def __getattr__(self, attr):
             return self.relationships(attr)
         def relationships(self, *types):
@@ -261,7 +265,10 @@ def initialize(backend):
             else:
                 self.__single_type = None
         def __getRelationships(self):
-            if len(self.__types) > 1:
+            if not self.__types:
+                for rel in self.__node.getRelationships(self.__dir):
+                    yield rel
+            elif len(self.__types) > 1:
                 for type in self.__types:
                     for rel in self.__node.getRelationships(type, self.__dir):
                         yield rel
@@ -270,7 +277,9 @@ def initialize(backend):
                                                         self.__dir):
                     yield rel
         def __hasRelationship(self):
-            if len(self.__types) > 1:
+            if not self.__types:
+                return self.__node.hasRelationship(self.__dir)
+            elif len(self.__types) > 1:
                 for type in self.__types:
                     if self.__node.hasRelationship(type, self.__dir):
                         return True
@@ -285,7 +294,7 @@ def initialize(backend):
                                                      self.__dir)
         def __call__(self, node, **attributes):
             node = get_node(node)
-            if dir is INCOMING:
+            if self.__dir is INCOMING:
                 relationship = node.createRelationshipTo(
                     self.__node, self.__single_type)
             else:
@@ -310,7 +319,7 @@ def initialize(backend):
             del self.single
             self(node)
         def del_single(self):
-            single = self.__single
+            single = self.__single()
             if single: single.delete()
         single = property(get_single, set_single, del_single)
         del get_single, set_single, del_single
@@ -329,6 +338,10 @@ def initialize(backend):
             _PropertyDict.__init__(self, relationship)
             self.__relationship = relationship
             self.__neo = neo
+        def __repr__(self):
+            return '<Relationship type=%r id=%s>' % (self.type, self.id)
+        def __hash__(self):
+            return self.id
         def getOtherNode(self, node):
             """Documentation for this is on module level - keep API in sync."""
             node = get_node(node)

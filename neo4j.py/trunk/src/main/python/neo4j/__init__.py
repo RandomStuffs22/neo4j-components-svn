@@ -557,6 +557,8 @@ def Traversal():
             def __getter():
                 return getattr(owner.__get__(None), attr)
             ReplaceProperty.__init__(self, __getter, "")
+            self.type = attr
+            self.direction = owner
 
     # Traversal directions
 
