@@ -9,6 +9,7 @@ class Movie(models.NodeModel):
 
 class Actor(models.NodeModel):
     name = models.Property(indexed=True)
+    href = property(lambda self: ('/actor/%s/' % (self.node.id,)))
     def __unicode__(self):
         return self.name
 
@@ -19,6 +20,7 @@ class Role(models.NodeModel):
     movie = models.Relationship(Movie, type=models.Outgoing.in_movie,
                                 single=True, optional=False,
                                 related_name="parts")
+    href = property(lambda self: ('/role/%s/' % (self.node.id,)))
     def __unicode__(self):
         return u'"%s" in "%s"' % (self.name, self.movie.title)
 

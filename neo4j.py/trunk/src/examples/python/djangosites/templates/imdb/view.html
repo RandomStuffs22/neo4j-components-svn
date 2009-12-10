@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
-
+{% load apply %}
 
 {% block content %}
 
@@ -8,10 +8,8 @@
 
 <h1>{{ title }}</h1>
 
-<ul>
-{% for item in items %}
-  <li><a href="/imdb{{ item.href }}"><img src="{{ item.icon }}"/>{{ item }}</a></li>
+{% for attr in attributes %}
+    {% apply attr item %}
 {% endfor %}
-</ul>
 
 {% endblock %}

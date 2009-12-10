@@ -212,6 +212,41 @@ def __bootstrap__(pyneo):
             def _update(self, values, **kwargs):
                 pass
 
+        class IdProperty(object):
+            def __init__(self, getter, setter):
+                self.getter = getter
+                self.setter = setter
+            def __get__(self, inst, cls):
+                if inst is None: return IdLookup(cls)
+                else:
+                    return self.getter(inst)
+            def __set__(self, inst, value):
+                return self.setter(inst, value)
+        class IdLookup(object):
+            indexed = True
+            unique = True
+            def __init__(self, model):
+                self.__model = model
+            index = property(lambda self: self)
+            def to_neo(self, value):
+                return int(value)
+            def nodes(self, nodeid):
+                try:
+                    node = DjangoNeo.neo.node[nodeid]
+                except:
+                    node = None
+                else:
+                    type_node = DjangoNeo.type_node(
+                        self.__model._meta.app_label, self.__model.__name__)
+                    for rel in node.relationships('<<INSTANCE>>').incoming:
+                        # verify that the found node is an instance of the
+                        # requested type
+                        if rel.start == type_node: break # ok, it is!
+                    else: # no, it isn't!
+                        node = None
+                if node is not None:
+                    yield node
+
         class NodeModel(django.Model):
             """Extend to make models"""
             objects = NodeModelManager()
@@ -231,8 +266,9 @@ def __bootstrap__(pyneo):
             def _get_pk_val(self, meta=None):
                 return self.__node.id
             def _set_pk_val(self, value):
+                if self.__node is None and value is None: return
                 raise TypeError("Cannot change the id of nodes.")
-            pk = property(_get_pk_val, _set_pk_val)
+            pk = id = IdProperty(_get_pk_val, _set_pk_val)
 
             def __eq__(self, other):
                 try:
@@ -351,7 +387,6 @@ def __bootstrap__(pyneo):
                 if lookup:
                     # TODO: filter for the remaining ones
                     raise NotImplementedError("filtering of query set")
-                # TODO: convert resultset of nodes to model objects
                 result = None
                 for item in resultset:
                     if result is not None:
@@ -467,7 +502,23 @@ def __bootstrap__(pyneo):
                 self.__single = single
                 self._direction = direction
                 self.creation_counter = DjangoNeo.field_counter
+                self.__related_single = related_single
+                self.reversed_name = related_name
             target = property(lambda self: self.__target)
+
+            __is_reversed = False
+            def reverse(self, target, name):
+                if self._direction is Incoming:
+                    direction = Outgoing
+                elif self._direction is Outgoing:
+                    direction = Incoming
+                else:
+                    direction = None
+                relationship = Relationship(
+                    target, type=self.__name, direction=direction,
+                    single=self.__related_single, related_name=name)
+                relationship.__is_reversed = True
+                return relationship
 
             def contribute_to_class(self, source, name):
                 if not issubclass(source, NodeModel):
@@ -492,13 +543,13 @@ def __bootstrap__(pyneo):
                     bound = Bound(self, source, self.__name or name, name)
                 source._meta.add_field(bound)
                 setattr(source, name, bound)
-                bound._setup_reversed(target)
+                if not self.__is_reversed:
+                    bound._setup_reversed(target)
 
         class BoundRelationship(object):
             indexed = False
             rel = None
             primary_key = False
-            __reversed_instance = None # FIXME: reversed relationships
             choices = None
             db_index = None
             def __init__(self, rel, source, relname, attname):
@@ -508,25 +559,16 @@ def __bootstrap__(pyneo):
                 self.__attname = attname
                 relationships = self.__relationships_for(source)
                 relationships[self.name] = self # XXX weekref
-            @property
-            def __reversed(self): # FIXME: the reversed stuff feels slightly off
-                if self.__reversed_instance is None:
-                    reversed_instance = self.__lookup_reversed()
-                    self.__reversed_instance = reversed_instance
-                    reversed_instance.__reversed_instance = self
-                return self.__reversed_instance
-            def __lookup_reversed(self):
-                return self._create_reversed()
             def _setup_reversed(self, target):
                 self.__target = target
-                return # TODO: implement this properly
-                target._meta.add_field(self.__reversed)
-            @not_implemented
-            def _create_reversed(self):
-                pass
+                if not isinstance(target, LazyModel):
+                    self.__rel.reverse(self.__source,
+                                       self.__attname).contribute_to_class(
+                        target, self.__reversed_name)
             attname = name = property(lambda self: self.__attname)
             _direction = property(lambda self: self.__rel._direction)
             _target_model = property(lambda self: self.__rel.target)
+            __reversed_name = property(lambda self: self.__rel.reversed_name)
 
             def get_default(self):
                 return None
@@ -561,6 +603,16 @@ def __bootstrap__(pyneo):
             @not_implemented
             def _save_relationship(self, instance, node, state):
                 pass
+
+            def _get_all_relationships(self, node):
+                return self.__load_relationships(node)
+            def __load_relationships(self, this):
+                relationships = this.relationships(self._type)
+                if self._direction is Incoming:
+                    relationships = relationships.incoming
+                elif self._direction is Outgoing:
+                    relationships = relationships.outgoing
+                return relationships
 
             creation_counter = property(lambda self:self.__rel.creation_counter)
             def __cmp__(self, other):
@@ -604,6 +656,9 @@ def __bootstrap__(pyneo):
                 relationship = self.__load_relationships(this).single
                 if relationship is None:
                     return None
+                return self._neo4j_instance(this, relationship)
+
+            def _neo4j_instance(self, this, relationship):
                 that = relationship.getOtherNode(this)
                 return self._target_model._neo4j_instance(that)
 
@@ -657,6 +712,9 @@ def __bootstrap__(pyneo):
                 #for rel in this.relationships(self._type):
                 #    that = rel.getOtherNode(this)
                 #    yield self._NodeModel(that)
+            def _neo4j_instance(self, this, relationship):
+                that = relationship.getOtherNode(this)
+                return self._target_model._neo4j_instance(that)
             def accept(self, obj):
                 pass # TODO: implement verification
             def _save_relationship(self, instance, node, state):
@@ -664,7 +722,14 @@ def __bootstrap__(pyneo):
             def _create_relationship(self, node, obj):
                 other = obj._save_neo4j_node()
                 # TODO: verify that it's ok in the reverse direction
-                node.relationships(self._type)( other )
+                self.__load_relationships(node)( other )
+            def __load_relationships(self, this):
+                relationships = this.relationships(self._type)
+                if self._direction is Incoming:
+                    relationships = relationships.incoming
+                elif self._direction is Outgoing:
+                    relationships = relationships.outgoing
+                return relationships
             @not_implemented
             def _extract_relationship(self, obj):
                 pass
@@ -690,6 +755,14 @@ def __bootstrap__(pyneo):
                     self.__rel._create_relationship(node, obj)
                 self.__removed.clear()
                 self.__added[:] = []
+            def _neo4j_relationships(self, node):
+                for rel in self.__rel._get_all_relationships(node):
+                    if rel not in self.__removed:
+                        yield rel
+            @property
+            def _new(self):
+                for item in self.__added:
+                    yield item
             def add(self, *objs):
                 for obj in objs:
                     self.__rel.accept(obj)
@@ -701,10 +774,10 @@ def __bootstrap__(pyneo):
             def clear(self):
                 pass
             @not_implemented
-            def create(self, **kwargs):
+            def create(self, *args, **kwargs):
                 pass
             @not_implemented
-            def get_or_create(self, **kwargs):
+            def get_or_create(self, *args, **kwargs):
                 pass
             def get_query_set(self):
                 return RelationshipQuerySet(self, self.__rel, self.__obj)
@@ -714,9 +787,28 @@ def __bootstrap__(pyneo):
                 self.__inst = inst
                 self.__rel = rel
                 self.__obj = obj
-            @not_implemented
-            def all(self):
-                pass
+            def __relationships(self, node):
+                for rel in self.__inst._neo4j_relationships(node):
+                    if self.__keep_relationship(rel):
+                        yield rel
+            def __iter__(self):
+                try:
+                    node = self.__obj.node
+                except:
+                    pass
+                else:
+                    buffered = buffer_iterator(
+                        lambda rel: self.__rel._neo4j_instance(node, rel),
+                        self.__relationships(node), size=10)
+                    for item in buffered:
+                        yield item
+                for item in self.__inst._new:
+                    if self.__keep_instance(item):
+                        yield item
+            def __keep_instance(self, obj):
+                return True # TODO: filtering
+            def __keep_relationship(self, rel):
+                return True # TODO: filterning
             @not_implemented
             def get(self, **lookup):
                 pass

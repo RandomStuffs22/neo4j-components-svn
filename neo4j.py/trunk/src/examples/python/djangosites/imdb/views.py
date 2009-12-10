@@ -1,6 +1,7 @@
 from django.shortcuts import render_to_response
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.core.urlresolvers import reverse
+from django.template.loader import render_to_string
 
 from djangosites.imdb import models
 
@@ -21,7 +22,7 @@ class search_functions:
                           if query != 'all']
 
     def all(self, query):
-        for search in self.__querires:
+        for search in self.__queries:
             for item in search( query ):
                 yield item
 
@@ -34,7 +35,7 @@ class search_functions:
             for element in Model.objects.filter(keywords=query):
                 yield element
     def character(self, query):
-        return models.Roles.objects.filter(name=query)
+        return models.Role.objects.filter(name=query)
     
 
 def search(request):
@@ -50,84 +51,51 @@ def search(request):
         return HttpResponseRedirect(reverse(search_redirects.get(
                     search, search_redirects['all'])))
 
-def list_movies(request):
+def _list(title, Model):
     return render_to_response('imdb/list.html', {
-            'title': "List of Movies",
-            'items': models.Movie.objects.all(),
+            'title': title,
+            'items': Model.objects.all(),
         })
 
+def list_movies(request):
+    return _list("List of Movies", models.Movie)
 
-#def actor(Actor, Movie, request, backend, id=None):
-#    """Actor page - list movies"""
-#    if id is None: # Search or search form
-#        if request.method == 'POST': # Search
-#            try:
-#                actor = Actor.objects.get(name=request.POST['name'])
-#            except Actor.DoesNotExist:
-#                return render_to_response('error.html', dict(
-#                        backend=backend,
-#                        message=('Could not find the actor "%s".' %
-#                                 request.POST['name'])))
-#        else: # Search form
-#            return render_to_response(
-#                'search.html',
-#                dict(title="Lookup Actor",
-#                     qname="name",
-#                     legend="Actor name:",
-#                     submit="Lookup",
-#                     backend=backend,
-#                     ))
-#    else:
-#        try:
-#            actor = Actor.objects.get(id=long(id))
-#        except Actor.DoesNotExist:
-#            return render_to_response('error.html', dict(
-#                    backend=backend,
-#                    message="There is no such actor."))
-#    try:
-#        return render_to_response(
-#            'actor.html', # Name of template file
-#            dict(title=actor.name, # parameters needed by the template
-#                 backend=backend,
-#                 actor=actor, # this is the actual actor object
-#                 # properties on the object may be accessed from the template
-#                 ))
-#    finally:
-#        actor.save()
-#
-#def movie(Actor, Movie, request, backend, id=None):
-#    """Movie page - list actors"""
-#    if id is None: # Search or serach form
-#        if request.method == 'POST': # Search
-#            try:
-#                movie = Movie.objects.get(title=request.POST['title'])
-#            except Movie.DoesNotExist:
-#                return render_to_response('error.html', dict(
-#                        backend=backend,
-#                        message=('Could not find the movie "%s".' %
-#                                 request.POST['title'])))
-#        else: # Search form
-#            return render_to_response(
-#                'search.html',
-#                dict(title="Lookup Movie",
-#                     qname="title",
-#                     legend="Movie title:",
-#                     submit="Lookup",
-#                     backend=backend,
-#                     ))
-#    else:
-#        try:
-#            movie = Movie.objects.get(id=long(id))
-#        except Movie.DoesNotExist:
-#            return render_to_response('error.html', dict(
-#                    backend=backend,
-#                    message="There is no such movie."))
-#    try:
-#        return render_to_response(
-#            'movie.html',
-#            dict(title=movie.title,
-#                 backend=backend,
-#                 movie=movie,
-#                 ))
-#    finally:
-#        movie.save()
+def list_actors(request):
+    return _list("List of Actors", models.Actor)
+
+def _view(Model, entity_id, *attributes):
+    entity = Model.objects.get(id=int(entity_id))
+    return render_to_response('imdb/view.html', {
+            'title': str(entity),
+            'attributes': attributes,
+            'item': entity,
+        })
+
+def view_movie(request, movie):
+    return _view(models.Movie, movie, _movie_parts)
+
+def view_actor(request, actor):
+    return _view(models.Actor, actor, _actor_roles)
+
+def view_role(request, role):
+    return _view(models.Role, role, _role_movie, _role_actors)
+
+def _movie_parts(movie):
+    return render_to_string('imdb/parts_table.html', {
+            'parts': movie.parts.all(),
+        })
+
+def _actor_roles(actor):
+    return render_to_string('imdb/list_view.html', {
+            'title': "Roles",
+            'items': actor.roles.all(),
+        })
+
+def _role_movie(role):
+    return '<a href="/imdb%s">%s</a>' % (role.movie.href, role.movie)
+
+def _role_actors(role):
+    return render_to_string('imdb/list_view.html', {
+            'title': "Played by",
+            'items': role.actors.all(),
+        })

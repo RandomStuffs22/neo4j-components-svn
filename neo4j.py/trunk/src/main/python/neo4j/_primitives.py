@@ -238,6 +238,11 @@ def initialize(backend):
             _PropertyDict.__init__(self, node)
             self.__neo = neo
             self.__node = node
+        def __eq__(self, other):
+            try:
+                return self.__node.getId() == other.__node.getId()
+            except:
+                return False
         def __repr__(self):
             return '<Node id=%s>' % (self.id,)
         def __hash__(self):
@@ -338,6 +343,11 @@ def initialize(backend):
             _PropertyDict.__init__(self, relationship)
             self.__relationship = relationship
             self.__neo = neo
+        def __eq__(self, other):
+            try:
+                return self.__relationship.getId()==other.__relationship.getId()
+            except:
+                return False
         def __repr__(self):
             return '<Relationship type=%r id=%s>' % (self.type, self.id)
         def __hash__(self):
