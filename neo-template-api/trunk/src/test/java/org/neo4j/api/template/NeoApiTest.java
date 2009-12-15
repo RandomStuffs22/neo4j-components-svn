@@ -17,7 +17,7 @@ public abstract class NeoApiTest
     @Before
     public void setUp()
     {
-        neo = new EmbeddedNeo("apitest");
+        neo = new EmbeddedNeo("target/var/neo");
     }
 
     @After
