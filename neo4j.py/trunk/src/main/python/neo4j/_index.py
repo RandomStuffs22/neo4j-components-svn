@@ -29,6 +29,7 @@ from neo4j._base import node as get_node
 def initialize(backend):
     global IndexService
     from neo4j._primitives import Node
+
     class IndexService(object):
         def __init__(self, core, neo):
             self.__neo = core
@@ -53,15 +54,17 @@ def initialize(backend):
                 self.__index.shutdown()
             self.__indexes = {}
             self.__index = None
+
     class Index(object):
         def __init__(self, index, neo, key, **ignored):
             self.__index = index
             self.__neo = neo
             self.__key = key
         # Multiple values
+        def match(self, query):
+            raise NotImplementedError('"Fulltext" query is not implemented.')
         def nodes(self, key):
-            for node in self.__index.getNodes(self.__key, key):
-                yield Node(self.__neo, node)
+            return IndexHits(self.__neo, self.__index.getNodes(self.__key, key))
         def add(self, key, *nodes):
             for node in nodes:
                 node = get_node(node)
@@ -83,4 +86,14 @@ def initialize(backend):
             old = self.__index.getSingleNode(self.__key, key)
             if old is not None:
                 self.__index.removeIndex(old, self.__key, key)
+
+    class IndexHits(object):
+        def __init__(self, neo, hits):
+            self.__neo = neo
+            self.__hits = hits
+        def __len__(self):
+            return self.__hits.size()
+        def __iter__(self):
+            for node in self.__hits:
+                yield Node(self.__neo, node)
 
