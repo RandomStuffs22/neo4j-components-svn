@@ -10,7 +10,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
   <artifactId>index-util</artifactId>
-  <version>0.9-SNAPSHOT</version>
+  <version>0.9-with-remove-SNAPSHOT</version>
   <name>Neo4j - Index util</name>
   <description>
     Utility classes to add property indexing in Neo.
