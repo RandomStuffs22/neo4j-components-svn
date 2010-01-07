@@ -1,0 +1,902 @@
+<add>
+<doc>
+<field name="business_name">National Amusements Fairfield Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">41.1611</field>
+<field name="lng">-73.2306</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">0</field>
+<field name="id">0</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">great popcorn</field>
+<field name="neoUserId">1</field>
+<field name="id">1</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Parsippany Cinema 12</field>
+<field name="category">cinema</field>
+<field name="lat">40.8726</field>
+<field name="lng">-74.4293</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">2</field>
+<field name="id">2</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">tons of stuff to do while waiting</field>
+<field name="neoUserId">3</field>
+<field name="id">3</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">plenty of parking</field>
+<field name="neoUserId">4</field>
+<field name="id">4</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Fairfield Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">41.1611</field>
+<field name="lng">-73.2306</field>
+<field name="review">tons of stuff to do while waiting</field>
+<field name="neoUserId">5</field>
+<field name="id">5</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Farmingdale Multiplex Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">40.7285</field>
+<field name="lng">-73.4238</field>
+<field name="review">good screen size</field>
+<field name="neoUserId">6</field>
+<field name="id">6</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">7</field>
+<field name="id">7</field>
+ </doc>
+<doc>
+<field name="business_name">New Center Cinema</field>
+<field name="category">cinema</field>
+<field name="lat">40.7439</field>
+<field name="lng">-73.9229</field>
+<field name="review">plenty of parking</field>
+<field name="neoUserId">8</field>
+<field name="id">8</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">lots of candy</field>
+<field name="neoUserId">9</field>
+<field name="id">9</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">10</field>
+<field name="id">10</field>
+ </doc>
+<doc>
+<field name="business_name">New Center Cinema</field>
+<field name="category">cinema</field>
+<field name="lat">40.7439</field>
+<field name="lng">-73.9229</field>
+<field name="review">good screen size</field>
+<field name="neoUserId">11</field>
+<field name="id">11</field>
+ </doc>
+<doc>
+<field name="business_name">Pj Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">40.923</field>
+<field name="lng">-73.0455</field>
+<field name="review">plenty of parking</field>
+<field name="neoUserId">12</field>
+<field name="id">12</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">13</field>
+<field name="id">13</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">14</field>
+<field name="id">14</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Fairfield Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">41.1611</field>
+<field name="lng">-73.2306</field>
+<field name="review">lots of candy</field>
+<field name="neoUserId">15</field>
+<field name="id">15</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">16</field>
+<field name="id">16</field>
+ </doc>
+<doc>
+<field name="business_name">New Center Cinema</field>
+<field name="category">cinema</field>
+<field name="lat">40.7439</field>
+<field name="lng">-73.9229</field>
+<field name="review">good screen size</field>
+<field name="neoUserId">17</field>
+<field name="id">17</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Fairfield Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">41.1611</field>
+<field name="lng">-73.2306</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">18</field>
+<field name="id">18</field>
+ </doc>
+<doc>
+<field name="business_name">Pj Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">40.923</field>
+<field name="lng">-73.0455</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">19</field>
+<field name="id">19</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Fairfield Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">41.1611</field>
+<field name="lng">-73.2306</field>
+<field name="review">rubbish movies</field>
+<field name="neoUserId">20</field>
+<field name="id">20</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">21</field>
+<field name="id">21</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">lots of candy</field>
+<field name="neoUserId">22</field>
+<field name="id">22</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">23</field>
+<field name="id">23</field>
+ </doc>
+<doc>
+<field name="business_name">New Center Cinema</field>
+<field name="category">cinema</field>
+<field name="lat">40.7439</field>
+<field name="lng">-73.9229</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">24</field>
+<field name="id">24</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">good screen size</field>
+<field name="neoUserId">25</field>
+<field name="id">25</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Fairfield Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">41.1611</field>
+<field name="lng">-73.2306</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">26</field>
+<field name="id">26</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">27</field>
+<field name="id">27</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">rubbish movies</field>
+<field name="neoUserId">28</field>
+<field name="id">28</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">plenty of parking</field>
+<field name="neoUserId">29</field>
+<field name="id">29</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">30</field>
+<field name="id">30</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">31</field>
+<field name="id">31</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Fairfield Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">41.1611</field>
+<field name="lng">-73.2306</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">32</field>
+<field name="id">32</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">tons of stuff to do while waiting</field>
+<field name="neoUserId">33</field>
+<field name="id">33</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">good screen size</field>
+<field name="neoUserId">34</field>
+<field name="id">34</field>
+ </doc>
+<doc>
+<field name="business_name">New Center Cinema</field>
+<field name="category">cinema</field>
+<field name="lat">40.7439</field>
+<field name="lng">-73.9229</field>
+<field name="review">tons of stuff to do while waiting</field>
+<field name="neoUserId">35</field>
+<field name="id">35</field>
+ </doc>
+<doc>
+<field name="business_name">New Center Cinema</field>
+<field name="category">cinema</field>
+<field name="lat">40.7439</field>
+<field name="lng">-73.9229</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">36</field>
+<field name="id">36</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">37</field>
+<field name="id">37</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Farmingdale Multiplex Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">40.7285</field>
+<field name="lng">-73.4238</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">38</field>
+<field name="id">38</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Parsippany Cinema 12</field>
+<field name="category">cinema</field>
+<field name="lat">40.8726</field>
+<field name="lng">-74.4293</field>
+<field name="review">good screen size</field>
+<field name="neoUserId">39</field>
+<field name="id">39</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">40</field>
+<field name="id">40</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Parsippany Cinema 12</field>
+<field name="category">cinema</field>
+<field name="lat">40.8726</field>
+<field name="lng">-74.4293</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">41</field>
+<field name="id">41</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">42</field>
+<field name="id">42</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">will never go here again</field>
+<field name="neoUserId">43</field>
+<field name="id">43</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">44</field>
+<field name="id">44</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">will never go here again</field>
+<field name="neoUserId">45</field>
+<field name="id">45</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Parsippany Cinema 12</field>
+<field name="category">cinema</field>
+<field name="lat">40.8726</field>
+<field name="lng">-74.4293</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">46</field>
+<field name="id">46</field>
+ </doc>
+<doc>
+<field name="business_name">New Center Cinema</field>
+<field name="category">cinema</field>
+<field name="lat">40.7439</field>
+<field name="lng">-73.9229</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">47</field>
+<field name="id">47</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">48</field>
+<field name="id">48</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">49</field>
+<field name="id">49</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">50</field>
+<field name="id">50</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">51</field>
+<field name="id">51</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">52</field>
+<field name="id">52</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">53</field>
+<field name="id">53</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">great popcorn</field>
+<field name="neoUserId">54</field>
+<field name="id">54</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">will never go here again</field>
+<field name="neoUserId">55</field>
+<field name="id">55</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">great popcorn</field>
+<field name="neoUserId">56</field>
+<field name="id">56</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">tons of stuff to do while waiting</field>
+<field name="neoUserId">57</field>
+<field name="id">57</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">good screen size</field>
+<field name="neoUserId">58</field>
+<field name="id">58</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">59</field>
+<field name="id">59</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">great popcorn</field>
+<field name="neoUserId">60</field>
+<field name="id">60</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">61</field>
+<field name="id">61</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Parsippany Cinema 12</field>
+<field name="category">cinema</field>
+<field name="lat">40.8726</field>
+<field name="lng">-74.4293</field>
+<field name="review">rubbish movies</field>
+<field name="neoUserId">62</field>
+<field name="id">62</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">great popcorn</field>
+<field name="neoUserId">63</field>
+<field name="id">63</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">64</field>
+<field name="id">64</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">65</field>
+<field name="id">65</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">rubbish movies</field>
+<field name="neoUserId">66</field>
+<field name="id">66</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">great popcorn</field>
+<field name="neoUserId">67</field>
+<field name="id">67</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">68</field>
+<field name="id">68</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">69</field>
+<field name="id">69</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">70</field>
+<field name="id">70</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">71</field>
+<field name="id">71</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">72</field>
+<field name="id">72</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">tons of stuff to do while waiting</field>
+<field name="neoUserId">73</field>
+<field name="id">73</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Fairfield Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">41.1611</field>
+<field name="lng">-73.2306</field>
+<field name="review">rubbish movies</field>
+<field name="neoUserId">74</field>
+<field name="id">74</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">75</field>
+<field name="id">75</field>
+ </doc>
+<doc>
+<field name="business_name">CJM Hyway Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.9222</field>
+<field name="lng">-74.1137</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">76</field>
+<field name="id">76</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">77</field>
+<field name="id">77</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Farmingdale Multiplex Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">40.7285</field>
+<field name="lng">-73.4238</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">78</field>
+<field name="id">78</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">79</field>
+<field name="id">79</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Parsippany Cinema 12</field>
+<field name="category">cinema</field>
+<field name="lat">40.8726</field>
+<field name="lng">-74.4293</field>
+<field name="review">always out of butter</field>
+<field name="neoUserId">80</field>
+<field name="id">80</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">81</field>
+<field name="id">81</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Farmingdale Multiplex Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">40.7285</field>
+<field name="lng">-73.4238</field>
+<field name="review">plenty of parking</field>
+<field name="neoUserId">82</field>
+<field name="id">82</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">crap staff</field>
+<field name="neoUserId">83</field>
+<field name="id">83</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Fairfield Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">41.1611</field>
+<field name="lng">-73.2306</field>
+<field name="review">great popcorn</field>
+<field name="neoUserId">84</field>
+<field name="id">84</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Parsippany Cinema 12</field>
+<field name="category">cinema</field>
+<field name="lat">40.8726</field>
+<field name="lng">-74.4293</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">85</field>
+<field name="id">85</field>
+ </doc>
+<doc>
+<field name="business_name">Pj Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">40.923</field>
+<field name="lng">-73.0455</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">86</field>
+<field name="id">86</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">87</field>
+<field name="id">87</field>
+ </doc>
+<doc>
+<field name="business_name">New Center Cinema</field>
+<field name="category">cinema</field>
+<field name="lat">40.7439</field>
+<field name="lng">-73.9229</field>
+<field name="review">rubbish movies</field>
+<field name="neoUserId">88</field>
+<field name="id">88</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">will never go here again</field>
+<field name="neoUserId">89</field>
+<field name="id">89</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Beacon Hill 5</field>
+<field name="category">cinema</field>
+<field name="lat">40.7184</field>
+<field name="lng">-74.3566</field>
+<field name="review">plenty of parking</field>
+<field name="neoUserId">90</field>
+<field name="id">90</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">attentive staff</field>
+<field name="neoUserId">91</field>
+<field name="id">91</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">will never go here again</field>
+<field name="neoUserId">92</field>
+<field name="id">92</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">plenty of parking</field>
+<field name="neoUserId">93</field>
+<field name="id">93</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">good screen size</field>
+<field name="neoUserId">94</field>
+<field name="id">94</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Farmingdale Multiplex Cinemas</field>
+<field name="category">cinema</field>
+<field name="lat">40.7285</field>
+<field name="lng">-73.4238</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">95</field>
+<field name="id">95</field>
+ </doc>
+<doc>
+<field name="business_name">Clearview Parsippany Cinema 12</field>
+<field name="category">cinema</field>
+<field name="lat">40.8726</field>
+<field name="lng">-74.4293</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">96</field>
+<field name="id">96</field>
+ </doc>
+<doc>
+<field name="business_name">National Amusements Showcase Cinemas Bridgeport</field>
+<field name="category">cinema</field>
+<field name="lat">41.161</field>
+<field name="lng">-73.2282</field>
+<field name="review">no air cond</field>
+<field name="neoUserId">97</field>
+<field name="id">97</field>
+ </doc>
+<doc>
+<field name="business_name">Five Star Theatres Bellmore Playhouse</field>
+<field name="category">cinema</field>
+<field name="lat">40.6724</field>
+<field name="lng">-73.5287</field>
+<field name="review">lots of late shows</field>
+<field name="neoUserId">98</field>
+<field name="id">98</field>
+ </doc>
+<doc>
+<field name="business_name">LeFrak Imax Theatre</field>
+<field name="category">cinema</field>
+<field name="lat">40.791</field>
+<field name="lng">-73.9763</field>
+<field name="review">tons of stuff to do while waiting</field>
+<field name="neoUserId">99</field>
+<field name="id">99</field>
+ </doc>
+</add>

@@ -1,0 +1,101 @@
+<add>
+<doc>
+  <field name="id">0</field>
+  <field name="cinema">Five Star Theatres Bellmore Playhouse</field>
+  <field name="street">525 Bedford Avenue</field>
+  <field name="city">Bellmore</field>
+  <field name="zip">11710</field>
+  <field name="lat">40.6724</field>
+  <field name="lng">-73.5287</field>
+  <field name="doctype">cinema</field>
+</doc>
+<doc>
+  <field name="id">1</field>
+  <field name="cinema">CJM Hyway Theatre</field>
+  <field name="street">22-18 Broadway</field>
+  <field name="city">Fair Lawn</field>
+  <field name="zip">07410</field>
+  <field name="lat">40.9222</field>
+  <field name="lng">-74.1137</field>
+  <field name="doctype">cinema</field>
+</doc>
+<doc>
+  <field name="id">2</field>
+  <field name="cinema">National Amusements Showcase Cinemas Bridgeport</field>
+  <field name="street">286 Canfield Ave</field>
+  <field name="city">Bridgeport</field>
+  <field name="zip">06605</field>
+  <field name="lat">41.161</field>
+  <field name="lng">-73.2282</field>
+  <field name="doctype">cinema</field>
+</doc>
+<doc>
+  <field name="id">3</field>
+  <field name="cinema">National Amusements Fairfield Cinemas</field>
+  <field name="street">41 Black Rock Tpke</field>
+  <field name="city">Fairfield</field>
+  <field name="zip">06430</field>
+  <field name="lat">41.1611</field>
+  <field name="lng">-73.2306</field>
+  <field name="doctype">cinema</field>
+</doc>
+<doc>
+  <field name="id">4</field>
+  <field name="cinema">Pj Cinemas</field>
+  <field name="street">1068 Route 112</field>
+  <field name="city">Port Jefferson Station</field>
+  <field name="zip">11776</field>
+  <field name="lat">40.923</field>
+  <field name="lng">-73.0455</field>
+  <field name="doctype">cinema</field>
+</doc>
+<doc>
+  <field name="id">5</field>
+  <field name="cinema">Clearview Parsippany Cinema 12</field>
+  <field name="street">3165 Us Highway 46</field>
+  <field name="city">Parsippany</field>
+  <field name="zip">07054</field>
+  <field name="lat">40.8726</field>
+  <field name="lng">-74.4293</field>
+  <field name="doctype">cinema</field>
+</doc>
+<doc>
+  <field name="id">6</field>
+  <field name="cinema">National Amusements Farmingdale Multiplex Cinemas</field>
+  <field name="street">1001 Broad Hollow Road</field>
+  <field name="city">Farmingdale</field>
+  <field name="zip">11735</field>
+  <field name="lat">40.7285</field>
+  <field name="lng">-73.4238</field>
+  <field name="doctype">cinema</field>
+</doc>
+<doc>
+  <field name="id">7</field>
+  <field name="cinema">New Center Cinema</field>
+  <field name="street">4217 Queens Blvd</field>
+  <field name="city">Sunnyside</field>
+  <field name="zip">11104</field>
+  <field name="lat">40.7439</field>
+  <field name="lng">-73.9229</field>
+  <field name="doctype">cinema</field>
+</doc>
+<doc>
+  <field name="id">8</field>
+  <field name="cinema">Clearview Beacon Hill 5</field>
+  <field name="street">343 Springfield Avenue</field>
+  <field name="city">Summit</field>
+  <field name="zip">07901</field>
+  <field name="lat">40.7184</field>
+  <field name="lng">-74.3566</field>
+  <field name="doctype">cinema</field>
+</doc>
+<doc>
+  <field name="id">9</field>
+  <field name="cinema">LeFrak Imax Theatre</field>
+  <field name="street">79th Street And Central Park West</field>
+  <field name="city">New York</field>
+  <field name="zip">10024</field>
+  <field name="lat">40.791</field>
+  <field name="lng">-73.9763</field>
+  <field name="doctype">cinema</field>
+</doc>
