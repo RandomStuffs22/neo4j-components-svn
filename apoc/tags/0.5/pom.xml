@@ -8,7 +8,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
-  <artifactId>apoc</artifactId>
+  <artifactId>neo4j-apoc</artifactId>
   <packaging>pom</packaging>
   <name>A Package Of Components</name>
   <version>0.5</version>
@@ -18,22 +18,22 @@
   <dependencies>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>kernel</artifactId>
+      <artifactId>neo4j-kernel</artifactId>
       <version>1.0-rc</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>index</artifactId>
+      <artifactId>neo4j-index</artifactId>
       <version>1.0-b1</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>shell</artifactId>
+      <artifactId>neo4j-shell</artifactId>
       <version>1.0-rc</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>remote-graphdb</artifactId>
+      <artifactId>neo4j-remote-graphdb</artifactId>
       <version>0.5</version>
     </dependency>
   </dependencies>
