@@ -8,10 +8,10 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
-  <artifactId>apoc</artifactId>
+  <artifactId>neo4j-apoc</artifactId>
   <packaging>pom</packaging>
   <name>A Package Of Components</name>
-  <version>0.5-SNAPSHOT</version>
+  <version>0.6-SNAPSHOT</version>
   <url>http://components.neo4j.org/${project.artifactId}/</url>
   <description>A meta package containing the most used Neo4j libraries. Intended use: as a Maven dependency.</description>
 
@@ -39,27 +39,24 @@
   </dependencies>
 
   <scm>
-    <connection>
-            scm:svn:https://svn.neo4j.org/components/${project.artifactId}/trunk/
-        </connection>
-    <url>https://trac.neo4j.org/browser/components/${project.artifactId}
-        </url>
+    <connection>scm:svn:https://svn.neo4j.org/components/apoc/trunk/</connection>
+    <url>https://trac.neo4j.org/browser/components/apoc</url>
   </scm>
 
   <licenses>
     <license>
       <name>Apache License, Version 2</name>
-      <url>https://svn.neo4j.org/components/${project.artifactId}/trunk/LICENSE.txt
+      <url>https://svn.neo4j.org/components/apoc/trunk/LICENSE.txt
             </url>
     </license>
     <license>
       <name>Neo4j libraries: GNU Affero General Public License, Version 3</name>
-      <url>https://svn.neo4j.org/components/${project.artifactId}/trunk/NOTICE.txt
+      <url>https://svn.neo4j.org/components/apoc/trunk/NOTICE.txt
             </url>
     </license>
     <license>
       <name>Apache Lucene library: Apache License, Version 2</name>
-      <url>https://svn.neo4j.org/components/${project.artifactId}/trunk/NOTICE.txt
+      <url>https://svn.neo4j.org/components/apoc/trunk/NOTICE.txt
             </url>
     </license>
   </licenses>
