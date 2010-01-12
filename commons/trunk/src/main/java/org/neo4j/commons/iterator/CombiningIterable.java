@@ -3,6 +3,12 @@ package org.neo4j.commons.iterator;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+/**
+ * Combining one or more {@link Iterable}s, making them look like they were
+ * one big iterable. All iteration/combining is done lazily.
+ * 
+ * @param <T> the type of items in the iteration.
+ */
 public class CombiningIterable<T> implements Iterable<T>
 {
 	private Iterable<Iterable<T>> iterables;

@@ -3,11 +3,12 @@ package org.neo4j.commons.iterator;
 import java.util.Iterator;
 
 /**
- * For each item in the supplied iterator (called surface item) there's
+ * For each item in the supplied iterator (called "surface item") there's
  * instantiated an iterator from that item which is iterated before moving
  * on to the next surface item.
  *
- * @param <T> the type of items.
+ * @param <T> the type of items to return
+ * @param <U> the type of items in the surface item iterator
  */
 public abstract class NestingIterator<T, U> extends PrefetchingIterator<T>
 {

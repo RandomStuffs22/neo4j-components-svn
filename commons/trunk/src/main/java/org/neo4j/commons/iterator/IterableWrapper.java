@@ -2,6 +2,13 @@ package org.neo4j.commons.iterator;
 
 import java.util.Iterator;
 
+/**
+ * Wraps an {@link Iterable} so that it returns items of another type. The
+ * iteration is done lazily.
+ *
+ * @param <T> the type of items to return
+ * @param <U> the type of items to wrap/convert from
+ */
 public abstract class IterableWrapper<T, U> implements Iterable<T>
 {
 	private Iterable<U> source;

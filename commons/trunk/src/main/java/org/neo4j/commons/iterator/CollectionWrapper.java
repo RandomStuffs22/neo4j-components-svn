@@ -5,6 +5,14 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 
+/**
+ * Wraps a {@link Collection}, making it look (and function) like a collection
+ * holding another type of items. The wrapper delegates to its underlying
+ * collection instead of keeping track of the items itself.
+ *
+ * @param <T> the type of items
+ * @param <U> the type of items of the underlying/wrapped collection
+ */
 public abstract class CollectionWrapper<T, U> implements Collection<T>
 {
 	private Collection<U> collection;

@@ -2,6 +2,12 @@ package org.neo4j.commons.iterator;
 
 import java.util.Iterator;
 
+/**
+ * An iterable which filters another iterable, only letting items with certain
+ * criterias pass through. All iteration/filtering is done lazily.
+ * 
+ * @param <T> the type of items in the iteration.
+ */
 public abstract class FilteringIterable<T> implements Iterable<T>
 {
 	private Iterable<T> source;
