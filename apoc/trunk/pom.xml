@@ -23,12 +23,12 @@
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>index</artifactId>
+      <artifactId>neo4j-index</artifactId>
       <version>1.0-b1</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>shell</artifactId>
+      <artifactId>neo4j-shell</artifactId>
       <version>1.0-rc</version>
     </dependency>
     <dependency>
