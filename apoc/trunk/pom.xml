@@ -4,7 +4,7 @@
   <parent>
     <artifactId>parent-pom</artifactId>
     <groupId>org.neo4j</groupId>
-    <version>5</version>
+    <version>6</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
@@ -19,22 +19,22 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-kernel</artifactId>
-      <version>1.0-rc</version>
+      <version>1.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-index</artifactId>
-      <version>1.0-b1</version>
+      <version>1.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-shell</artifactId>
-      <version>1.0-rc</version>
+      <version>1.0-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-remote-graphdb</artifactId>
-      <version>0.5</version>
+      <version>0.6-SNAPSHOT</version>
     </dependency>
   </dependencies>
 
@@ -45,21 +45,20 @@
 
   <licenses>
     <license>
-      <name>Apache License, Version 2</name>
-      <url>https://svn.neo4j.org/components/apoc/trunk/LICENSE.txt
-            </url>
-    </license>
-    <license>
-      <name>Neo4j libraries: GNU Affero General Public License, Version 3</name>
-      <url>https://svn.neo4j.org/components/apoc/trunk/NOTICE.txt
-            </url>
-    </license>
-    <license>
-      <name>Apache Lucene library: Apache License, Version 2</name>
-      <url>https://svn.neo4j.org/components/apoc/trunk/NOTICE.txt
-            </url>
+      <name>Apache License Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <comments>
+        Note that this license is for the project itself,
+        and not for its dependencies. See the included NOTICE.txt
+        file for further details.
+        </comments>
     </license>
   </licenses>
+
+  <issueManagement>
+    <system>Trac</system>
+    <url>https://trac.neo4j.org/query?status=assigned&amp;status=new&amp;status=reopened&amp;component=apoc</url>
+  </issueManagement>
 
   <developers>
     <developer>
