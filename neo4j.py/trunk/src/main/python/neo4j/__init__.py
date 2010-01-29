@@ -280,6 +280,10 @@ node = index['value']
 del index['value']
 ---
 
+ Keep in mind that when updating the index with a new value (f.ex. when a
+ property value on a node changes) remember to remove the old value from the
+ index as well, else both values will be indexed.
+
  Using indexes as multi value indexes:
 
 ---
