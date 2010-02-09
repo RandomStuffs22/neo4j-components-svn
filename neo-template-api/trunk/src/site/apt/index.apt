@@ -1,6 +1,0 @@
-Neo4j Template API
-
-    Inversion of Control template with callbacks executed in transaction. 
-    Graph wrapper for neo service with convenience methods. Traversal with 
-    fluent api and automatic result mapping for easy traversals. GraphDescription 
-    for test-data graphs.

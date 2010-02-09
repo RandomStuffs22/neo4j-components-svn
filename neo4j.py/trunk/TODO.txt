@@ -1,0 +1,13 @@
+[2010-02-09] Backends should support passing more JVM arguments
+    Heap size is the most important one.
+    This is applicable for non-jython backends.
+    * src/main/python/neo4j/_backend/reflection.py
+
+[2010-02-09] More Neo4j components should be exposed with Pythonic API
+
+[2010-02-09] Django: Complete the queryset implementation
+
+[2010-02-09] Django: Expose traversers to the developer
+
+[2010-02-09] Django: Enable the developer to use managers for models
+
