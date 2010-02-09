@@ -19,9 +19,9 @@
  */
 
 /**
- * A utility for indexing nodes ordered by a timestamp. You add each
- * node with a timestamp and then can then ask the timeline to return all nodes
- * within a specific period of time with optional start/end timestamps (exclusive).
+ * A tool for introspecting a running Neo4j Graph Database instance from a
+ * different process. The implementation is not speedy enough to be used as
+ * the main access channel to a Graph Database for actual applications.
  */
-package org.neo4j.index.timeline;
+package org.neo4j.remote;
 
