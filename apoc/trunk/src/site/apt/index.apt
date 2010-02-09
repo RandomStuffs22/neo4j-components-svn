@@ -21,7 +21,7 @@ Included components
 
 Usage
     
-    To use Apoc, add the following repository to your POM.xml file:
+    To use Apoc, add the following repository to your 'pom.xml' file:
     
 ---
     <repositories>

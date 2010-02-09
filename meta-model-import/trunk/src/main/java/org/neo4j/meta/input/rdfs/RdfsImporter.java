@@ -34,18 +34,18 @@ import org.ontoware.rdf2go.vocabulary.RDF;
 import org.ontoware.rdf2go.vocabulary.RDFS;
 
 /**
- * Imports RDF schema graphs and creates a neo meta model representation of it.
+ * Imports RDF schema graphs and creates a meta model representation of it.
  */
 public class RdfsImporter
 {
 	private MetaModel meta;
 	
 	/**
-	 * @param meta the {@link MetaModel} instance to use.
+	 * @param model the {@link MetaModel} instance to use.
 	 */
-	public RdfsImporter( MetaModel meta )
+	public RdfsImporter( MetaModel model )
 	{
-		this.meta = meta;
+		this.meta = model;
 	}
 	
 	/**
@@ -66,7 +66,7 @@ public class RdfsImporter
 	public void doImport( File file ) throws IOException
 	{
 		Model model = RdfHelper.readModel( file );
-		Transaction tx = ( ( MetaModelImpl ) meta ).neo().beginTx();
+		Transaction tx = ( ( MetaModelImpl ) meta ).graphDb().beginTx();
 		try
 		{
 			readFrom( model );
