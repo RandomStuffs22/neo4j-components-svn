@@ -80,16 +80,16 @@ public class Owl2GraphDb
 		return this.changeHandlers;
 	}
 
-	public void syncOntologiesWithNeoRepresentation( File... ontologies )
+	public void syncOntologiesWithGraphDbRepresentation( File... ontologies )
 	{
-		syncOntologiesWithNeoRepresentation( false, ontologies );
+		syncOntologiesWithGraphDbRepresentation( false, ontologies );
 	}
 	
 	/**
 	 * Performs the synchronization of ontologies into neo representation.
 	 * @param ontologies an array of files containing ontologies.
 	 */
-	public void syncOntologiesWithNeoRepresentation(
+	public void syncOntologiesWithGraphDbRepresentation(
 		boolean clearPreviousOntologies, File... ontologies )
 	{
 		util.syncOntologiesWithGraphDbRepresentation(
