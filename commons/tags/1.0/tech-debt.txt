@@ -1,0 +1,9 @@
+[2010-02-09] Some useful iterator algebra utils are missing
+    Such as:
+     - iterator/iterable for arrays
+     - AllButFirst iterable
+     - AllButLast iterable
+     - prepend single element to an iterator
+
+[2010-02-10] Tests are missing completely
+    An entire component w/o tests, not good
