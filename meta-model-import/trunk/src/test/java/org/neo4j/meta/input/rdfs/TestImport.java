@@ -28,10 +28,10 @@ public class TestImport extends MetaTestCase
 	 */
 	public void testSomeImport() throws Exception
 	{
-		MetaModel meta = new MetaModelImpl( neo() );
+		MetaModel meta = new MetaModelImpl( graphDb() );
 		new RdfsImporter( meta ).doImport( new File( "test.rdfs" ) );
 		
-		Transaction tx = neo().beginTx();
+		Transaction tx = graphDb().beginTx();
 		try
 		{
 			String baseName = "http://test.org#";
@@ -119,10 +119,10 @@ public class TestImport extends MetaTestCase
 	private void doImport( String file ) throws Exception
 	{
 		System.out.println( "=========================" );
-		MetaModel meta = new MetaModelImpl( neo() );
+		MetaModel meta = new MetaModelImpl( graphDb() );
 		new RdfsImporter( meta ).doImport( new File( file ) );
 		
-		Transaction tx = neo().beginTx();
+		Transaction tx = graphDb().beginTx();
 		try
 		{
 			deleteMetaModel();

@@ -8,11 +8,11 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.meta.model.MetaModel;
 
 /**
- * Owl2Neo reads one or more ontologies and stores that data in neo as nodes
+ * Reads one or more ontologies and stores that data in Neo4j as nodes
  * and relationships so that other components can get information about
  * the data structure.
  * 
- * This is the entry class for the owl2neometa component, instantiate it
+ * This is the entry class for this component, instantiate it
  * (with dependency injection) to use this component.
  */
 public class Owl2GraphDb
@@ -24,7 +24,7 @@ public class Owl2GraphDb
 //     */
 //    public static final String PROPERTY_TYPE = "property_type";
 //    
-	private GraphDatabaseService neo;
+	private GraphDatabaseService graphDb;
 	private MetaModel metaModel;
 	private Owl2GraphDbUtil util;
 	private UnsupportedConstructHandler unsupportedConstructHandler;
@@ -35,18 +35,18 @@ public class Owl2GraphDb
 	 * @param metaModel the {@link MetaModel} to use for storing
 	 * information about the ontologies.
 	 */
-	public Owl2GraphDb( GraphDatabaseService neo, MetaModel metaModel,
+	public Owl2GraphDb( GraphDatabaseService graphDb, MetaModel metaModel,
 	    UnsupportedConstructHandler unsupportedConstructHandler )
 	{
-		this.neo = neo;
+		this.graphDb = graphDb;
 		this.metaModel = metaModel;
 		this.unsupportedConstructHandler = unsupportedConstructHandler;
 		this.util = new Owl2GraphDbUtil( this );
 	}
 	
-    public Owl2GraphDb( GraphDatabaseService neo, MetaModel metaModel )
+    public Owl2GraphDb( GraphDatabaseService graphDb, MetaModel metaModel )
     {
-        this( neo, metaModel, new StrictUnsupportedConstructHandler() );
+        this( graphDb, metaModel, new StrictUnsupportedConstructHandler() );
     }
     
 	/**
@@ -54,7 +54,7 @@ public class Owl2GraphDb
 	 */
 	public GraphDatabaseService getGraphDb()
 	{
-		return this.neo;
+		return this.graphDb;
 	}
 	
 	/**
@@ -86,7 +86,7 @@ public class Owl2GraphDb
 	}
 	
 	/**
-	 * Performs the synchronization of ontologies into neo representation.
+	 * Performs the synchronization of ontologies into neo4j representation.
 	 * @param ontologies an array of files containing ontologies.
 	 */
 	public void syncOntologiesWithGraphDbRepresentation(

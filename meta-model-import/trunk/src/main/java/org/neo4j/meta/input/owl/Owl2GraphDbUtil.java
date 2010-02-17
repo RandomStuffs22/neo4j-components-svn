@@ -125,7 +125,7 @@ import org.semanticweb.owl.util.OWLObjectVisitorAdapter;
 import org.semanticweb.owl.vocab.OWLXMLVocabulary;
 
 /**
- * Utility for reading the ontologies an filling the neo meta model
+ * Utility for reading the ontologies an filling the meta model
  * {@link MetaManager} and the in-memory representation {@link OwlModel}
  * with all the properties, classes and restrictions from the ontologies.
  */
