@@ -9,17 +9,20 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.Node;
-import org.neo4j.api.core.Relationship;
-import org.neo4j.api.core.RelationshipType;
-import org.neo4j.api.core.Transaction;
-import org.neo4j.impl.nioneo.xa.NeoStoreXaDataSource;
-import org.neo4j.impl.transaction.XaDataSourceManager;
-import org.neo4j.impl.transaction.xaframework.XaDataSource;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.graphdb.Transaction;
+//import org.neo4j.index.IndexService;
+//import org.neo4j.index.lucene.LuceneIndexService;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.impl.nioneo.xa.NeoStoreXaDataSource;
+import org.neo4j.kernel.impl.transaction.XaDataSourceManager;
+import org.neo4j.kernel.impl.transaction.xaframework.XaDataSource;
 
 /**
- * Try to backup Neo and a Lucene data source to another running Neo+Lucene.
+ * Try to backup Neo4j and a Lucene data source to another
+ * running Neo4j+Lucene.
  */
 public class MultiRunningTest
 {
@@ -44,29 +47,29 @@ public class MultiRunningTest
         System.out
             .println( "setting up database and backup-copy including Lucene" );
 
-        EmbeddedNeo neo = Util.startNeoInstance( STORE_LOCATION_DIR );
-        XaDataSource neoStoreXaDataSource = neo.getConfig()
+        EmbeddedGraphDatabase graphDb = Util.startGraphDbInstance( STORE_LOCATION_DIR );
+        XaDataSource neoStoreXaDataSource = graphDb.getConfig()
             .getPersistenceModule().getPersistenceManager()
             .getPersistenceSource().getXaDataSource();
         neoStoreXaDataSource.keepLogicalLogs( true );
 
-        // IndexService indexService = new LuceneIndexService( neo );
-        XaDataSourceManager xaDsm = neo.getConfig().getTxModule()
+//        IndexService indexService = new LuceneIndexService( graphDb );
+        XaDataSourceManager xaDsm = graphDb.getConfig().getTxModule()
             .getXaDataSourceManager();
         XaDataSource ds = xaDsm.getXaDataSource( "lucene" );
         // ((LuceneDataSource) ds).keepLogicalLogs( true );
 
-        Transaction tx = neo.beginTx();
+        Transaction tx = graphDb.beginTx();
         try
         {
-            // indexService.index( addNode( neo ), "number", 1 );
+//            indexService.index( addNode( graphDb ), "number", 1 );
             tx.success();
         }
         finally
         {
             tx.finish();
         }
-        Util.stopNeo( neo ); // indexService );
+        Util.stopGraphDb( graphDb ); // , indexService );
 
         Util.copyDir( STORE_LOCATION_DIR, BACKUP_LOCATION_DIR );
     }
@@ -75,23 +78,24 @@ public class MultiRunningTest
     public void backup() throws IOException
     {
         System.out.println( "starting tests" );
-        EmbeddedNeo neo = Util.startNeoInstance( STORE_LOCATION_DIR );
-        ((NeoStoreXaDataSource) neo.getConfig().getPersistenceModule()
+        EmbeddedGraphDatabase graphDb = Util.startGraphDbInstance( STORE_LOCATION_DIR );
+        ((NeoStoreXaDataSource) graphDb.getConfig().getPersistenceModule()
             .getPersistenceManager().getPersistenceSource()
             .getXaDataSource()).keepLogicalLogs( true );
-        // IndexService indexService = new LuceneIndexService( neo );
-        XaDataSourceManager xaDsm = neo.getConfig().getTxModule()
+//        IndexService indexService = new LuceneIndexService( graphDb );
+        XaDataSourceManager xaDsm = graphDb.getConfig().getTxModule()
             .getXaDataSourceManager();
-        XaDataSource ds = xaDsm.getXaDataSource( "lucene" );
+        // XaDataSource ds = xaDsm.getXaDataSource( "lucene" );
         // ((LuceneDataSource) ds).keepLogicalLogs( true );
 
         System.out.println( "backing up original db without any changes" );
-        tryBackup( neo, BACKUP_LOCATION_DIR, 1 );
+        tryBackup( graphDb, BACKUP_LOCATION_DIR, 0 );
 
-        Transaction tx = neo.beginTx();
+        Transaction tx = graphDb.beginTx();
         try
         {
-            // indexService.index( addNode( neo ), "number", 2 );
+            addNode( graphDb );
+//            indexService.index( addNode( graphDb ), "number", 2 );
             tx.success();
         }
         finally
@@ -99,12 +103,13 @@ public class MultiRunningTest
             tx.finish();
         }
         System.out.println( "one node added" );
-        tryBackup( neo, BACKUP_LOCATION_DIR, 2 );
+        tryBackup( graphDb, BACKUP_LOCATION_DIR, 1 );
 
-        tx = neo.beginTx();
+        tx = graphDb.beginTx();
         try
         {
-            // indexService.index( addNode( neo ), "number", 3 );
+            addNode( graphDb );
+//            indexService.index( addNode( graphDb ), "number", 3 );
             tx.success();
         }
         finally
@@ -113,12 +118,13 @@ public class MultiRunningTest
         }
         System.out.println( "one node added" );
 
-        tx = neo.beginTx();
+        tx = graphDb.beginTx();
         try
         {
-            // indexService.index( addNode( neo ), "number", 4 );
+//            indexService.index( addNode( graphDb ), "number", 4 );
+            addNode( graphDb );
             System.out.println( "one node added, not commited" );
-            tryBackup( neo, BACKUP_LOCATION_DIR, 3 );
+            tryBackup( graphDb, BACKUP_LOCATION_DIR, 2 );
             tx.success();
         }
         finally
@@ -126,23 +132,23 @@ public class MultiRunningTest
             tx.finish();
         }
         System.out.println( "previous add commited" );
-        tryBackup( neo, BACKUP_LOCATION_DIR, 4 );
+        tryBackup( graphDb, BACKUP_LOCATION_DIR, 3 );
 
-        Util.stopNeo( neo ); // , indexService );
+        Util.stopGraphDb( graphDb ); // , indexService );
     }
 
-    protected void tryBackup( EmbeddedNeo neo, String location, int relCount )
+    protected void tryBackup( EmbeddedGraphDatabase graphDb, String location, int relCount )
         throws IOException
     {
-        setupBackup( neo, location );
+        setupBackup( graphDb, location );
 
-        EmbeddedNeo bNeo = Util.startNeoInstance( location );
-        // IndexService bIndexService = new LuceneIndexService( bNeo );
-        Transaction bTx = bNeo.beginTx();
+        EmbeddedGraphDatabase bDb = Util.startGraphDbInstance( location );
+//        IndexService bIndexService = new LuceneIndexService( bDb );
+        Transaction bTx = bDb.beginTx();
         try
         {
             List<Relationship> rels = new ArrayList<Relationship>();
-            for ( Relationship rel : bNeo.getReferenceNode().getRelationships() )
+            for ( Relationship rel : bDb.getReferenceNode().getRelationships() )
             {
                 rels.add( rel );
             }
@@ -157,31 +163,31 @@ public class MultiRunningTest
         {
             bTx.finish();
         }
-        Util.stopNeo( bNeo ); // , bIndexService );
+        Util.stopGraphDb( bDb ); // , bIndexService );
     }
 
     @SuppressWarnings( "serial" )
-    protected void setupBackup( EmbeddedNeo neo, String location )
+    protected void setupBackup( EmbeddedGraphDatabase graphDb, String location )
         throws IOException
     {
-        EmbeddedNeo bNeo = Util.startNeoInstance( location );
-        // IndexService bIndexService = new LuceneIndexService( bNeo );
-        Backup backupComp = new NeoBackup( neo, bNeo, new ArrayList<String>()
+        EmbeddedGraphDatabase bDb = Util.startGraphDbInstance( location );
+//        IndexService bIndexService = new LuceneIndexService( bDb );
+        Backup backupComp = new Neo4jBackup( graphDb, bDb, new ArrayList<String>()
         {
             {
                 add( "nioneodb" );
-                add( "lucene" );
+//                add( "lucene" );
             }
         } );
         backupComp.enableFileLogger();
         backupComp.doBackup();
-        // Util.stopNeo( bNeo, bIndexService );
+        Util.stopGraphDb( bDb ); //, bIndexService );
     }
 
-    private Node addNode( EmbeddedNeo neo )
+    private Node addNode( EmbeddedGraphDatabase graphDb )
     {
-        Node referenceNode = neo.getReferenceNode();
-        Node node = neo.createNode();
+        Node referenceNode = graphDb.getReferenceNode();
+        Node node = graphDb.createNode();
         node.setProperty( "theId", node.getId() );
         referenceNode.createRelationshipTo( node, MyRels.TEST );
         return node;

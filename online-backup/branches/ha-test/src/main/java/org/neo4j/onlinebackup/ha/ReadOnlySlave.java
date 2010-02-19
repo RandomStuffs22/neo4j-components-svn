@@ -3,10 +3,10 @@ package org.neo4j.onlinebackup.ha;
 import java.io.IOException;
 import java.util.Map;
 
-import org.neo4j.api.core.EmbeddedReadOnlyNeo;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.impl.nioneo.store.UnderlyingStorageException;
-import org.neo4j.impl.nioneo.xa.NeoStoreXaDataSource;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.kernel.EmbeddedReadOnlyGraphDatabase;
+import org.neo4j.kernel.impl.nioneo.store.UnderlyingStorageException;
+import org.neo4j.kernel.impl.nioneo.xa.NeoStoreXaDataSource;
 import org.neo4j.onlinebackup.net.Callback;
 import org.neo4j.onlinebackup.net.ConnectToMasterJob;
 import org.neo4j.onlinebackup.net.Connection;
@@ -16,7 +16,7 @@ import org.neo4j.onlinebackup.net.SocketException;
 
 public class ReadOnlySlave implements Callback
 {
-    private final EmbeddedReadOnlyNeo neo;
+    private final EmbeddedReadOnlyGraphDatabase graphDb;
     private final NeoStoreXaDataSource xaDs;
 
     private final JobEater jobEater;
@@ -31,8 +31,8 @@ public class ReadOnlySlave implements Callback
     public ReadOnlySlave( String path, Map<String,String> params, 
         String masterIp, int masterPort )
     {
-        this.neo = new EmbeddedReadOnlyNeo( path, params );
-        this.xaDs = (NeoStoreXaDataSource) neo.getConfig().getTxModule()
+        this.graphDb = new EmbeddedReadOnlyGraphDatabase( path, params );
+        this.xaDs = (NeoStoreXaDataSource) graphDb.getConfig().getTxModule()
             .getXaDataSourceManager().getXaDataSource( "nioneodb" );
         this.xaDs.makeBackupSlave();
         recover();
@@ -79,9 +79,9 @@ public class ReadOnlySlave implements Callback
         return masterConnection.connected();
     }
     
-    public NeoService getNeoService()
+    public GraphDatabaseService getGraphDbService()
     {
-        return neo;
+        return graphDb;
     }
     
     public String getMasterIp()
@@ -136,7 +136,7 @@ public class ReadOnlySlave implements Callback
     {
         jobEater.stopEating();
         logApplier.stopApplyLogs();
-        neo.shutdown();
+        graphDb.shutdown();
     }
 
     public void tryApplyNewLog()

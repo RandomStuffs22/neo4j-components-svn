@@ -6,28 +6,28 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.Relationship;
-import org.neo4j.api.core.Transaction;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 /**
- * Test to backup only Neo to a backup location.
+ * Test to backup only Neo4j to a backup location.
  */
 public class SimpleLocalTest extends SimpleRunningTest
 {
     @Override
-    protected void tryBackup( EmbeddedNeo neo, String location, int relCount )
-        throws IOException
+    protected void tryBackup( EmbeddedGraphDatabase graphDb, String location,
+        int relCount ) throws IOException
     {
         System.out.println( "backing up to backup location" );
-        Backup backupComp = new NeoBackup( neo, location );
+        Backup backupComp = new Neo4jBackup( graphDb, location );
         backupComp.doBackup();
-        EmbeddedNeo bNeo = Util.startNeoInstance( location );
-        Transaction bTx = bNeo.beginTx();
+        EmbeddedGraphDatabase bDb = Util.startGraphDbInstance( location );
+        Transaction bTx = bDb.beginTx();
         try
         {
             List<Relationship> rels = new ArrayList<Relationship>();
-            for ( Relationship rel : bNeo.getReferenceNode().getRelationships() )
+            for ( Relationship rel : bDb.getReferenceNode().getRelationships() )
             {
                 rels.add( rel );
             }
@@ -38,6 +38,6 @@ public class SimpleLocalTest extends SimpleRunningTest
         {
             bTx.finish();
         }
-        Util.stopNeo( bNeo );
+        Util.stopGraphDb( bDb );
     }
 }

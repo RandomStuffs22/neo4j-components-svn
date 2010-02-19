@@ -22,18 +22,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import org.neo4j.api.core.EmbeddedNeo;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 /**
- * Online backup implementation for neo4j.
+ * Online backup implementation for Neo4j.
  */
-public class NeoBackup implements Backup
+public class Neo4jBackup implements Backup
 {
-    private final EmbeddedNeo onlineNeo;
+    private final EmbeddedGraphDatabase onlineGraphDb;
     private String destDir;
     private List<String> xaNames = null;
-    private EmbeddedNeo backupNeo = null;
-    private static Logger logger = Logger.getLogger( NeoBackup.class.getName() );
+    private EmbeddedGraphDatabase backupGraphDb = null;
+    private static Logger logger =
+        Logger.getLogger( Neo4jBackup.class.getName() );
     private static ConsoleHandler consoleHandler = new ConsoleHandler();
     private static FileHandler fileHandler = null;
     private static final Level LOG_LEVEL_NORMAL = Level.INFO;
@@ -48,18 +49,20 @@ public class NeoBackup implements Backup
     }
 
     /**
-     * Backup from a running EmbeddedNeo to a destination directory.
-     * @param sourceNeo
+     * Backup from a running {@link EmbeddedGraphDatabase} to a destination
+     * directory.
+     * @param sourceGraphDb
      *            running database as backup source
      * @param destDir
      *            location of backup destination
      */
-    public NeoBackup( final EmbeddedNeo sourceNeo, final String destDir )
+    public Neo4jBackup( final EmbeddedGraphDatabase sourceGraphDb,
+        final String destDir )
     {
-        if ( sourceNeo == null )
+        if ( sourceGraphDb == null )
         {
             throw new IllegalArgumentException(
-                "The EmbeddedNeo instance is null." );
+                "The graph database instance is null." );
         }
         if ( destDir == null )
         {
@@ -68,69 +71,73 @@ public class NeoBackup implements Backup
         if ( !new File( destDir ).exists() )
         {
             throw new RuntimeException(
-                "Unable to locate local onlineNeo store in[" + destDir + "]" );
+                "Unable to locate local onlineGraphDb store in[" +
+                destDir + "]" );
         }
-        this.onlineNeo = sourceNeo;
+        this.onlineGraphDb = sourceGraphDb;
         this.destDir = destDir;
     }
 
     /**
-     * Backup from a running EmbeddedNeo to another running EmbeddedNeo.
-     * @param sourceNeo
+     * Backup from a running {@link EmbeddedGraphDatabase} to another running
+     * {@link EmbeddedGraphDatabase}.
+     * @param sourceGraphDb
      *            running database as backup source
-     * @param destNeo
+     * @param destGraphDb
      *            running database as backup destination
      */
-    public NeoBackup( final EmbeddedNeo sourceNeo, final EmbeddedNeo destNeo )
+    public Neo4jBackup( final EmbeddedGraphDatabase sourceGraphDb,
+        final EmbeddedGraphDatabase destGraphDb )
     {
-        if ( sourceNeo == null )
+        if ( sourceGraphDb == null )
         {
             throw new IllegalArgumentException(
-                "The online EmbeddedNeo instance is null." );
+                "The online graph db instance is null." );
         }
-        if ( destNeo == null )
+        if ( destGraphDb == null )
         {
             throw new IllegalArgumentException(
-                "The backup destination Neo instance is null." );
+                "The backup destination graph db instance is null." );
         }
-        this.onlineNeo = sourceNeo;
-        this.backupNeo = destNeo;
+        this.onlineGraphDb = sourceGraphDb;
+        this.backupGraphDb = destGraphDb;
     }
 
     /**
-     * Backup from a running EmbeddedNeo to a destination directory including
-     * other data sources. NOTE: For now it assumes there is only a
-     * LuceneIndexService running besides Neo4j. Common data source names are
-     * "nioneodb" and "lucene".
-     * @param sourceNeo
+     * Backup from a running {@link EmbeddedGraphDatabase} to a destination
+     * directory including other data sources. NOTE: For now it assumes there is
+     * only a LuceneIndexService running besides Neo4j. Common data source names
+     * are "nioneodb" and "lucene".
+     * @param sourceGraphDb
      *            running database as backup source
      * @param destDir
      *            location of backup destination
      * @param xaDataSourceNames
      *            names of data sources to backup
      */
-    public NeoBackup( final EmbeddedNeo sourceNeo, final String destDir,
-        final List<String> xaDataSourceNames )
+    public Neo4jBackup( final EmbeddedGraphDatabase sourceGraphDb,
+        final String destDir, final List<String> xaDataSourceNames )
     {
-        this( sourceNeo, destDir );
+        this( sourceGraphDb, destDir );
         initXaNames( xaDataSourceNames );
     }
 
     /**
-     * Backup from a running EmbeddedNeo to another running EmbeddedNeo
-     * including other data sources. Common data source names are "nioneodb" and
-     * "lucene".
-     * @param sourceNeo
+     * Backup from a running {@link EmbeddedGraphDatabase} to another running
+     * {@link EmbeddedGraphDatabase} including other data sources. Common data
+     * source names are "nioneodb" and "lucene".
+     * @param sourceGraphDb
      *            running database as backup source
-     * @param destNeo
+     * @param destGraphDb
      *            running database as backup destination
      * @param xaDataSourceNames
      *            names of data sources to backup
      */
-    public NeoBackup( final EmbeddedNeo sourceNeo, final EmbeddedNeo destNeo,
+    public Neo4jBackup( final EmbeddedGraphDatabase sourceGraphDb,
+        final EmbeddedGraphDatabase destGraphDb,
         final List<String> xaDataSourceNames )
     {
-        this( sourceNeo, destNeo );
+        this( sourceGraphDb, destGraphDb );
         initXaNames( xaDataSourceNames );
     }
 
@@ -153,53 +160,56 @@ public class NeoBackup implements Backup
 
     public void doBackup() throws IOException
     {
-        logger.info( "Initializing NeoBackup." );
-        NeoResource srcResource = new EmbeddedNeoResource( onlineNeo );
+        logger.info( "Initializing backup." );
+        Neo4jResource srcResource =
+            new EmbeddedGraphDatabaseResource( onlineGraphDb );
         if ( xaNames == null )
         {
-            if ( backupNeo == null )
+            if ( backupGraphDb == null )
             {
-                NeoResource dstResource = LocalNeoResource
+                Neo4jResource dstResource = LocalGraphDatabaseResource
                     .getInstance( destDir );
                 runSimpleBackup( srcResource, dstResource );
                 dstResource.close();
             }
             else
             {
-                NeoResource dstResource = new EmbeddedNeoResource( backupNeo );
+                Neo4jResource dstResource =
+                    new EmbeddedGraphDatabaseResource( backupGraphDb );
                 runSimpleBackup( srcResource, dstResource );
             }
         }
         else
         {
-            if ( backupNeo == null )
+            if ( backupGraphDb == null )
             {
                 // TODO this is a temporary fix until we can restore services
-                NeoResource dstResource = LocalNeoLuceneResource
+                Neo4jResource dstResource = LocalLuceneIndexResource
                     .getInstance( destDir );
                 runMultiBackup( srcResource, dstResource );
                 dstResource.close();
             }
             else
             {
-                NeoResource dstResource = new EmbeddedNeoResource( backupNeo );
+                Neo4jResource dstResource =
+                    new EmbeddedGraphDatabaseResource( backupGraphDb );
                 runMultiBackup( srcResource, dstResource );
             }
         }
     }
 
     /**
-     * Backup only Neo data source.
+     * Backup Neo4j data source only.
      * @param srcResource
      *            backup source
      * @param dstResource
      *            backup destination
      * @throws IOException
      */
-    private void runSimpleBackup( final NeoResource srcResource,
-        final NeoResource dstResource ) throws IOException
+    private void runSimpleBackup( final Neo4jResource srcResource,
+        final Neo4jResource dstResource ) throws IOException
     {
-        NeoBackupTask task = new NeoBackupTask( srcResource.getDataSource(),
+        Neo4jBackupTask task = new Neo4jBackupTask( srcResource.getDataSource(),
             dstResource.getDataSource() );
         task.prepare();
         task.run();
@@ -215,10 +225,10 @@ public class NeoBackup implements Backup
      *            backup destination
      * @throws IOException
      */
-    private void runMultiBackup( final NeoResource srcResource,
-        final NeoResource dstResource ) throws IOException
+    private void runMultiBackup( final Neo4jResource srcResource,
+        final Neo4jResource dstResource ) throws IOException
     {
-        List<NeoBackupTask> tasks = new ArrayList<NeoBackupTask>();
+        List<Neo4jBackupTask> tasks = new ArrayList<Neo4jBackupTask>();
         logger.info( "Checking and preparing " + xaNames.toString()
             + " data sources." );
         for ( String xaName : xaNames )
@@ -247,7 +257,7 @@ public class NeoBackup implements Backup
                 }
                 else
                 {
-                    NeoBackupTask task = new NeoBackupTask( srcDataSource,
+                    Neo4jBackupTask task = new Neo4jBackupTask( srcDataSource,
                         dstDataSource );
                     task.prepare();
                     tasks.add( task );
@@ -262,7 +272,7 @@ public class NeoBackup implements Backup
         }
         else
         {
-            for ( NeoBackupTask task : tasks )
+            for ( Neo4jBackupTask task : tasks )
             {
                 task.run();
             }
@@ -274,7 +284,7 @@ public class NeoBackup implements Backup
      * Class to handle backup tasks. It separates preparing and running the
      * backup.
      */
-    private class NeoBackupTask
+    private class Neo4jBackupTask
     {
         private final XaDataSourceResource src;
         private final XaDataSourceResource dst;
@@ -291,7 +301,7 @@ public class NeoBackup implements Backup
          * @param resourceName
          *            name of data source
          */
-        private NeoBackupTask( final XaDataSourceResource src,
+        private Neo4jBackupTask( final XaDataSourceResource src,
             final XaDataSourceResource dst )
         {
             this.src = src;

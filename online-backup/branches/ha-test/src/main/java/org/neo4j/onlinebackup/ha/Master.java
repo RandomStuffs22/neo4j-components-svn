@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.neo4j.api.core.EmbeddedNeo;
-import org.neo4j.api.core.NeoService;
-import org.neo4j.impl.nioneo.xa.NeoStoreXaDataSource;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.impl.nioneo.xa.NeoStoreXaDataSource;
 import org.neo4j.onlinebackup.net.AcceptJob;
 import org.neo4j.onlinebackup.net.Callback;
 import org.neo4j.onlinebackup.net.Connection;
@@ -22,7 +22,7 @@ import org.neo4j.onlinebackup.net.SocketException;
 
 public class Master implements Callback
 {
-    private final EmbeddedNeo neo;
+    private final EmbeddedGraphDatabase graphDb;
     private final NeoStoreXaDataSource xaDs;
 
     private final JobEater jobEater;
@@ -34,8 +34,8 @@ public class Master implements Callback
     
     public Master( String path, Map<String,String> params, int listenPort )
     {
-        this.neo = new EmbeddedNeo( path, params );
-        this.xaDs = (NeoStoreXaDataSource) neo.getConfig().getTxModule()
+        this.graphDb = new EmbeddedGraphDatabase( path, params );
+        this.xaDs = (NeoStoreXaDataSource) graphDb.getConfig().getTxModule()
             .getXaDataSourceManager().getXaDataSource( "nioneodb" );
         xaDs.keepLogicalLogs( true );
         this.port = listenPort;
@@ -56,9 +56,9 @@ public class Master implements Callback
         jobEater.start();
     }
     
-    public NeoService getNeoService()
+    public GraphDatabaseService getGraphDbService()
     {
-        return neo;
+        return graphDb;
     }
     
     public int getPort()
@@ -106,7 +106,7 @@ public class Master implements Callback
         {
             e.printStackTrace();
         }
-        neo.shutdown();
+        graphDb.shutdown();
     }
     
     public long getIdentifier()
