@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008-2009 "Neo Technology,"
+
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -20,8 +21,8 @@
 Backend implementation for the CPython platform using JPype reflection.
 
 
-Copyright (c) 2008-2009 "Neo Technology,"
-    Network Engine for Objects in Lund AB [http://neotechnology.com]
+ Copyright (c) 2008-2010 "Neo Technology,"
+     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
 import jpype
@@ -33,6 +34,7 @@ def initialize(classpath, parameters):
         RelationshipType, Evaluator, IndexService,\
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH, StopAtDepth,\
         array, to_java, to_python, tx_join
+    # TODO: add support for setting memory parameters
     jvm = parameters.get('jvm', None)
     if jvm is None:
         jvm = jpype.getDefaultJVMPath()
@@ -41,8 +43,7 @@ def initialize(classpath, parameters):
         args.append('-Djava.ext.dirs=' + ':'.join(parameters['ext_dirs']))
     args.append('-Djava.class.path=' + ':'.join(classpath))
     jpype.startJVM(jvm, *args)
-    neo4j = jpype.JPackage('org').neo4j
-    core = neo4j.api.core
+    core = jpype.JPackage('org').neo4j.graphdb
     INCOMING = core.Direction.INCOMING
     OUTGOING = core.Direction.OUTGOING
     BOTH = core.Direction.BOTH
@@ -57,18 +58,18 @@ def initialize(classpath, parameters):
     NotFoundException = jpype.JException(core.NotFoundException)
     NotInTransactionException = jpype.JException(core.NotInTransactionException)
     try:
-        EmbeddedNeo = jpype.JClass("org.neo4j.api.core.EmbeddedNeo")
+        EmbeddedGraphDb = jpype.JClass("org.neo4j.kernel.EmbeddedGraphDatabase")
     except:
-        EmbeddedNeo = None
+        EmbeddedGraphDb = None
     try:
-        RemoteNeo = jpype.JClass("org.neo4j.api.remote.RemoteNeo")
+        RemoteGraphDb = jpype.JClass("org.neo4j.remote.RemoteGraphDatabase")
     except:
-        RemoteNeo = None
+        RemoteGraphDb = None
     try:
-        IndexService = jpype.JClass("org.neo4j.util.index.LuceneIndexService")
+        IndexService = jpype.JClass("org.neo4j.index.lucene.LuceneIndexService")
     except:
         try:
-            IndexService = jpype.JClass("org.neo4j.util.index.NeoIndexService")
+            IndexService = jpype.JClass("org.neo4j.index.NeoIndexService")
         except:
             IndexService = None
     def tx_join():
@@ -102,4 +103,4 @@ def initialize(classpath, parameters):
         def __init__(self):
             self.stop = jpype.JProxy(Stop, inst=self)
             self.returnable = jpype.JProxy(Returnable, inst=self)
-    return EmbeddedNeo, RemoteNeo
+    return EmbeddedGraphDb, RemoteGraphDb

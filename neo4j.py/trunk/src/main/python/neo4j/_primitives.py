@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008-2009 "Neo Technology,"
+
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -31,7 +32,7 @@ Primitive elements in Neo4j.py
  implemented.
 
 
- Copyright (c) 2008-2009 "Neo Technology,"
+ Copyright (c) 2008-2010 "Neo Technology,"
     Network Engine for Objects in Lund AB {{http://neotechnology.com}}
 """
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008-2009 "Neo Technology,"
+
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -20,8 +21,8 @@
 This module defines the basic behaviour for all Neo4j.py objects.
 
 
-Copyright (c) 2008-2009 "Neo Technology,"
-    Network Engine for Objects in Lund AB [http://neotechnology.com]
+ Copyright (c) 2008-2010 "Neo Technology,"
+     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
 class Neo4jObject(object):

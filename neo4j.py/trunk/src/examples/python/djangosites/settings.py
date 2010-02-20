@@ -1,3 +1,23 @@
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 2008-2010 "Neo Technology,"
+#     Network Engine for Objects in Lund AB [http://neotechnology.com]
+# 
+# This file is part of Neo4j.py.
+# 
+# Neo4j.py is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+# 
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import os, sys
 
 MODEL_TYPE = os.environ.get('DJANGOSITES_MODEL_TYPE', 'neo4j')
@@ -22,12 +42,12 @@ NEO4J_RESOURCE_URI = os.path.join(_data_path, 'neo')
 NEO4J_OPTIONS = {}
 
 DATABASE_ENGINE = ''           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-if 'java' in sys.platform.lower(): # use postgres with jython
-    DATABASE_ENGINE = 'doj.backends.zxjdbc.postgresql'
-    DATABASE_NAME = "djangosites"
-else: # use sqlite with cpython
-    DATABASE_ENGINE = 'sqlite3'
-    DATABASE_NAME = os.path.join(_data_path, 'sqlite')
+#if 'java' in sys.platform.lower(): # use postgres with jython
+#    DATABASE_ENGINE = 'doj.backends.zxjdbc.postgresql'
+#    DATABASE_NAME = "djangosites"
+#else: # use sqlite with cpython
+#    DATABASE_ENGINE = 'sqlite3'
+#    DATABASE_NAME = os.path.join(_data_path, 'sqlite')
 DATABASE_USER = 'django'             # Not used with sqlite3.
 DATABASE_PASSWORD = 'jython'         # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.

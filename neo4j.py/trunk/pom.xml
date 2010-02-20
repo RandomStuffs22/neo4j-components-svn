@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.neo4j</groupId>
     <artifactId>parent-pom</artifactId>
-    <version>5</version>
+    <version>6</version>
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>
 
@@ -42,18 +42,18 @@
   <dependencies>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>neo</artifactId>
-      <version>1.0-b8</version>
+      <artifactId>neo4j-kernel</artifactId>
+      <version>1.0-rc</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>index-util</artifactId>
-      <version>0.6</version>
+      <artifactId>neo4j-index</artifactId>
+      <version>1.0-b1</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>remote-neo</artifactId>
-      <version>0.1</version>
+      <artifactId>neo4j-remote-graphdb</artifactId>
+      <version>0.5</version>
     </dependency>
   </dependencies>
 

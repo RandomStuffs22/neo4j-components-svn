@@ -86,7 +86,7 @@ def ParentPom(pom):
             self.id = id
             self.__pom = pom
         def __getitem__(self, path):
-            return replacement.get(path, lambda x:x)(self, self.__pom[path])
+            return replacement.get(path, lambda s,x:x)(self, self.__pom[path])
     replacement = {
         'url': lambda pom, value: posixpath.join(value, pom.id)
         }

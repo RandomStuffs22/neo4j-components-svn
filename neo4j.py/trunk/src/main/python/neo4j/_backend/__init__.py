@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008-2009 "Neo Technology,"
+
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -19,8 +20,8 @@
 """
 This module selects the appropriate backend depending on platform.
 
-Copyright (c) 2008-2009 "Neo Technology,"
-    Network Engine for Objects in Lund AB [http://neotechnology.com]
+ Copyright (c) 2008-2010 "Neo Technology,"
+     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
 def initialize(classpath, **params):

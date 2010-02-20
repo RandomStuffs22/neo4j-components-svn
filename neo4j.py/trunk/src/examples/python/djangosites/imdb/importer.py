@@ -1,7 +1,7 @@
 #!/bin/sh
 # -*- mode: Python; coding: utf-8 -*-
 
-# Copyright (c) 2008-2009 "Neo Technology,"
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -18,9 +18,8 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-"""echo\
-" IMDB data importer wrapper script
+""":"
+echo IMDB data importer wrapper script
 
 # This is a Python module first and foremost,
 # but this first string makes it possible to execute the file as a shell script
@@ -117,8 +116,8 @@ importer.populate(\"$IMDB_DATADIR\")\n\
 echo $COMMAND | $PYTHON manage.py shell
 
 # End of the shell script part of this file - the rest is Python
-exit "\
-$?"""
+exit $?
+":"""
 # Beging Python code
 from __future__ import division, with_statement, absolute_import
 
@@ -131,14 +130,14 @@ Import IMDB data.
  The main entry point for this module is the populate function.
 
 
- Copyright (c) 2009 "Neo Technology,"
+ Copyright (c) 2008-2010 "Neo Technology,"
      Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
 import sys, os, contextlib, time
 
 from . import models # completely portable
-from neo4j.model.django_model import NeoServiceProperty
+from neo4j.model.django_model import GraphDatabaseProperty
 
 
 def print_percent(cur, tot):
@@ -207,7 +206,7 @@ class BatchProcessor(object):
                 yield
         else:
             yield
-    __neo = NeoServiceProperty()
+    __neo = GraphDatabaseProperty()
 
 
 def populate(datadir=None, batch_size=100):

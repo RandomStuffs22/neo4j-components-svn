@@ -17,10 +17,20 @@
 # 
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Python version compatibility.
 
-from django.conf import settings
+ This module contains compatibility code for working on both Python 2.x
+ and Python 3.x.
 
-if settings.MODEL_TYPE == 'neo4j':
-    from djangosites.imdb.neo_model import *
+
+ Copyright (c) 2008-2010 "Neo Technology,"
+     Network Engine for Objects in Lund AB [http://neotechnology.com]
+"""
+
+import sys
+
+if sys.version_info >= (3,0):
+    raise ImportError("Py3k support not implemented.")
 else:
-    from djangosites.imdb.orm_model import *
+    Object = object

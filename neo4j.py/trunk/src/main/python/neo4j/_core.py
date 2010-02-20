@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008-2009 "Neo Technology,"
+
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -20,8 +21,8 @@
 This module dispatches the implementation.
 
 
-Copyright (c) 2008-2009 "Neo Technology,"
-    Network Engine for Objects in Lund AB [http://neotechnology.com]
+ Copyright (c) 2008-2010 "Neo Technology,"
+     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
 from neo4j._base import Neo4jObject
@@ -91,10 +92,10 @@ def load_neo(resource_uri, parameters):
                                  "resource_uri=%r at server_path=%r",
                                  resource_uri, server_path)
                 backend.start_server(resource_uri, server_path)
-        return NeoService(resource_uri, log)
+        return GraphDatabase(resource_uri, log)
     # Define the implementation
-    # --- <NeoService> ---
-    class NeoService(Neo4jObject): # Use same name everywhere for name mangling
+    # --- <GraphDatabase> ---
+    class GraphDatabase(Neo4jObject):#Use same name everywhere for name mangling
         def __init__(self, resource_uri, log):
             neo = backend.load_neo(resource_uri)
             Neo4jObject.__init__(self, neo=neo)
@@ -110,11 +111,11 @@ def load_neo(resource_uri, parameters):
                                 'referencenode', 'reference_node'):
                 return self.reference_node
             else:
-                raise AttributeError("NeoService has no attribute '%s'" % attr)
-    body = {'__doc__': neo4j.NeoService.__doc__}
-    for name in dir(neo4j.NeoService):
+                raise AttributeError("GraphDatabase has no attribute '%s'"%attr)
+    body = {'__doc__': neo4j.GraphDatabase.__doc__}
+    for name in dir(neo4j.GraphDatabase):
         if not name.startswith('_'):
-            member = getattr(neo4j.NeoService, name)
+            member = getattr(neo4j.GraphDatabase, name)
             if isinstance(member, property):
                 pass
             elif hasattr(member, 'im_func'):
@@ -122,8 +123,8 @@ def load_neo(resource_uri, parameters):
             elif hasattr(member, '__func__'):
                 member = member.__func__
             body[name] = member
-    NeoService = type("NeoService", (NeoService,), body)
-    # --- </NeoService> ---
+    GraphDatabase = type("GraphDatabase", (GraphDatabase,), body)
+    # --- </GraphDatabase> ---
     if hasattr(backend.implementation, 'tx_join'):
         if log: log.debug("Transaction joining in effect "
                           "(mechanism used to discover threads).")

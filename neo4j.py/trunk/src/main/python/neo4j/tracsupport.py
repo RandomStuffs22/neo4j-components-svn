@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008-2009 "Neo Technology,"
+
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -20,8 +21,8 @@
 This module defines points for integrating with Neo4j from trac.
 
 
-Copyright (c) 2009 "Neo Technology,"
-    Network Engine for Objects in Lund AB [http://neotechnology.com]
+ Copyright (c) 2008-2010 "Neo Technology,"
+     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 ### TODO: Documentation! ###
 
@@ -29,10 +30,10 @@ from __future__ import with_statement
 
 import os
 
-__all__ = 'NeoServiceProperty',
+__all__ = 'GraphDatabaseProperty',
 
 def __body__():
-    global NeoServiceProperty#, ModelFactory
+    global GraphDatabaseProperty#, ModelFactory
     import os.path
     try:
         from trac.core import Component, implements, Interface, ExtensionPoint
@@ -67,7 +68,7 @@ def __body__():
         def __getattr__(self, attr):
             return getattr(self.neo, attr)
 
-    class INeoServiceProvider(Interface):
+    class IGraphDatabaseProvider(Interface):
         def instance(resource_uri, params): pass
 
     class Options(list):
@@ -76,7 +77,7 @@ def __body__():
             return option
 
     class ServiceProvider(Component):
-        implements(INeoServiceProvider)
+        implements(IGraphDatabaseProvider)
 
         resource_uri = Option('neo4j','resource_uri', doc="""
 """)
@@ -113,7 +114,7 @@ def __body__():
                     value = getattr(self, option)
                     if value is not None:
                         params[option] = filter(value)
-            return resource_uri, neo4j.NeoService(resource_uri, **params)
+            return resource_uri, neo4j.GraphDatabase(resource_uri, **params)
 
         instances = {}
         def instance(self, resource_uri, params):
@@ -126,13 +127,13 @@ def __body__():
                 self.instances[key] = neo
             return self.instances[resource_uri]
 
-    def NeoServiceProperty(resource_uri=None, **params):
+    def GraphDatabaseProperty(resource_uri=None, **params):
         """Documentation goes here..."""
-        ep = ExtensionPoint(INeoServiceProvider)
-        def NeoServiceProperty(component):
+        ep = ExtensionPoint(IGraphDatabaseProvider)
+        def GraphDatabaseProperty(component):
             for neo_service in ep.extensions(component):
                 return neo_service.instance(resource_uri, params)
-        return property(NeoServiceProperty)
+        return property(GraphDatabaseProperty)
 
     class ModelFactory(object): # XXX: Not ready yet
         def __init__(self):

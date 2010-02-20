@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008-2009 "Neo Technology,"
+
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -20,8 +21,8 @@
 This module defines the index behaviour.
 
 
-Copyright (c) 2008-2009 "Neo Technology,"
-    Network Engine for Objects in Lund AB [http://neotechnology.com]
+ Copyright (c) 2008-2010 "Neo Technology,"
+     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
 from neo4j._base import node as get_node
@@ -94,6 +95,7 @@ def initialize(backend):
         def __len__(self):
             return self.__hits.size()
         def __iter__(self):
-            for node in self.__hits:
-                yield Node(self.__neo, node)
+            hits = self.__hits
+            while hits.hasNext():
+                yield Node(self.__neo, hits.next())
 

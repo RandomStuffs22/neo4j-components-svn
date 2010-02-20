@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008-2009 "Neo Technology,"
+
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -30,13 +31,13 @@ Neo4j.py   --   Python bindings for the Neo4j Graph Database
  The typical way to use Neo4j.py is:
 
 ------------------------------------------------------------
-from neo4j import NeoService
-neo = NeoService( "/neo/db/path" )
-with neo.transaction:
-    ref_node = neo.reference_node
-    new_node = neo.node()
+import neo4j
+graphdb = neo4j.GraphDatabase( "/neo/db/path" )
+with graphdb.transaction:
+    ref_node = graphdb.reference_node
+    new_node = graphdb.node()
     # put operations that manipulate the node space here ...
-neo.shutdown()
+graphdb.shutdown()
 ------------------------------------------------------------
 
 * Getting started
@@ -84,11 +85,11 @@ sudo jython setup.py install
  Jython (in 2.5b3 or earlier) has a problem with installing packages under
  Windows. You might get this error when installing:
 
----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 running install_egg_info
 Creating X:\\<PATH_TO>\\jython\\Lib\\site-packages\\
 error: X:\\<PATH_TO>\\jython\\Lib\\site-packages\\: couldn't make directories
----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 
  If the install output ends like that when installing under Windows,
  don't panic.
@@ -129,10 +130,10 @@ error: X:\\<PATH_TO>\\jython\\Lib\\site-packages\\: couldn't make directories
 
  * {{http://sourceforge.net/mailarchive/forum.php?thread_name=1afed6d30907300541v74a722c0nbf9155832affd101%40mail.gmail.com&forum_name=jpype-users}}
 
-** Starting Neo
+** Starting the Neo4j Graph Database
 
- Apart from specifying the path to where the Neo data is stored to
- NeoService a few extra keyword options may be specified. These include:
+ Apart from specifying the path to where the Neo4j graph data is stored to
+ GraphDatabase a few extra keyword options may be specified. These include:
 
     [classpath] A list of paths that are to be added to the classpath
                 in order to be able to find the Java classes for Neo4j.
@@ -154,22 +155,22 @@ error: X:\\<PATH_TO>\\jython\\Lib\\site-packages\\: couldn't make directories
 
  <<Example:>>
 
-------------------------------------------------
-neo = NeoService("/neo/db/path",
-                 classpath=["/a/newer/neo.jar"],
-                 jvm="/usr/lib/jvm.so")
-------------------------------------------------
+----------------------------------------------------------------
+graphdb = neo4j.GraphDatabase("/neo/db/path",
+                              classpath=["/a/newer/kernel.jar"],
+                              jvm="/usr/lib/jvm.so")
+----------------------------------------------------------------
 
 * Package content
 
  Some of the content of this package is loaded lazily. When the package is
- first imported The guaranteed content is NeoService and the API required
+ first imported The guaranteed content is GraphDatabase and the API required
  for defining Traversals, the Exceptions might not be available. When the
- first NeoService has been initialized the rest of the package is loaded.
+ first GraphDatabase has been initialized the rest of the package is loaded.
 
  The content of this module is:
 
-    [NeoService           ] factory for creating a Neo database service.
+    [GraphDatabase        ] factory for creating a Neo4j Graph Database.
 
     [Traversal            ] Base for defining traversals over the node
                             space.
@@ -209,64 +210,64 @@ neo = NeoService("/neo/db/path",
 
  Creating a node:
 
----
-n = neo.node()
----
+------------------
+n = graphdb.node()
+------------------
 
  Specify properties for new node:
 
----
-n = neo.node(color="Red", widht=16, height=32)
----
+--------------------------------------------------
+n = graphdb.node(color="Red", widht=16, height=32)
+--------------------------------------------------
 
  Accessing node by id:
 
----
-n17 = neo.node[14]
----
+----------------------
+n17 = graphdb.node[14]
+----------------------
 
  Accessing properties:
 
----
+----------------------------------------
 value = e['key'] # get property value
 e['key'] = value # set property value
 del e['key']     # remove property value
----
+----------------------------------------
 
  Create relationship:
 
----
+------------
 n1.Knows(n2)
----
+------------
 
  Any name that does not mean anything for the node class can be used as
  relationship type:
 
----
+----------------------------
 n1.some_reltionship_type(n2)
 n1.CASE_MATTERS(n2)
----
+----------------------------
 
  Specify properties for new relationships:
 
----
+---------------------------------------------
 n1.Knows(n2, since=123456789,
              introduced_at="Christmas party")
----
+---------------------------------------------
 
 * Indexes
 
  Get index:
 
 ---
-index = neo.index("index name")
+index = graphdb.index("index name")
 ---
 
  Create index:
 
----
-index = neo.index("some index", create=True)
----
+------------------------------------------------
+index = graphdb.index("some index", create=True)
+------------------------------------------------
 
  If an index is created that already exists, the existing index will not be
  replaced, and the existing index will be returned. The create flag is a
@@ -274,11 +275,11 @@ index = neo.index("some index", create=True)
 
  Using indexes:
 
----
+---------------------
 index['value'] = node
 node = index['value']
 del index['value']
----
+---------------------
 
  Keep in mind that when updating the index with a new value (f.ex. when a
  property value on a node changes) remember to remove the old value from the
@@ -286,11 +287,11 @@ del index['value']
 
  Using indexes as multi value indexes:
 
----
+--------------------------------------
 multiIndex.add('value', node)
 for node in multiIndex.nodes('value'):
     doStuffWith(node)
----
+--------------------------------------
 
 * Traversals
 
@@ -368,14 +369,14 @@ for hacker_node in Hackers(traversal_start_node):
  mailing list: {{https://lists.neo4j.org/mailman/listinfo/user}}
 
 
- Copyright (c) 2008-2009 "Neo Technology,"
+ Copyright (c) 2008-2010 "Neo Technology,"
     Network Engine for Objects in Lund AB {{http://neotechnology.com}}
 """
 
 if __name__.endswith('__init__'): raise ImportError # Prohibit import as module
-__all__ = 'NeoService', 'Traversal',
+__all__ = 'GraphDatabase', 'Traversal',
 
-class NeoService(object):
+class GraphDatabase(object):
     # This class defines the API and implementation but is never instantiated
     # This class is instead redefined in the _core module.
     # Having the class defined here serves a documentation purpouse
@@ -383,9 +384,9 @@ class NeoService(object):
 
 <<Usage:>>
 
----------------------------------------------------
-neo = NeoService("/path/to/node_store/", **options)
----------------------------------------------------
+----------------------------------------------------------------
+graphdb = neo4j.GraphDatabase("/path/to/node_store/", **options)
+----------------------------------------------------------------
 
 * Accepted options
 
@@ -410,18 +411,18 @@ neo = NeoService("/path/to/node_store/", **options)
     """
     @property
     def transaction(self):
-        """Access the transaction context for this NeoService.
+        """Access the transaction context for this GraphDatabase.
 
  <<Usage:>>
 
----------------------
-with neo.transaction:
+-------------------------
+with graphdb.transaction:
     # do stuff...
----------------------
+-------------------------
         """
         return self.__transaction()
     def index(self, name, create=False, **options):
-        """Access an index for this NeoService.
+        """Access an index for this GraphDatabase.
 
  The name parameter is string containing the name of the
  index. If the create parameter is True the index is created
@@ -430,49 +431,51 @@ with neo.transaction:
 
  <<Usage:>>
 
-------------------------------
-name_index = neo.index('name')
-------------------------------
+----------------------------------
+name_index = graphdb.index('name')
+----------------------------------
         """
         return self.__index.get(name, options, create)
     @property
     def node(self):
-        """Access the nodes in this NeoService.
+        """Access the nodes in this GraphDatabase.
 
  <<Usage:>>
 
--------------------------------------------------------------------
-node = neo.node[x] # lookup the node with id=x
-node = neo.node()  # create a new node
-node = neo.node(name="Thomas Anderson", # create a new node and set
-                age=27)           # the 'name' and 'age' properties
--------------------------------------------------------------------
+-----------------------------------------------------------------------
+node = graphdb.node[x] # lookup the node with id=x
+node = graphdb.node()  # create a new node
+node = graphdb.node(name="Thomas Anderson", # create a new node and set
+                    age=27)           # the 'name' and 'age' properties
+-----------------------------------------------------------------------
         """
+        # TODO: add a lenght to this
         return self.__nodes
     @property
     def relationship(self):
-        """Access the relationships in this NeoService.
+        """Access the relationships in this GraphDatabase.
 
  <<Usage:>>
 
--------------------------------------------------------------------
-relationship = neo.relatoionship[x] # lookup relationship with id=x
--------------------------------------------------------------------
+-----------------------------------------------------------------------
+relationship = graphdb.relatoionship[x] # lookup relationship with id=x
+-----------------------------------------------------------------------
         """
+        # TODO: add a length to this
         return self.__relationships
     @property
     def reference_node(self):
-        """Get the reference node for this NeoService.
+        """Get the reference node for this GraphDatabase.
         
  <<Usage:>>
 
------------------------------
-ref_node = neo.reference_node
------------------------------
+---------------------------------
+ref_node = graphdb.reference_node
+---------------------------------
         """
         return self.__nodes.reference
     def shutdown(self):
-        """Shut down this NeoService."""
+        """Shut down this GraphDatabase."""
         if self.__index is not None:
             self.__index.shutdown()
         if self.__neo is not None:
@@ -647,11 +650,11 @@ class Coworkers(neo4j.Traversal):
  To utilize a traversal you simply instantiate the class and iterate
  over the instance.
 
----
+-------------------------------------------------
 ted = get_the_node_that_represents_ted()
 for coworker in Coworkers(ted):
     print( "Ted works with " + coworker['name'] )
----
+-------------------------------------------------
         """
         @property
         def _traversal_types_(self):
@@ -675,10 +678,10 @@ def transactional(accessor):
     """Decorates a method so that it is executed within a transaction.
 
  The transactional function should be invoked with a single argument of a
- descriptor that returns an instance of NeoService on __get__ (for example a
+ descriptor that returns an instance of GraphDatabase on __get__ (for example a
  property). The result of the transactional function is a method decorator that
  executes the decorated method within the context of a transaction on the
- NeoService provided by the accessor descriptor.
+ GraphDatabase provided by the accessor descriptor.
 
  <<Example:>>
 
@@ -686,44 +689,44 @@ def transactional(accessor):
 import neo4j
 
 class MyService(object):
-    def __init__(self, neo):
-        self.__neo = neo
-        for type_rel in neo.reference_node.data_type:
+    def __init__(self, graphdb):
+        self.__graphdb = graphdb
+        for type_rel in graphdb.reference_node.data_type:
             if type_rel['type'] == 'MyEntity':
                 self.__entities = type_rel.end
                 break
         else:
-            self.__entities = entities = neo.node()
-            neo.reference_node.data_type(entities, type='MyEntity')
+            self.__entities = entities = graphdb.node()
+            graphdb.reference_node.data_type(entities, type='MyEntity')
 
     @property
-    def neo(self):
-        # This is the descriptor used to get the NeoService instance
-        return self.__neo
+    def graphdb(self):
+        # This is the descriptor used to get the GraphDatabase instance
+        return self.__graphdb
 
-    @neo4j.transactional(neo) # Make the create_entity method transactional
+    @neo4j.transactional(graphdb) # Make this method transactional
     def create_entity(self, name):
-        node = self.neo.node(name=name)
+        node = self.graphdb.node(name=name)
         node.instance_of( self.__entities )
-        return MyEntity( self.__neo, node )
+        return MyEntity( self.__graphdb, node )
 
 class MyEntity(object):
-    def __init__(self, neo, node):
-        self.__neo
+    def __init__(self, graphdb, node):
+        self.__graphdb
         self.__node = node
 
     @property
-    def neo(self):
-        # This is the descriptor used to get the NeoService instance
-        return self.__neo
+    def graphdb(self):
+        # This is the descriptor used to get the GraphDatabase instance
+        return self.__graphdb
 
     @property
-    @neo4j.transactional(neo) # Make the name property getter transactional
+    @neo4j.transactional(graphdb) # Make this property getter transactional
     def name(self):
         return self.__node['name']
 
     @name.setter
-    @neo4j.transactional(neo) # Make the name property setter transactional
+    @neo4j.transactional(graphdb) # Make this property setter transactional
     def name(self, name):
         self.__node['name'] = name
 ---------------------------------------------------------------------------
@@ -741,3 +744,5 @@ class MyEntity(object):
         else:
             transactional.__doc__ = doc
     return transactional(accessor)
+
+NeoService = GraphDatabase

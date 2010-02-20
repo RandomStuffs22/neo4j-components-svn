@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2008-2009 "Neo Technology,"
+
+# Copyright (c) 2008-2010 "Neo Technology,"
 #     Network Engine for Objects in Lund AB [http://neotechnology.com]
 # 
 # This file is part of Neo4j.py.
@@ -20,8 +21,8 @@
 Backend implementation for the Java platform (i.e. Jython).
 
 
-Copyright (c) 2008-2009 "Neo Technology,"
-    Network Engine for Objects in Lund AB [http://neotechnology.com]
+ Copyright (c) 2008-2010 "Neo Technology,"
+     Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
 def import_api():
@@ -29,13 +30,13 @@ def import_api():
         BREADTH_FIRST, DEPTH_FIRST,\
         NotFoundException, NotInTransactionException,\
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH
-    from org.neo4j.api.core.Direction import INCOMING, OUTGOING, BOTH
-    from org.neo4j.api.core.Traverser.Order import BREADTH_FIRST, DEPTH_FIRST
-    from org.neo4j.api.core import StopEvaluator, ReturnableEvaluator,\
+    from org.neo4j.graphdb.Direction import INCOMING, OUTGOING, BOTH
+    from org.neo4j.graphdb.Traverser.Order import BREADTH_FIRST, DEPTH_FIRST
+    from org.neo4j.graphdb import StopEvaluator, ReturnableEvaluator,\
         RelationshipType
-    from org.neo4j.api.core.StopEvaluator import END_OF_GRAPH
-    from org.neo4j.api.core.ReturnableEvaluator import ALL, ALL_BUT_START_NODE
-    from org.neo4j.api.core import NotFoundException, NotInTransactionException
+    from org.neo4j.graphdb.StopEvaluator import END_OF_GRAPH
+    from org.neo4j.graphdb.ReturnableEvaluator import ALL, ALL_BUT_START_NODE
+    from org.neo4j.graphdb import NotFoundException, NotInTransactionException
     return StopEvaluator, ReturnableEvaluator, RelationshipType
 
 def initialize(classpath, parameters):
@@ -49,18 +50,18 @@ def initialize(classpath, parameters):
         sys.path.extend(classpath)
         Stop, Returnable, Type = import_api()
     try:
-        from org.neo4j.api.core import EmbeddedNeo
+        from org.neo4j.kernel import EmbeddedGraphDatabase
     except:
-        EmbeddedNeo = None
+        EmbeddedGraphDatabase = None
     try:
-        from org.neo4j.api.remote import RemoteNeo
+        from org.neo4j.remote import RemoteGraphDatabase
     except:
-        RemoteNeo = None
+        RemoteGraphDatabase = None
     try:
-        from org.neo4j.util.index import LuceneIndexService as IndexService
+        from org.neo4j.index.lucene import LuceneIndexService as IndexService
     except:
         try:
-            from org.neo4j.util.index import NeoIndexService as IndexService
+            from org.neo4j.index import NeoIndexService as IndexService
         except:
             IndexService = None
     # Define conversions
@@ -95,4 +96,4 @@ def initialize(classpath, parameters):
             return self.__name
         def __eq__(self, other):
             return self.name() == other.name()
-    return EmbeddedNeo, RemoteNeo
+    return EmbeddedGraphDatabase, RemoteGraphDatabase

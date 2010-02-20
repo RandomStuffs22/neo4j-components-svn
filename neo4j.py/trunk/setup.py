@@ -67,7 +67,7 @@ CPython implementation of the Python 3 series.
         impl = platform.python_implementation()
     except:
         return
-    if impl == 'CPython':
+    if impl == 'CPython': #XXX: jcc not supported @all platforms (e.g. freebsd)
         parameters['setup_requires'] = ['jcc'] # TODO: implement JCC-support
         #parameters['install_requires'] = ['jpype']
 #        warnings.warn("""Neo4j.py requires JPype.
