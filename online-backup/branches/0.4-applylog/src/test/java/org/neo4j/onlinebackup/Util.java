@@ -105,7 +105,7 @@ public class Util
             e.printStackTrace();
         }
     }
-
+    
     static boolean deleteDir( File directory )
     {
         if ( directory.isDirectory() )
@@ -122,20 +122,20 @@ public class Util
         return directory.delete();
     }
 
-    static EmbeddedGraphDatabase startGraphDbInstance( String location )
+    static EmbeddedGraphDatabase startNeoInstance( String location )
     {
         File file = new File( location );
         return new EmbeddedGraphDatabase( file.getAbsolutePath() );
     }
 
-    static void stopGraphDb( EmbeddedGraphDatabase graphDb )
+    static void stopNeo( EmbeddedGraphDatabase neo )
     {
-        graphDb.shutdown();
+        neo.shutdown();
     }
 
-    static void stopGraphDb( EmbeddedGraphDatabase graphDb, IndexService indexService )
+    static void stopNeo( EmbeddedGraphDatabase neo, IndexService indexService )
     {
         indexService.shutdown();
-        stopGraphDb( graphDb );
+        stopNeo( neo );
     }
 }
