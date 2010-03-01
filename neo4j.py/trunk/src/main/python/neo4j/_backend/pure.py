@@ -22,10 +22,11 @@
 raise ImportError("Pure Python backend not implemented.")
 
 def initialize(classpath, parameters):
-    return None, RemoteNeo
+    return None, RemoteGraphDatabase
 
-class RemoteNeo(object):
-    pass
+class RemoteGraphDatabase(object):
+    def __init__(self, resource_uri, settings=None):
+        pass
 
 class IndexService(object):
     pass

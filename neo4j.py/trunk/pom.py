@@ -48,11 +48,13 @@ class Pom(object):
         return nspath
     def __getitem__(self, path):
         element = self.tree.findtext(self.__path(path))
+        if element is None:
+            element = self.tree.findtext(self.__path('properties.' + path))
         if element is None and self.parent is not None:
             element = self.parent[path]
         if element is None:
             raise KeyError(path)
-        return self.pattern.sub(lambda match:self[match.groupdict()['val']],
+        return self.pattern.sub(lambda match:self[match.groupdict()['var']],
                                 element)
     def developer(self, developer_role, element):
         for developer in self.tree.findall(self.__path('developers.developer')):

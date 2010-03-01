@@ -1,7 +1,6 @@
-[2010-02-09] Backends should support passing more JVM arguments
-    Heap size is the most important one.
-    This is applicable for non-jython backends.
-    * src/main/python/neo4j/_backend/reflection.py
+[2010-02-20] Write a tutorial for getting started with Neo4j.py
+    Perhaps based on the book "Programming the Semantic Web":
+    http://oreilly.com/catalog/9780596153823
 
 [2010-02-09] More Neo4j components should be exposed with Pythonic API
 

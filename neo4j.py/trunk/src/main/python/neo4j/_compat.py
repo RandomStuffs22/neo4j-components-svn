@@ -31,6 +31,30 @@ Python version compatibility.
 import sys
 
 if sys.version_info >= (3,0):
+    def is_string(obj):
+        return isinstance(obj, str)
+    def is_integer(obj):
+        return isinstance(obj, int)
+    def is_number(obj):
+        return isinstance(obj, (int, float))
     raise ImportError("Py3k support not implemented.")
 else:
     Object = object
+    try:
+        assert issubclass(unicode, basestring)
+    except:
+        try:
+            assert len((str, unicode)) == 2
+        except:
+            def is_string(obj):
+                return isinstance(obj, str)
+        else:
+            def is_string(obj):
+                return isinstance(obj, (str, unicode))
+    else:
+        def is_string(obj):
+            return isinstance(obj, basestring)
+    def is_integer(obj):
+        return isinstance(obj, (int, long))
+    def is_number(obj):
+        return isinstance(obj, (int, long, float))

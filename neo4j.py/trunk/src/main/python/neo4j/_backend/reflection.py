@@ -27,21 +27,30 @@ Backend implementation for the CPython platform using JPype reflection.
 
 import jpype
 
+from neo4j._core import BaseAdminInterface
+from neo4j._compat import is_integer, is_string
+
+
 def initialize(classpath, parameters):
     global INCOMING, OUTGOING, BOTH,\
         BREADTH_FIRST, DEPTH_FIRST,\
         NotFoundException, NotInTransactionException,\
         RelationshipType, Evaluator, IndexService,\
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH, StopAtDepth,\
-        array, to_java, to_python, tx_join
-    # TODO: add support for setting memory parameters
-    jvm = parameters.get('jvm', None)
+        array, to_java, to_python, tx_join, make_map,\
+        Node, Relationship
+    jvm = parameters.pop('jvm', None)
     if jvm is None:
         jvm = jpype.getDefaultJVMPath()
     args = []
     if 'ext_dirs' in parameters:
         args.append('-Djava.ext.dirs=' + ':'.join(parameters['ext_dirs']))
     args.append('-Djava.class.path=' + ':'.join(classpath))
+    heap_size = parameters.pop('heap_size', None)
+    if heap_size is not None:
+        if is_integer(heap_size) or heap_size[-1].isdigit():
+            heap_size = '%sM' % heap_size # default to megabyte
+        args.append('-Xmx' + heap_size)
     jpype.startJVM(jvm, *args)
     core = jpype.JPackage('org').neo4j.graphdb
     INCOMING = core.Direction.INCOMING
@@ -57,6 +66,8 @@ def initialize(classpath, parameters):
     END_OF_GRAPH = Stop.END_OF_GRAPH
     NotFoundException = jpype.JException(core.NotFoundException)
     NotInTransactionException = jpype.JException(core.NotInTransactionException)
+    Node = jpype.JClass("org.neo4j.graphdb.Node")
+    Relationship = jpype.JClass("org.neo4j.graphdb.Relationship")
     try:
         EmbeddedGraphDb = jpype.JClass("org.neo4j.kernel.EmbeddedGraphDatabase")
     except:
@@ -72,15 +83,27 @@ def initialize(classpath, parameters):
             IndexService = jpype.JClass("org.neo4j.index.NeoIndexService")
         except:
             IndexService = None
+
+    HashMap = jpype.java.util.HashMap
+    def make_map(d):
+        result = HashMap()
+        for key, value in d.items():
+            result.put(key, value)
+        return result
+
     def tx_join():
         if not jpype.isThreadAttachedToJVM():
             jpype.attachThreadToJVM()
+
     def array(lst):
         return lst
+
     def to_java(obj):
         return obj
+
     def to_python(obj):
         return obj
+
     rel_types = {}
     def RelationshipType(name):
         if name in rel_types:
@@ -90,6 +113,7 @@ def initialize(classpath, parameters):
                     'name': lambda:name
                     })
             return type
+
     def StopAtDepth(limit):
         limit = int(limit)
         assert limit > 0, "Illegal stop depth."
@@ -104,3 +128,39 @@ def initialize(classpath, parameters):
             self.stop = jpype.JProxy(Stop, inst=self)
             self.returnable = jpype.JProxy(Returnable, inst=self)
     return EmbeddedGraphDb, RemoteGraphDb
+
+
+class AdminInterface(BaseAdminInterface):
+    implementation = "JPype"
+
+    def __init__(self, neo, *more):
+        super(AdminInterface, self).__init__(neo, *more)
+        try:
+            self.__xa_mgr=neo.getConfig().getTxModule().getXaDataSourceManager()
+        except:
+            self.__xa_mgr = None
+        try:
+            self.__node_manager=neo.getConfig().getNeoModule().getNodeManager()
+        except:
+            pass
+
+    def _all_data_sources(self):
+        if self.__xa_mgr is None:
+            raise NotImplementedError("Cannot get datasources")
+        for xa_source in self.__xa_mgr.getAllRegisteredDataSources():
+            yield xa_source
+
+    @property
+    def number_of_nodes(self):
+        try:
+            return int(self.__node_manager.getNumberOfIdsInUse(Node))
+        except:
+            raise NotImplementedError("Cannot get Nodemanager")
+
+    @property
+    def number_of_relationships(self):
+        try:
+            return int(self.__node_manager.getNumberOfIdsInUse(Node))
+        except:
+            raise NotImplementedError("Cannot get Nodemanager")
+

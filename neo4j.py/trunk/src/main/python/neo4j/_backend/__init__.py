@@ -31,7 +31,7 @@ def initialize(classpath, **params):
     try: # Native implementation
         if 'java' in sys.platform.lower():
             if log: log.debug("Trying Jython backend.")
-            from neo4j._backend import java as implementation
+            from neo4j._backend import native as implementation
             embedded, remote = implementation.initialize(classpath, params)
             if log: log.debug("Using Jython backend.")
         elif 'cli' in sys.platform.lower():
@@ -60,7 +60,7 @@ def initialize(classpath, **params):
         except: # FAIL.
             raise ImportError("No applicable backend found.")
     # Define load function
-    def load_neo(resource_uri):
+    def load_neo(resource_uri, settings):
         if '://' not in resource_uri and embedded is not None:
             impl = embedded
         elif remote is not None:
@@ -71,6 +71,6 @@ def initialize(classpath, **params):
         else:
             raise RuntimeError("Cannot connect to Neo instance at '%s'." %
                                (resource_uri,))
-        return impl(resource_uri)
+        return impl(resource_uri, implementation.make_map(settings))
     def start_server(resource_uri, server_path):
-        pass
+        raise NotImplementedError("start_server is not implemented")

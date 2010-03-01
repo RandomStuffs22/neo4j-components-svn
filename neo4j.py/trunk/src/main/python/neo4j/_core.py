@@ -26,6 +26,80 @@ This module dispatches the implementation.
 """
 
 from neo4j._base import Neo4jObject
+from neo4j._compat import is_string, is_integer
+
+
+BASIC_NEO4J_OPTIONS = [
+    # Cache
+    'min_node_cache_size',
+    'max_node_cache_size',
+    'min_relationship_cache_size',
+    'max_relationship_cache_size',
+    'adaptive_cache_heap_ratio',
+    'adaptive_cache_manager_decrease_ratio',
+    'use_adaptive_cache',
+    'adaptive_cache_worker_sleep_time',
+    'adaptive_cache_manager_increase_ratio',
+    # Memory mapping
+    'use_memory_mapped_buffers',
+]
+NEO4J_OPTIONS = {
+    # Memory mapping
+    'mmap_nodestore': 'neostore.nodestore.db.mapped_memory',
+    'mmap_relationshipstore': 'neostore.relationshipstore.db.mapped_memory',
+    'mmap_propertystore': 'neostore.propertystore.db.mapped_memory',
+    'mmap_property_keys': 'neostore.propertystore.db.index.keys.mapped_memory',
+    'mmap_property_index': 'neostore.propertystore.db.index.mapped_memory',
+    'mmap_property_strings': 'neostore.propertystore.db.strings.mapped_memory',
+    'mmap_property_arrays': 'neostore.propertystore.db.arrays.mapped_memory',
+}
+for option in BASIC_NEO4J_OPTIONS:
+    NEO4J_OPTIONS[option] = option
+
+
+def propertysetter(func):
+    return property(fset=func, doc=func.__doc__)
+
+class BaseAdminInterface(object):
+    @classmethod
+    def config(AdminInterface, parameters):
+        config = {}
+        for key in dir(AdminInterface):
+            value = parameters.pop(key, None)
+            if value is not None:
+                config[key] = value
+        return config
+    def __init__(self, neo, config):
+        self.__neo = neo
+        for key, value in config.items():
+            setattr(self, key, value)
+    def __str__(self):
+        return "GraphDatabaseAdmin[implementation='%s']"%(self.implementation,)
+    def _all_data_sources(self):
+        raise NotImplementedError("Not supported by %s" % (self,))
+    @propertysetter
+    def keep_logical_logs(self, value):
+        for source in self._all_data_sources():
+            source.keepLogicalLogs( True )
+    @propertysetter
+    def auto_rotate_logs(self, value):
+        for source in self._all_data_sources():
+            source.setAutoRotate( True )
+    def rotate_logical_logs(self):
+        for source in self._all_data_sources():
+            source.rotateLogicalLog()
+    @property
+    def implementation(self):
+        if self.__class__ == BaseAdminInterface:
+            return "<unknown>"
+        return self.__module__.split('.')[-1]
+    @property
+    def number_of_nodes(self):
+        raise NotImplementedError("Cannot get the number of nodes")
+    @property
+    def number_of_relationships(self):
+        raise NotImplementedError("Cannot get the number of relationships")
+
 
 def load_neo(resource_uri, parameters):
     global load_neo,\
@@ -40,6 +114,17 @@ def load_neo(resource_uri, parameters):
     import neo4j._index as indexes
     import os.path, atexit
     log = parameters.get('log', None)
+    if isinstance(log, bool) and log is True:
+        import logging
+        parameters['log'] = log = logging # use base logger
+    elif is_string(log) or is_integer(log):
+        import logging
+        logger = logging.getLogger("neo4j")
+        logger.setLevel(log)
+        if not logger.handlers:
+            import sys
+            logger.addHandler(logging.StreamHandler(sys.stdout))
+        parameters['log'] = log = logger
     # Setup the parameters
     class_base = os.path.join(os.path.dirname(__file__), 'classes')
     if 'classpath' not in parameters:
@@ -49,7 +134,7 @@ def load_neo(resource_uri, parameters):
                 classpath.append(os.path.join(class_base, file))
     elif isinstance(parameters['classpath'], basestring):
         parameters['classpath'] = parameters['classpath'].split(os.pathsep)
-    if 'ext_dirs' not in parameters: # JPype cannot have jars on classpath
+    if 'ext_dirs' not in parameters: # JPype cannot handle jars on classpath
         if os.path.isdir(class_base):
             parameters['ext_dirs'] = [class_base]
     elif isinstance(parameters['ext_dirs'], basestring):
@@ -77,9 +162,19 @@ def load_neo(resource_uri, parameters):
     RETURN_ALL_BUT_START_NODE = backend.implementation.ALL_BUT_START_NODE
     STOP_AT_END_OF_GRAPH      = backend.implementation.END_OF_GRAPH
     StopAtDepth               = backend.implementation.StopAtDepth
+    try:
+        AdminInterface        = backend.implementation.AdminInterface
+    except:
+        AdminInterface        = BaseAdminInterface
     # Define replacement load function for use when the initial load is done
     def load_neo(resource_uri, parameters):
         log = parameters.get('log', None)
+        settings = {}
+        config = AdminInterface.config(parameters)
+        for in_key, out_key in NEO4J_OPTIONS.items():
+            value = parameters.get(in_key)
+            if value is not None:
+                settings[out_key] = value
         if parameters.get('start_server', False):
             server_path = parameters.get('server_path', resource_uri)
             if '://' in server_path:
@@ -92,16 +187,17 @@ def load_neo(resource_uri, parameters):
                                  "resource_uri=%r at server_path=%r",
                                  resource_uri, server_path)
                 backend.start_server(resource_uri, server_path)
-        return GraphDatabase(resource_uri, log)
+        return GraphDatabase(resource_uri, settings, config, log)
     # Define the implementation
     # --- <GraphDatabase> ---
     class GraphDatabase(Neo4jObject):#Use same name everywhere for name mangling
-        def __init__(self, resource_uri, log):
-            neo = backend.load_neo(resource_uri)
+        def __init__(self, resource_uri, settings, config, log):
+            neo = backend.load_neo(resource_uri, settings)
             Neo4jObject.__init__(self, neo=neo)
             self.__neo = neo
-            self.__nodes = NodeFactory(self, neo)
-            self.__relationships = RelationshipLookup(self, neo)
+            self.__admin = admin = AdminInterface(neo, config)
+            self.__nodes = NodeFactory(self, neo, admin)
+            self.__relationships = RelationshipLookup(self, neo, admin)
             self.__index = indexes.IndexService(self, neo)
             self.__transaction = lambda: TransactionContext(neo)
             self.__log = log
@@ -166,9 +262,12 @@ def load_neo(resource_uri, parameters):
                 self.__tx.finish()
                 self.__tx = None
     class NodeFactory(object):
-        def __init__(self, neo, backend):
+        def __init__(self, neo, backend, admin):
             self.__neo = neo
             self.__backend = backend
+            self.__admin = admin
+        def __len__(self):
+            return self.__admin.number_of_nodes
         def __getitem__(self, id):
             return Node(self.__neo, self.__backend.getNodeById(id))
         def __call__(self, **attributes):
@@ -180,9 +279,12 @@ def load_neo(resource_uri, parameters):
         def reference(self):
             return Node(self.__neo, self.__backend.getReferenceNode())
     class RelationshipLookup(object):
-        def __init__(self, neo, backend):
+        def __init__(self, neo, backend, admin):
             self.__neo = neo
             self.__backend = backend
+            self.__admin = admin
+        def __len__(self):
+            return self.__admin.number_of_relationships
         def __getitem__(self, id):
             return Relationship(self.__neo,
                                 self.__backend.getRelationshipById(id))

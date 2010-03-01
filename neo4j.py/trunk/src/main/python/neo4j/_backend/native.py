@@ -25,11 +25,18 @@ Backend implementation for the Java platform (i.e. Jython).
      Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
+import warnings
+
+from neo4j._core import BaseAdminInterface
+from neo4j._compat import is_integer, is_string
+
+
 def import_api():
     global INCOMING, OUTGOING, BOTH,\
         BREADTH_FIRST, DEPTH_FIRST,\
         NotFoundException, NotInTransactionException,\
-        ALL, ALL_BUT_START_NODE, END_OF_GRAPH
+        ALL, ALL_BUT_START_NODE, END_OF_GRAPH,\
+        Node, Relationship
     from org.neo4j.graphdb.Direction import INCOMING, OUTGOING, BOTH
     from org.neo4j.graphdb.Traverser.Order import BREADTH_FIRST, DEPTH_FIRST
     from org.neo4j.graphdb import StopEvaluator, ReturnableEvaluator,\
@@ -37,11 +44,34 @@ def import_api():
     from org.neo4j.graphdb.StopEvaluator import END_OF_GRAPH
     from org.neo4j.graphdb.ReturnableEvaluator import ALL, ALL_BUT_START_NODE
     from org.neo4j.graphdb import NotFoundException, NotInTransactionException
+    from org.neo4j.graphdb import Node, Relationship
     return StopEvaluator, ReturnableEvaluator, RelationshipType
+
+def make_map(m):
+    return m
 
 def initialize(classpath, parameters):
     global RelationshipType, Evaluator, StopAtDepth, IndexService,\
         array, to_java, to_python
+    heap_size = parameters.pop('heap_size', None)
+    if heap_size is not None:
+        from java.lang import Runtime as jre; jre = jre.getRuntime()
+        if is_integer(heap_size):
+            heap_size *= (1024**2) # Default to megabyte
+        elif heap_size[-1].isdigit():
+            heap_size = int(heap_size) * (1024**2)
+        else:
+            heap_size = int(heap_size[:-1]) * {
+                'k': 1024,
+                'm': 1024**2,
+                'g': 1024**3,
+                't': 1024**4,
+            }[heap_size[-1].lower()]
+        if jre.maxMemory() < heap_size:
+            warnings.warn(RuntimeWarning(
+                    "Insufficient heap size!\n"
+                    "Requested %s bytes, running in %s bytes." % (
+                        heap_size, jre.maxMemory())))
     # Import implementation
     try:
         Stop, Returnable, Type = import_api()
@@ -97,3 +127,39 @@ def initialize(classpath, parameters):
         def __eq__(self, other):
             return self.name() == other.name()
     return EmbeddedGraphDatabase, RemoteGraphDatabase
+
+
+class AdminInterface(BaseAdminInterface):
+    implementation = "Jython"
+
+    def __init__(self, neo, *more):
+        super(AdminInterface, self).__init__(neo, *more)
+        try:
+            self.__xa_mgr=neo.getConfig().getTxModule().getXaDataSourceManager()
+        except:
+            self.__xa_mgr = None
+        try:
+            self.__node_manager=neo.getConfig().getNeoModule().getNodeManager()
+        except:
+            pass
+
+    def _all_data_sources(self):
+        if self.__xa_mgr is None:
+            raise NotImplementedError("Cannot get datasources")
+        for xa_source in self.__xa_mgr.getAllRegisteredDataSources():
+            yield xa_source
+
+    @property
+    def number_of_nodes(self):
+        try:
+            return int(self.__node_manager.getNumberOfIdsInUse(Node))
+        except:
+            raise NotImplementedError("Cannot get Nodemanager")
+
+    @property
+    def number_of_relationships(self):
+        try:
+            return int(self.__node_manager.getNumberOfIdsInUse(Node))
+        except:
+            raise NotImplementedError("Cannot get Nodemanager")
+

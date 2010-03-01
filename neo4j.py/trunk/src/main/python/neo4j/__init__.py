@@ -57,9 +57,9 @@ graphdb.shutdown()
 
  To install Neo4j.py simply check out the source code:
 
--------------------------------------------------------------------
-svn export https://svn.neo4j.org/components/neo4j.py/trunk neo4j.py
--------------------------------------------------------------------
+-----------------------------------------------------------------------
+svn export https://svn.neo4j.org/components/neo4j.py/trunk neo4j-python
+-----------------------------------------------------------------------
 
  Then install using distutils:
 
@@ -74,11 +74,11 @@ sudo python setup.py install
 
  Check out and install as with CPython:
 
--------------------------------------------------------------------
-svn export https://svn.neo4j.org/components/neo4j.py/trunk neo4j.py
-cd neo4j.py
+-----------------------------------------------------------------------
+svn export https://svn.neo4j.org/components/neo4j.py/trunk neo4j-python
+cd neo4j-python
 sudo jython setup.py install
--------------------------------------------------------------------
+-----------------------------------------------------------------------
 
 ** Windows installation issues
 
@@ -396,6 +396,12 @@ graphdb = neo4j.GraphDatabase("/path/to/node_store/", **options)
     [ext_dirs ] A list of paths that contain jar files.
 
     [jvm      ] The path to the Java virtual machine to use.
+                This option is not applicable with Jython and will be
+                ignored.
+
+    [heap_size] The size of the heap used by the JVM.
+                This option is not applicable with Jython, but will be
+                verified.
 
     [username ] The username to use when connecting to a remote server.
 
@@ -405,9 +411,18 @@ graphdb = neo4j.GraphDatabase("/path/to/node_store/", **options)
 
     [server_path ] The path to where the server db is stored.
 
+    [keep_logical_log] set this to True to keep logical logs after
+                rotation. The logs will be renamed and stored instead
+                of being removed after they have been rotated.
+
     The classpath or ext_dirs options are used for finding the Java
     implementation of Neo4j. If they are not specified it defaults to
     the jar files that are disributed with this package.
+
+    The heap_size option is not available in Jython since the heap size
+    is already specified when Jython is started. Neo4j will however
+    verify that the current heap size is at least big enough to hold the
+    size specified in this parameter, or issue a warning.
     """
     @property
     def transaction(self):
@@ -449,7 +464,6 @@ node = graphdb.node(name="Thomas Anderson", # create a new node and set
                     age=27)           # the 'name' and 'age' properties
 -----------------------------------------------------------------------
         """
-        # TODO: add a lenght to this
         return self.__nodes
     @property
     def relationship(self):
@@ -461,8 +475,20 @@ node = graphdb.node(name="Thomas Anderson", # create a new node and set
 relationship = graphdb.relatoionship[x] # lookup relationship with id=x
 -----------------------------------------------------------------------
         """
-        # TODO: add a length to this
         return self.__relationships
+    @property
+    def admin(self):
+        """Access the aministrative interface for this GraphDatabase.
+
+ The actual content of the returned aministrative interface is
+ implementation dependant and will have different members depending
+ on the backend used by the Graph Database.
+
+ The following members are guaranteed to always be part of the admin object:
+
+    [implementation] The name of the backend used.
+        """
+        return self.__admin
     @property
     def reference_node(self):
         """Get the reference node for this GraphDatabase.
