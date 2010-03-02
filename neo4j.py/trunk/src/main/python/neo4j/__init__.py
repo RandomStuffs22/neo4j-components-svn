@@ -700,7 +700,7 @@ for coworker in Coworkers(ted):
 
 Traversal()
 
-def transactional(accessor):
+def transactional(accessor, **params):
     """Decorates a method so that it is executed within a transaction.
 
  The transactional function should be invoked with a single argument of a
@@ -769,6 +769,6 @@ class MyEntity(object):
                     map(str, sys.version_info) ))
         else:
             transactional.__doc__ = doc
-    return transactional(accessor)
+    return transactional(accessor, **params)
 
 NeoService = GraphDatabase

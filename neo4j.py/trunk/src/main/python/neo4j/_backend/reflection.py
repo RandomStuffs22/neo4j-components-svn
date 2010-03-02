@@ -135,7 +135,6 @@ class AdminInterface(BaseAdminInterface):
     implementation = "JPype"
 
     def __init__(self, neo, *more):
-        super(AdminInterface, self).__init__(neo, *more)
         try:
             self.__xa_mgr=neo.getConfig().getTxModule().getXaDataSourceManager()
         except:
@@ -144,6 +143,7 @@ class AdminInterface(BaseAdminInterface):
             self.__node_manager=neo.getConfig().getNeoModule().getNodeManager()
         except:
             pass
+        super(AdminInterface, self).__init__(neo, *more)
 
     def _all_data_sources(self):
         if self.__xa_mgr is None:

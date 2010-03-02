@@ -54,7 +54,8 @@ class Transactional(object):
     def __call__(self, obj, *args):
         return self.__get__(obj)(*args)
 
-def transactional(accessor):
+def transactional(accessor, retry=False):
+    if retry: raise NotImplementedError("retrying transactional methods")
     def transactional(decorated):
         # Make the transactional method idempotent w/ regard to property
         if decorated is None:

@@ -25,6 +25,8 @@ This module dispatches the implementation.
      Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
+import threading
+
 from neo4j._base import Neo4jObject
 from neo4j._compat import is_string, is_integer
 
@@ -69,8 +71,10 @@ class BaseAdminInterface(object):
             if value is not None:
                 config[key] = value
         return config
-    def __init__(self, neo, config):
+    def __init__(self, neo, config, log):
         self.__neo = neo
+        self.__log = log
+        self.__lock = threading.Lock()
         for key, value in config.items():
             setattr(self, key, value)
     def __str__(self):
@@ -79,15 +83,39 @@ class BaseAdminInterface(object):
         raise NotImplementedError("Not supported by %s" % (self,))
     @propertysetter
     def keep_logical_logs(self, value):
+        if value is None:
+            try:
+                value = self.__keep_logical_logs
+            except:
+                return
+        assert isinstance(value, bool),\
+            "graphdb.admin.keep_logical_logs = True/False"
+        self.__keep_logical_logs = value
         for source in self._all_data_sources():
-            source.keepLogicalLogs( True )
+            if self.__log: self.__log.debug("%s.keep_logical_logs = %s",
+                                            source, value)
+            source.keepLogicalLogs( value )
     @propertysetter
     def auto_rotate_logs(self, value):
         for source in self._all_data_sources():
             source.setAutoRotate( True )
     def rotate_logical_logs(self):
-        for source in self._all_data_sources():
-            source.rotateLogicalLog()
+        versions = []
+        self.__lock.acquire() # with statement would give better performance...
+        try:
+            for source in self._all_data_sources():
+                if self.__log: self.__log.debug("Rotating logs on %s.", source)
+                versions.append( (source, source.getCurrentLogVersion()) )
+                source.rotateLogicalLog()
+        finally:
+            self.__lock.release()
+        result = []
+        for source,version in versions:
+            try:
+                result.append(source.getFileName(version))
+            except:
+                result.append( (str(source), version) )
+        return result
     @property
     def implementation(self):
         if self.__class__ == BaseAdminInterface:
@@ -198,7 +226,7 @@ def load_neo(resource_uri, parameters):
             neo = backend.load_neo(resource_uri, settings)
             Neo4jObject.__init__(self, neo=neo)
             self.__neo = neo
-            self.__admin = admin = AdminInterface(neo, config)
+            self.__admin = admin = AdminInterface(neo, config, log)
             self.__nodes = NodeFactory(self, neo, admin)
             self.__relationships = RelationshipLookup(self, neo, admin)
             self.__index = indexes.IndexService(self, neo)

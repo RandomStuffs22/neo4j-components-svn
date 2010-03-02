@@ -49,6 +49,10 @@ def initialize(backend):
         def create(self, name, options):
             index = Index(self.__index, self.__neo, name, **options)
             self.__indexes[name] = index
+            try:
+                self.__neo.admin.keep_logical_logs = None
+            except:
+                pass
             return index
         def shutdown(self):
             if self.__index is not None:
