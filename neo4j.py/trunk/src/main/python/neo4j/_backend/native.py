@@ -36,16 +36,16 @@ def import_api():
         BREADTH_FIRST, DEPTH_FIRST,\
         NotFoundException, NotInTransactionException,\
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH,\
-        Node, Relationship
+        Node, Relationship, NativeRelType
     from org.neo4j.graphdb.Direction import INCOMING, OUTGOING, BOTH
     from org.neo4j.graphdb.Traverser.Order import BREADTH_FIRST, DEPTH_FIRST
-    from org.neo4j.graphdb import StopEvaluator, ReturnableEvaluator,\
-        RelationshipType
+    from org.neo4j.graphdb import StopEvaluator, ReturnableEvaluator
     from org.neo4j.graphdb.StopEvaluator import END_OF_GRAPH
     from org.neo4j.graphdb.ReturnableEvaluator import ALL, ALL_BUT_START_NODE
     from org.neo4j.graphdb import NotFoundException, NotInTransactionException
     from org.neo4j.graphdb import Node, Relationship
-    return StopEvaluator, ReturnableEvaluator, RelationshipType
+    from org.neo4j.graphdb import RelationshipType as NativeRelType
+    return StopEvaluator, ReturnableEvaluator, NativeRelType
 
 def make_map(m):
     return m
@@ -159,7 +159,14 @@ class AdminInterface(BaseAdminInterface):
     @property
     def number_of_relationships(self):
         try:
-            return int(self.__node_manager.getNumberOfIdsInUse(Node))
+            return int(self.__node_manager.getNumberOfIdsInUse(Relationship))
+        except:
+            raise NotImplementedError("Cannot get Nodemanager")
+
+    @property
+    def number_of_relationship_types(self):
+        try:
+            return int(self.__node_manager.getNumberOfIdsInUse(NativeRelType))
         except:
             raise NotImplementedError("Cannot get Nodemanager")
 

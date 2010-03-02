@@ -99,6 +99,9 @@ class BaseAdminInterface(object):
     @property
     def number_of_relationships(self):
         raise NotImplementedError("Cannot get the number of relationships")
+    @property
+    def number_of_relationship_types(self):
+        raise NotImplementedError("Cannot get the number of relationship types")
 
 
 def load_neo(resource_uri, parameters):

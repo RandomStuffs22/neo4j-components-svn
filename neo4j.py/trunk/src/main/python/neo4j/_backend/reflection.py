@@ -38,7 +38,7 @@ def initialize(classpath, parameters):
         RelationshipType, Evaluator, IndexService,\
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH, StopAtDepth,\
         array, to_java, to_python, tx_join, make_map,\
-        Node, Relationship
+        Node, Relationship, NativeRelType
     jvm = parameters.pop('jvm', None)
     if jvm is None:
         jvm = jpype.getDefaultJVMPath()
@@ -66,8 +66,9 @@ def initialize(classpath, parameters):
     END_OF_GRAPH = Stop.END_OF_GRAPH
     NotFoundException = jpype.JException(core.NotFoundException)
     NotInTransactionException = jpype.JException(core.NotInTransactionException)
-    Node = jpype.JClass("org.neo4j.graphdb.Node")
-    Relationship = jpype.JClass("org.neo4j.graphdb.Relationship")
+    Node = core.Node
+    Relationship = core.Relationship
+    NativeRelType = core.RelationshipType
     try:
         EmbeddedGraphDb = jpype.JClass("org.neo4j.kernel.EmbeddedGraphDatabase")
     except:
@@ -160,7 +161,15 @@ class AdminInterface(BaseAdminInterface):
     @property
     def number_of_relationships(self):
         try:
-            return int(self.__node_manager.getNumberOfIdsInUse(Node))
+            return int(self.__node_manager.getNumberOfIdsInUse(Relationship))
+        except:
+            raise NotImplementedError("Cannot get Nodemanager")
+
+    @property
+    def number_of_relationship_types(self):
+        try:
+            return int(
+                self.__node_manager.getNumberOfIdsInUse(NativeRelType))
         except:
             raise NotImplementedError("Cannot get Nodemanager")
 
