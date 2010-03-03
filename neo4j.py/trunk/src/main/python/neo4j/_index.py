@@ -61,7 +61,9 @@ def initialize(backend):
             self.__index = None
 
     class Index(object):
-        def __init__(self, index, neo, key, **ignored):
+        def __init__(self, index, neo, key, full_text=False, **ignored):
+            if full_text:
+                raise NotImplementedError("support for full text index")
             self.__index = index
             self.__neo = neo
             self.__key = key

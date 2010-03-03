@@ -1,3 +1,6 @@
+[2010-03-03] Add support for LuceneFulltextIndex
+    * src/main/python/neo4j/_index.py L66
+
 [2010-03-03] Add support for read_only mode
     * src/main/python/neo4j/_core.py L176
 
