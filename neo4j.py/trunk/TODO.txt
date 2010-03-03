@@ -1,3 +1,6 @@
+[2010-03-03] Add support for read_only mode
+    * src/main/python/neo4j/_core.py L176
+
 [2010-02-20] Write a tutorial for getting started with Neo4j.py
     Perhaps based on the book "Programming the Semantic Web":
     http://oreilly.com/catalog/9780596153823

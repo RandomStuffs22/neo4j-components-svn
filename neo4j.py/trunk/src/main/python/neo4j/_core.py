@@ -173,6 +173,9 @@ def load_neo(resource_uri, parameters):
     if log:
         log.debug("classpath is: %s", parameters['classpath'])
         log.debug("ext_dirs is:  %s", parameters['ext_dirs'])
+    # TODO: implement support for read_only GraphDatabase
+    if parameters.get('read_only', False):
+        raise NotImplementedError("read_only mode")
     # Load the backend and the Neo4j classes
     backend.initialize(**parameters)
     # Initialize subsystems
