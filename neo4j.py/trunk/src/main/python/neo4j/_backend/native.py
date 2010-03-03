@@ -34,7 +34,7 @@ from neo4j._compat import is_integer, is_string
 def import_api():
     global INCOMING, OUTGOING, BOTH,\
         BREADTH_FIRST, DEPTH_FIRST,\
-        NotFoundException, NotInTransactionException,\
+        NotFoundException,NotInTransactionException,DeadlockDetectedException,\
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH,\
         Node, Relationship, NativeRelType
     from org.neo4j.graphdb.Direction import INCOMING, OUTGOING, BOTH
@@ -43,6 +43,7 @@ def import_api():
     from org.neo4j.graphdb.StopEvaluator import END_OF_GRAPH
     from org.neo4j.graphdb.ReturnableEvaluator import ALL, ALL_BUT_START_NODE
     from org.neo4j.graphdb import NotFoundException, NotInTransactionException
+    from org.neo4j.kernel.impl.transaction import DeadlockDetectedException
     from org.neo4j.graphdb import Node, Relationship
     from org.neo4j.graphdb import RelationshipType as NativeRelType
     return StopEvaluator, ReturnableEvaluator, NativeRelType

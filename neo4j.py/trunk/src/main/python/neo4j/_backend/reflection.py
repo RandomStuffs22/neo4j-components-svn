@@ -34,7 +34,7 @@ from neo4j._compat import is_integer, is_string
 def initialize(classpath, parameters):
     global INCOMING, OUTGOING, BOTH,\
         BREADTH_FIRST, DEPTH_FIRST,\
-        NotFoundException, NotInTransactionException,\
+        NotFoundException,NotInTransactionException,DeadlockDetectedException,\
         RelationshipType, Evaluator, IndexService,\
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH, StopAtDepth,\
         array, to_java, to_python, tx_join, make_map,\
@@ -53,6 +53,7 @@ def initialize(classpath, parameters):
         args.append('-Xmx' + heap_size)
     jpype.startJVM(jvm, *args)
     core = jpype.JPackage('org').neo4j.graphdb
+    kernel_impl = jpype.JPackage('org').neo4j.kernel.impl
     INCOMING = core.Direction.INCOMING
     OUTGOING = core.Direction.OUTGOING
     BOTH = core.Direction.BOTH
@@ -66,6 +67,8 @@ def initialize(classpath, parameters):
     END_OF_GRAPH = Stop.END_OF_GRAPH
     NotFoundException = jpype.JException(core.NotFoundException)
     NotInTransactionException = jpype.JException(core.NotInTransactionException)
+    DeadlockDetectedException = jpype.JException(
+        kernel_impl.transaction.DeadlockDetectedException)
     Node = core.Node
     Relationship = core.Relationship
     NativeRelType = core.RelationshipType

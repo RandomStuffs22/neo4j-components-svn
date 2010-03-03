@@ -134,7 +134,7 @@ class BaseAdminInterface(object):
 
 def load_neo(resource_uri, parameters):
     global load_neo,\
-        NotFoundError, NotInTransactionError, Traversal,\
+        NotFoundError, NotInTransactionError, DeadlockDetectedError, Traversal,\
         Incoming, Outgoing, Undirected, BREADTH_FIRST, DEPTH_FIRST,\
         RETURN_ALL_NODES, RETURN_ALL_BUT_START_NODE,\
         STOP_AT_END_OF_GRAPH, StopAtDepth
@@ -184,6 +184,7 @@ def load_neo(resource_uri, parameters):
     Traversal                 = traversals.Traversal
     NotFoundError             = backend.implementation.NotFoundException
     NotInTransactionError     = backend.implementation.NotInTransactionException
+    DeadlockDetectedError     = backend.implementation.DeadlockDetectedException
     Incoming                  = traversals.Incoming
     Outgoing                  = traversals.Outgoing
     Undirected                = traversals.Undirected

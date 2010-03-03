@@ -508,8 +508,9 @@ ref_node = graphdb.reference_node
             self.__neo.shutdown()
     close = shutdown
     def __new__(cls, resource_uri, **params):
-        global NotFoundError, NotInTransactionError, Traversal,\
-            Incoming, Outgoing, Undirected, BREADTH_FIRST, DEPTH_FIRST,\
+        global NotFoundError, NotInTransactionError, DeadlockDetectedError,\
+            Traversal, Incoming, Outgoing, Undirected,\
+            BREADTH_FIRST, DEPTH_FIRST,\
             RETURN_ALL_NODES, RETURN_ALL_BUT_START_NODE,\
             STOP_AT_END_OF_GRAPH, StopAtDepth
         from neo4j import _core as core
@@ -528,6 +529,7 @@ ref_node = graphdb.reference_node
         # Define values for globals
         NotFoundError             = core.NotFoundError
         NotInTransactionError     = core.NotInTransactionError
+        DeadlockDetectedError     = core.DeadlockDetectedError
         Traversal                 = core.Traversal
         Incoming                  = core.Incoming
         Outgoing                  = core.Outgoing
@@ -708,6 +710,15 @@ def transactional(accessor, **params):
  property). The result of the transactional function is a method decorator that
  executes the decorated method within the context of a transaction on the
  GraphDatabase provided by the accessor descriptor.
+
+ The transactional function accepts the optional keyword only argument retry.
+ If retry is True the transactional operation will be retried if a deadlock
+ is detected. Otherwise the operation will be attempted only once, and if
+ a deadlock is detected a DeadlockDetectedError will be raised. The
+ operation will only be retried when a deadlock is detected, other exceptional
+ cases will still cause exceptions to be raised from the method.
+ Retrying the operation means rolling back the transaction, starting a new
+ transaction and re-execute the operation in that transaction.
 
  <<Example:>>
 

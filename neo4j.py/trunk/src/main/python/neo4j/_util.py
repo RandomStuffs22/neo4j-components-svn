@@ -30,15 +30,23 @@ Utility functions that make working with Neo4j easier in Python.
      Network Engine for Objects in Lund AB [http://neotechnology.com]
 """
 
+import neo4j
+
 class Transactional(object):
     def __init__(self, accessor, method):
         self.accessor = accessor
         self.method = method
-    def __get__(self, obj, cls=None):
+    def descr_get(self, obj, cls):
         method = self.method.__get__(obj, cls)
-        neo = self.accessor.__get__(obj, cls)
+        graphdb = self.accessor.__get__(obj, cls)
+        return method, graphdb
+    def __call__(self, obj, *args): # for when invoked through @property
+        return self.__get__(obj)(*args)
+
+    def __get__(self, obj, cls=None):
+        method, graphdb = self.descr_get(obj, cls)
         def result(*args, **kwargs):
-            tx = neo.transaction.begin()
+            tx = graphdb.transaction.begin()
             try:
                 try:
                     result = method(*args, **kwargs)
@@ -51,11 +59,29 @@ class Transactional(object):
                 tx.finish()
             return result
         return result
-    def __call__(self, obj, *args):
-        return self.__get__(obj)(*args)
+
+class RetryTransactional(Transactional):
+    def __get__(self, obj, cls=None):
+        method, graphdb = self.descr_get(obj, cls)
+        def result(*args, **kwargs):
+            while True:
+                tx = graphdb.transaction.begin()
+                try:
+                    try:
+                        result = method(*args, **kwargs)
+                    except neo4j.DeadlockDetectedError:
+                        continue
+                    except:
+                        tx.failure()
+                        raise
+                    else:
+                        tx.success()
+                finally:
+                    tx.finish()
+                return result
+        return result
 
 def transactional(accessor, retry=False):
-    if retry: raise NotImplementedError("retrying transactional methods")
     def transactional(decorated):
         # Make the transactional method idempotent w/ regard to property
         if decorated is None:
@@ -69,5 +95,8 @@ def transactional(accessor, retry=False):
         elif isinstance(decorated, Transactional):
             if decorated.accessor == accessor:
                 return decorated
-        return Transactional(accessor, decorated)
+        if retry:
+            return RetryTransactional(accessor, decorated)
+        else:
+            return Transactional(accessor, decorated)
     return transactional
