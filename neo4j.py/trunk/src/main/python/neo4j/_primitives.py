@@ -60,7 +60,7 @@ class _PropertyDict(object): # NOTE: Should this inherit from dict?
         self.__set(item, value)
     def __delitem__(self,item):
         """s.__delitem__(p) <=> del s[p]"""
-        self.__del(self,item)
+        self.__del(item)
     def __contains__(self,item):
         """s.__contains__(p) <=> p in s <=> s.has_key(p)"""
         return self.__has(item)
