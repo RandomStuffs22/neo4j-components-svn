@@ -4,11 +4,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.util.Random;
 
-import org.neo4j.onlinebackup.ha.ReadOnlySlave;
+import org.neo4j.kernel.impl.transaction.xaframework.XaDataSource;
+import org.neo4j.onlinebackup.ha.AbstractSlave;
 
 public class HandleMasterConnection extends ConnectionJob
 {
+    private static final Random r = new Random( System.currentTimeMillis() );
+    
     private static enum Status implements JobStatus
     {
         GET_LOG,
@@ -21,7 +25,7 @@ public class HandleMasterConnection extends ConnectionJob
         SEND_REQUEST,
     }
     
-    private final ReadOnlySlave slave;
+    private final XaDataSource xaDs;
     
     private int retries = 0;
     private File tempFile;
@@ -30,13 +34,13 @@ public class HandleMasterConnection extends ConnectionJob
     private long logVersionWriting = -1;
     private long masterVersion = -1;
     
-    public HandleMasterConnection( Connection connection, ReadOnlySlave slave, 
-        long masterVersion )
+    public HandleMasterConnection( Connection connection, AbstractSlave slave, 
+        long masterVersion, XaDataSource xaDs )
     {
         super( connection, slave );
-        this.slave = slave;
+        this.xaDs = xaDs;
         this.masterVersion = masterVersion;
-        if ( slave.getVersion() < (masterVersion - 1) )
+        if ( xaDs.getCurrentLogVersion() < (masterVersion - 1) )
         {
             setStatus( Status.SETUP_REQUEST );
         }
@@ -68,7 +72,7 @@ public class HandleMasterConnection extends ConnectionJob
                     return true;
                 }
                 long version = buffer.getLong();
-                if ( version < slave.getVersion() )
+                if ( version < xaDs.getCurrentLogVersion() )
                 {
                     log( "Got wrong version [" + version + "]" );
                     setStatus( Status.SETUP_NOT_OK );
@@ -76,15 +80,21 @@ public class HandleMasterConnection extends ConnectionJob
                 }
                 logLength = buffer.getLong();
                 log( "Got offer: " + version + "," + logLength );
-                if ( !slave.hasLog( version ) )
+                if ( !xaDs.hasLogicalLog( version ) )
                 {
                     try
                     {
                         logVersionWriting = version;
-                        tempFile = File.createTempFile( "logical-log", 
-                            Long.toString( version ) );
+                        do 
+                        {
+                            tempFile = new File( xaDs.getName() + 
+                                    "-logical-transfer.v" + 
+                                    Long.toString( version ) + "_" +
+                                    r.nextLong() );
+                        } while ( tempFile.exists() );
                         logToWrite = new RandomAccessFile( tempFile, 
                             "rw").getChannel();
+                        logToWrite.truncate( 0 );
                     }
                     catch ( IOException e )
                     {
@@ -120,10 +130,11 @@ public class HandleMasterConnection extends ConnectionJob
     
     private boolean setupRequest()
     {
-        long version = slave.getVersion() + 1;
+        long version = xaDs.getCurrentLogVersion();
+        // System.out.println( xaDs.getName() + " requesting " + version );
         while ( version < masterVersion )
         {
-            if ( slave.hasLog( version ) )
+            if ( xaDs.hasLogicalLog( version ) )
             {
                 version++;
             }
@@ -281,7 +292,7 @@ public class HandleMasterConnection extends ConnectionJob
                 if ( logToWrite.position() >= logLength )
                 {
                     log( "Log transfer complete" );
-                    if ( slave.getVersion() < (masterVersion - 1) )
+                    if ( xaDs.getCurrentLogVersion() < (masterVersion - 1) )
                     {
                         setStatus( Status.SETUP_REQUEST );
                     }
@@ -290,12 +301,23 @@ public class HandleMasterConnection extends ConnectionJob
                         setStatus( Status.GET_MESSAGE );
                     }
                     logToWrite.close();
-                    tempFile.renameTo( 
-                        new File( slave.getLogName( logVersionWriting ) ) );
+                    String newName = xaDs.getFileName( logVersionWriting );
+                    File newLog = new File( newName );
+                    if ( newLog.exists() )
+                    {
+                        log( "Error new log file[" + newName + 
+                                "] already exist" );
+                        close();
+                    }
+                    if ( !tempFile.renameTo( new File( newName ) ) )
+                    {
+                        log( "Unable to move log to " + newName );
+                        close();
+                    }
                     logVersionWriting = -1;
                     tempFile = null;
                     logToWrite = null;
-                    slave.tryApplyNewLog();
+                    // slave.tryApplyNewLog();
                 }
                 return true;
             }

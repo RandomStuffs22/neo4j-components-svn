@@ -1,32 +1,18 @@
 package org.neo4j.onlinebackup.ha;
 
-import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.neo4j.kernel.impl.nioneo.xa.NeoStoreXaDataSource;
+import org.neo4j.kernel.impl.transaction.xaframework.XaDataSource;
 
 public class LogApplier extends Thread
 {
-    private final Queue<Long> queue = new ConcurrentLinkedQueue<Long>();
-    
     private volatile boolean run = true;
     
-    private final NeoStoreXaDataSource xaDs;
+    private final XaDataSource[] xaDataSources;
     
-    LogApplier( NeoStoreXaDataSource xaDs )
+    LogApplier( XaDataSource[] xaDataSources )
     {
-        this.xaDs = xaDs;
-    }
-    
-    public boolean applyLog( long version )
-    {
-        if ( !run )
-        {
-            throw new IllegalStateException( "Log applier not running" );
-        }
-        return queue.offer( version );
+        this.xaDataSources = xaDataSources;
     }
     
     public void run()
@@ -35,33 +21,33 @@ public class LogApplier extends Thread
         {
             while ( run )
             {
-                Long logVersion = queue.poll();
-                if ( logVersion != null )
+                for ( XaDataSource xaDs : xaDataSources )
                 {
-                    if ( logVersion == xaDs.getCurrentLogVersion() )
+                    long logVersion = xaDs.getCurrentLogVersion();
+                    if ( xaDs.hasLogicalLog( logVersion ) )
                     {
                         ReadableByteChannel logChannel = 
                             xaDs.getLogicalLog( logVersion );
                         xaDs.applyLog( logChannel );
                     }
-                }
-                else
-                {
-                    synchronized ( this )
+                    else
                     {
-                        try
+                        synchronized ( this )
                         {
-                            this.wait( 250 );
-                        }
-                        catch ( InterruptedException e )
-                        {
-                            interrupted();
+                            try
+                            {
+                                this.wait( 250 );
+                            }
+                            catch ( InterruptedException e )
+                            {
+                                interrupted();
+                            }
                         }
                     }
                 }
             }
         }
-        catch ( IOException e )
+        catch ( Exception e )
         {
             System.err.println( "Failed to apply log: " + e );
             e.printStackTrace();

@@ -18,41 +18,32 @@ public class HandleSlaveConnection extends ConnectionJob
     }
     
     private final Master master;
+    private final String xaDsName;
     
     private int retries = 0;
     private long logVersionToSend = -1;
     private ReadableByteChannel logToSend = null;
     private long logLength = -1;
     
+    private long slaveVersion;
+    
     public HandleSlaveConnection( Connection connection, Master master, 
-        long slaveVersion )
+        long slaveVersion, String xaDsName )
     {
         super( connection, master );
         this.master = master;
-        if ( master.hasLog( slaveVersion ) )
-        {
-            logVersionToSend = slaveVersion;
-            logLength = master.getLogLength( slaveVersion );
-            
-            try
-            {
-                logToSend = master.getLog( slaveVersion );
-            }
-            catch ( IOException e )
-            {
-                throw new SocketException( "Error getting next log", e );
-            }
-        }
+        this.xaDsName = xaDsName;
+        this.slaveVersion = slaveVersion;
         setStatus( Status.GET_MESSAGE );
+    }
+    
+    public String getXaDsName()
+    {
+        return xaDsName;
     }
     
     private synchronized boolean getMessage()
     {
-        if ( logVersionToSend > -1 && logLength > -1 && logToSend != null )
-        {
-            setStatus( Status.SETUP_OFFER_LOG );
-            return true;
-        }
         if ( !acquireReadBuffer() )
         {
             return false;
@@ -72,18 +63,18 @@ public class HandleSlaveConnection extends ConnectionJob
                     return true;
                 }
                 logVersionToSend = buffer.getLong();
-                if ( logVersionToSend > master.getVersion() )
+                if ( logVersionToSend > master.getVersion( xaDsName ) )
                 {
                     log( "Got wrong version [" + logVersionToSend + "]" );
                     return true;
                 }
                 log( "Slave request: " + logVersionToSend );
-                if ( master.hasLog( logVersionToSend ) )
+                if ( master.hasLog( xaDsName, logVersionToSend ) )
                 {
                     try
                     {
-                        logToSend = master.getLog( logVersionToSend );
-                        logLength = master.getLogLength( logVersionToSend );
+                        logToSend = master.getLog( xaDsName, logVersionToSend );
+                        logLength = master.getLogLength( xaDsName, logVersionToSend );
                     }
                     catch ( IOException e )
                     {
@@ -247,17 +238,21 @@ public class HandleSlaveConnection extends ConnectionJob
                 {
                     releaseWriteBuffer();
                     setStatus( Status.GET_MESSAGE );
-                    if ( master.hasLog( logVersionToSend + 1 ) )
-                    {
-                        logVersionToSend = logVersionToSend++;
-                        logLength = master.getLogLength( logVersionToSend );
-                        logToSend = master.getLog( logVersionToSend );
-                    }
-                    else
-                    {
+//                    if ( master.hasLog( logVersionToSend + 1 ) )
+//                    {
+//                        logVersionToSend = logVersionToSend++;
+//                        logLength = master.getLogLength( logVersionToSend );
+//                        logToSend = master.getLog( logVersionToSend );
+//                    }
+//                    else
+//                    {
                         logLength = -1;
                         logVersionToSend = -1;
                         logToSend = null;
+//                    }
+                    if ( logVersionToSend >= slaveVersion )
+                    {
+                        slaveVersion = logVersionToSend + 1;
                     }
                     return true;
                 }
@@ -293,15 +288,25 @@ public class HandleSlaveConnection extends ConnectionJob
     
     public synchronized boolean offerLogToSlave( long version )
     {
+        if ( !getConnection().connected() )
+        {
+            System.out.println( "Not connected" );
+            return false;
+        }
         if ( logLength != -1 || logVersionToSend != -1 || logToSend != null )
         {
-            return false;
+            // we already sending a version
+            return true;
         }
         try
         {
-            logToSend = master.getLog( version );
-            logLength = master.getLogLength( version );
-            logVersionToSend = version;
+            if ( getStatus() == Status.GET_MESSAGE )
+            {
+                logToSend = master.getLog( xaDsName, version );
+                logLength = master.getLogLength( xaDsName, version );
+                logVersionToSend = version;
+                setStatus( Status.SETUP_OFFER_LOG );
+            }
             return true;
         }
         catch ( IOException e )
