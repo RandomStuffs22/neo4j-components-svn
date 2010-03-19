@@ -1,9 +1,12 @@
 package org.neo4j.meta.input.rdfs;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.util.Collection;
 
-import junit.framework.TestCase;
-
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -15,34 +18,23 @@ import org.neo4j.util.EntireGraphDeletor;
 /**
  * Base class for tests.
  */
-public abstract class MetaTestCase extends TestCase
+public abstract class MetaTestCase
 {
 	private static GraphDatabaseService graphDb;
 	
-	@Override
-	protected void setUp() throws Exception
+	@BeforeClass
+	public static void setUpDb() throws Exception
 	{
-		if ( graphDb == null )
-		{
-			graphDb = new EmbeddedGraphDatabase( "target/var/db" );
-			Runtime.getRuntime().addShutdownHook( new Thread()
-			{
-				@Override
-				public void run()
-				{
-					graphDb.shutdown();
-				}
-			} );
-		}
+	    graphDb = new EmbeddedGraphDatabase( "target/var/db" );
 	}
 	
-	@Override
-	protected void tearDown() throws Exception
+	@AfterClass
+	public static void tearDownDb() throws Exception
 	{
-		super.tearDown();
+	    graphDb.shutdown();
 	}
 	
-	protected GraphDatabaseService graphDb()
+	protected static GraphDatabaseService graphDb()
 	{
 		return graphDb;
 	}

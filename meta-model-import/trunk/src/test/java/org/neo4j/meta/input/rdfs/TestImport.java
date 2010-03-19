@@ -1,7 +1,11 @@
 package org.neo4j.meta.input.rdfs;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.File;
 
+import org.junit.Test;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.meta.input.rdfs.RdfsImporter;
 import org.neo4j.meta.model.MetaModel;
@@ -16,16 +20,11 @@ import org.neo4j.meta.model.MetaModelProperty;
  */
 public class TestImport extends MetaTestCase
 {
-	@Override
-	protected void setUp() throws Exception
-	{
-		super.setUp();
-	}
-	
 	/**
 	 * A simple example.
 	 * @throws Exception if something goes wrong.
 	 */
+    @Test
 	public void testSomeImport() throws Exception
 	{
 		MetaModel meta = new MetaModelImpl( graphDb() );
@@ -96,7 +95,8 @@ public class TestImport extends MetaTestCase
 	 * Imports the FOAF RDF/XML graph.
 	 * @throws Exception if something goes wrong.
 	 */
-	public void testFoafImport() throws Exception
+    @Test
+    public void testFoafImport() throws Exception
 	{
 		doAnImportOf(
 			"foaf.rdfs"
@@ -134,7 +134,7 @@ public class TestImport extends MetaTestCase
 		}
 	}
 	
-	private void assertAllNotNull( Object... objects )
+    private void assertAllNotNull( Object... objects )
 	{
 		for ( Object object : objects )
 		{

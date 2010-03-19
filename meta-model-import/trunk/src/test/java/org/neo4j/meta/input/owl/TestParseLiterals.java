@@ -1,9 +1,13 @@
 package org.neo4j.meta.input.owl;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-public class TestParseLiterals extends TestCase
+import org.junit.Test;
+
+public class TestParseLiterals
 {
+    @Test
 	public void testParseSomeLiterals() throws Exception
 	{
 		String booleanUri = RdfUtil.NS_XML_SCHEMA + "boolean";

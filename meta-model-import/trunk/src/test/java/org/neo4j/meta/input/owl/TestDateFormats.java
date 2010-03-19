@@ -1,6 +1,8 @@
 package org.neo4j.meta.input.owl;
 
-import java.text.ParseException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -8,17 +10,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests date parsing.
  */
-public class TestDateFormats extends TestCase
+public class TestDateFormats
 {
 	/**
 	 * Tests standard xml date formats.
 	 */
-	public void testStandardXmlDateTimeFormats()
+    @Test
+	public void testStandardXmlDateTimeFormats() throws Exception
 	{
 		Map<String, List<String>> dates = new HashMap<String, List<String>>();
 		dates.put( RdfUtil.NS_XML_SCHEMA + "dateTime", Arrays.asList(
@@ -37,56 +40,43 @@ public class TestDateFormats extends TestCase
 		dates.put( RdfUtil.NS_XML_SCHEMA + "date", Arrays.asList(
 			"2007-09-14" ) );
 		
-		try
+		for ( String format : dates.keySet() )
 		{
-			for ( String format : dates.keySet() )
+			for ( String dateString : dates.get( format ) )
 			{
-				for ( String dateString : dates.get( format ) )
-				{
-					Object result = RdfUtil.getRealValue( format, dateString );
-					assertNotNull( result );
-					assertEquals( Date.class, result.getClass() );
-					Date date = ( Date ) result;
-					Calendar calendar = Calendar.getInstance();
-					calendar.setTime( date );
-					assertEquals( dateString, 2007,
-						calendar.get( Calendar.YEAR ) );
-					assertEquals( dateString, Calendar.SEPTEMBER,
-						calendar.get( Calendar.MONTH ) );
-					assertEquals( dateString, 14,
-						calendar.get( Calendar.DAY_OF_MONTH ) );
-				}
+				Object result = RdfUtil.getRealValue( format, dateString );
+				assertNotNull( result );
+				assertEquals( Date.class, result.getClass() );
+				Date date = ( Date ) result;
+				Calendar calendar = Calendar.getInstance();
+				calendar.setTime( date );
+				assertEquals( dateString, 2007,
+					calendar.get( Calendar.YEAR ) );
+				assertEquals( dateString, Calendar.SEPTEMBER,
+					calendar.get( Calendar.MONTH ) );
+				assertEquals( dateString, 14,
+					calendar.get( Calendar.DAY_OF_MONTH ) );
 			}
-		}
-		catch ( ParseException e )
-		{
-			fail( "Unable to parse: " + e.toString() );
 		}
 	}
 	
-	public void testTimeFormat()
+    @Test
+	public void testTimeFormat() throws Exception
 	{
-		try
-		{
-			Date date = ( Date ) RdfUtil.getRealValue(
-				RdfUtil.NS_XML_SCHEMA + "time", "12:00:03" );
-			Calendar cal = Calendar.getInstance();
-			cal.setTime( date );
-			assertEquals( 12, cal.get( Calendar.HOUR_OF_DAY ) );
-			assertEquals( 0, cal.get( Calendar.MINUTE ) );
-			assertEquals( 3, cal.get( Calendar.SECOND ) );
-			
-			date = ( Date ) RdfUtil.getRealValue(
-				RdfUtil.NS_XML_SCHEMA + "time", "20:32:12.146" );
-			cal.setTime( date );
-			assertEquals( 20, cal.get( Calendar.HOUR_OF_DAY ) );
-			assertEquals( 32, cal.get( Calendar.MINUTE ) );
-			assertEquals( 12, cal.get( Calendar.SECOND ) );
-			assertEquals( 146, cal.get( Calendar.MILLISECOND ) );
-		}
-		catch ( ParseException e )
-		{
-			fail( "Unable to parse " + e.toString() );
-		}
+		Date date = ( Date ) RdfUtil.getRealValue(
+			RdfUtil.NS_XML_SCHEMA + "time", "12:00:03" );
+		Calendar cal = Calendar.getInstance();
+		cal.setTime( date );
+		assertEquals( 12, cal.get( Calendar.HOUR_OF_DAY ) );
+		assertEquals( 0, cal.get( Calendar.MINUTE ) );
+		assertEquals( 3, cal.get( Calendar.SECOND ) );
+		
+		date = ( Date ) RdfUtil.getRealValue(
+			RdfUtil.NS_XML_SCHEMA + "time", "20:32:12.146" );
+		cal.setTime( date );
+		assertEquals( 20, cal.get( Calendar.HOUR_OF_DAY ) );
+		assertEquals( 32, cal.get( Calendar.MINUTE ) );
+		assertEquals( 12, cal.get( Calendar.SECOND ) );
+		assertEquals( 146, cal.get( Calendar.MILLISECOND ) );
 	}
 }
