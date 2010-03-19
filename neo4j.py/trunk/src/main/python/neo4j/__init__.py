@@ -44,7 +44,7 @@ graphdb.shutdown()
 
 ** Requirements
 
- In order to use Neo4j.py, regardless of wherther Jython or CPython is used
+ In order to use Neo4j.py, regardless of whether Jython or CPython is used
  the system needs to have a JVM installed.
 
  The required Java classes are automatically downloaded and installed as
