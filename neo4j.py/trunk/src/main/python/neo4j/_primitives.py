@@ -73,15 +73,12 @@ class _PropertyDict(object): # NOTE: Should this inherit from dict?
         Returns the number of properties in s."""
         return len( self.keys() )
     
-    def get(self,key,*args,**kwargs):
+    def get(self,key,default=None):
         """<<<s.get(p[,d]) -> s[p] if p in s else d.>>>"""
-        hasDefault, default = getDefaultValueFrom(args,kwargs)
         if key in self:
             return self[key]
-        elif hasDefault:
-            return default
         else:
-            raise KeyError
+            return default
 
     def items(self):
         """s.items() -> list of s's property (key, value) pairs, as 2-tuples."""
@@ -104,16 +101,13 @@ class _PropertyDict(object): # NOTE: Should this inherit from dict?
         """s.itervalues() -> an iterator over the property values in s."""
         return iter(self.__vals())
 
-    def setdefault(self,key,*args,**kwargs):
+    def setdefault(self, key, default=None):
         """s.setdefault(k[,d]) -> s.get(k,d), also set s[k]=d if k not in s"""
-        hasDefault, default = getDefaultValueFrom(args,kwargs)
         if key in self:
             return self[key]
-        elif hasDefault:
+        elif default is not None:
             self[key] = default
-            return default
-        else:
-            raise KeyError
+        return default
 
     def update(self,*args,**more):
         """s.update(E, **F) -> None.  Update s from E and F:
@@ -132,27 +126,6 @@ class _PropertyDict(object): # NOTE: Should this inherit from dict?
                 self[key] = value
         for key,value in more.iteritems():
             self[key] = value
-
-def getDefaultValueFrom(args, kwargs):
-    """Function for finding a default value in var_[kw_]args.
-    Finds a default value. Asserts that there is only one default value.
-    Returns True and the default value if there is a defult value.
-    Returns False and None if there is no default value.
-    (Note that the default value could be None...)"""
-    if not (len(args)+len(kwargs)) in (0,1):
-        raise TypeError("Too many arguments.")
-    elif kwargs and 'defaultValue' not in kwargs:
-        raise TypeError("Unknown argument '%s'" % kwargs.keys()[0])
-    elif args:
-        return True, args[0]
-    elif 'defaultValue' in kwargs:
-        return True, kwargs['defaultValue']
-    elif 'default' in kwargs:
-        return True, kwargs['default']
-    elif 'd' in kwargs:
-        return True, kwargs['d']
-    else:
-        return False, None
 
 
 class Node(_PropertyDict):

@@ -87,6 +87,7 @@ def initialize(backend):
             return bool(self.__pos.isStartNode())
         @property
         def last_relationship(self):
+            if self.is_start: return None
             return Relationship(self.__neo,
                                 self.__pos.lastRelationshipTraversed())
         @property
