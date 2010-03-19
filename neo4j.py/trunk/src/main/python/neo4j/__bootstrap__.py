@@ -49,10 +49,7 @@ def __bootstrap__(bootstrap):
     pyneo = pyneo() # pyneo is a singleton
 
     import sys
-    if sys.version_info >= (3,):
-        from neo4j import _py_3x_ as python_implementation
-    else:
-        from neo4j import _py_2x_ as python_implementation
+    from neo4j import _py_compat as python_implementation
     pyneo.python = python_implementation
 
     #@pyneo
