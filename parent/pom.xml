@@ -47,6 +47,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <ga-id>UA-1192232-15</ga-id>
   </properties>
 
   <build>
@@ -103,6 +104,17 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>org.neo4j.maven.skins</groupId>
+            <artifactId>default-skin</artifactId>
+            <version>1.0.1-SNAPSHOT</version>
+          </dependency>
+        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.apache.felix</groupId>
