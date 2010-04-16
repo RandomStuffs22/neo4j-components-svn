@@ -20,15 +20,41 @@ public class TestIterators
         assertEquals( (Integer) 4, iterator.next() );
         assertFalse( iterator.hasNext() );
     }
-    
+
     @Test
-    public void testRangeIterator()
+    public void testRangeIteratorFromZero()
     {
-        Iterator<Integer> iterator = new RangeIterator( 3, 4 );
+        Iterator<Integer> iterator = new RangeIterator( 3 );
+        assertEquals( (Integer) 0, iterator.next() );
+        assertEquals( (Integer) 1, iterator.next() );
+        assertEquals( (Integer) 2, iterator.next() );
+        assertFalse( iterator.hasNext() );
+    }
+
+    @Test
+    public void testRangeIteratorWithStartEnd()
+    {
+        Iterator<Integer> iterator = new RangeIterator( 3, 6 );
         assertEquals( (Integer) 3, iterator.next() );
         assertEquals( (Integer) 4, iterator.next() );
         assertEquals( (Integer) 5, iterator.next() );
-        assertEquals( (Integer) 6, iterator.next() );
+        assertFalse( iterator.hasNext() );
+    }
+
+    @Test
+    public void testRangeIteratorWithStartEndAndStride()
+    {
+        Iterator<Integer> iterator = new RangeIterator( 3, 9, 2 );
+        assertEquals( (Integer) 3, iterator.next() );
+        assertEquals( (Integer) 5, iterator.next() );
+        assertEquals( (Integer) 7, iterator.next() );
+        assertFalse( iterator.hasNext() );
+
+        iterator = new RangeIterator( 3, 10, 2 );
+        assertEquals( (Integer) 3, iterator.next() );
+        assertEquals( (Integer) 5, iterator.next() );
+        assertEquals( (Integer) 7, iterator.next() );
+        assertEquals( (Integer) 9, iterator.next() );
         assertFalse( iterator.hasNext() );
     }
 }

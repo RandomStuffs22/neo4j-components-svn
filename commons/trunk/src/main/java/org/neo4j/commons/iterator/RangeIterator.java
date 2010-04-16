@@ -1,20 +1,42 @@
 package org.neo4j.commons.iterator;
 
+/**
+ * Iterates over a range, where the start value is inclusive, but the
+ * end value is exclusive.
+ */
 public class RangeIterator extends PrefetchingIterator<Integer>
 {
     private int current;
     private final int end;
+    private final int stride;
     
-    public RangeIterator( int start, int length )
+    public RangeIterator( int end )
+    {
+        this( 0, end );
+    }
+    
+    public RangeIterator( int start, int end )
+    {
+        this( start, end, 1 );
+    }
+    
+    public RangeIterator( int start, int end, int stride )
     {
         this.current = start;
-        this.end = start + length;
+        this.end = end;
+        this.stride = stride;
     }
     
     @Override
     protected Integer fetchNextOrNull()
     {
-        int result = current++;
-        return result < end ? result : null;
+        try
+        {
+            return current < end ? current : null;
+        }
+        finally
+        {
+            current += stride;
+        }
     }
 }

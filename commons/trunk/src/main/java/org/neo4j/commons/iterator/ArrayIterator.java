@@ -13,7 +13,13 @@ public class ArrayIterator<T> extends PrefetchingIterator<T>
     @Override
     protected T fetchNextOrNull()
     {
-        int i = index++;
-        return i < array.length ? array[i] : null;
+        try
+        {
+            return index < array.length ? array[index] : null;
+        }
+        finally
+        {
+            index++;
+        }
     }
 }
