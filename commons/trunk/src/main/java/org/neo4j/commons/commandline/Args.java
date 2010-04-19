@@ -100,7 +100,6 @@ public class Args
                     String key = arg.substring( 0, equalIndex );
                     String value = arg.substring( equalIndex + 1 );
                     map.put( key, value );
-                    System.out.println( "put1:" + key + "=" + value );
                 }
                 else
                 {
@@ -110,13 +109,11 @@ public class Args
                         args[ nextIndex ] : null;
                     value = value == null || isOption( value ) ? null : value;
                     map.put( key, value );
-                    System.out.println( "put2:" + key + "=" + value );
                 }
             }
             else
             {
                 orphans.add( arg );
-                System.out.println( "orphan:" + arg );
             }
         }
     }
