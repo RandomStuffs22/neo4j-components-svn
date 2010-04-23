@@ -482,7 +482,7 @@ public class NioNeoDbPersistenceSource implements PersistenceSource
 
         public int getKeyIdForProperty( int propertyId )
         {
-            throw new RuntimeException( "Not implemented" );
+            return xaCon.getWriteTransaction().getKeyIdForProperty( propertyId );
         }
     }
 

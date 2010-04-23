@@ -1772,4 +1772,14 @@ class WriteTransaction extends XaTransaction
         }
         return false;
     }
+
+    public int getKeyIdForProperty( int propertyId )
+    {
+        PropertyRecord propRecord = getPropertyRecord( propertyId );
+        if ( propRecord == null )
+        {
+            propRecord = getPropertyStore().getLightRecord( propertyId );
+        }
+        return propRecord.getKeyIndexId();
+    }
 }
