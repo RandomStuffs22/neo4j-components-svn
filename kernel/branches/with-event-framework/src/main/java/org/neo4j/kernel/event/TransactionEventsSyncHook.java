@@ -6,6 +6,7 @@ import java.util.List;
 import javax.transaction.Status;
 import javax.transaction.Synchronization;
 
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.neo4j.kernel.impl.core.NodeManager;
@@ -22,39 +23,34 @@ public class TransactionEventsSyncHook<T> implements Synchronization
      * used in afterCompletion.
      */
     private TransactionData transactionData;
+    private final Transaction transaction;
 
     public TransactionEventsSyncHook(
-            NodeManager nodeManager,
+            NodeManager nodeManager, Transaction transaction,
             SynchronizedWriteSet<TransactionEventHandler<T>> transactionEventHandlers )
     {
         this.nodeManager = nodeManager;
+        this.transaction = transaction;
         this.handlers = transactionEventHandlers;
     }
 
     public void beforeCompletion()
     {
-        System.out.println( "beforeCompletion" );
         TransactionData data = null;
-        try
+        data = nodeManager.getTransactionData();
+        for ( TransactionEventHandler<T> handler : this.handlers )
         {
-            data = nodeManager.getTransactionData();
-            for ( TransactionEventHandler<T> handler : this.handlers )
+            try
             {
-                System.out.println( "passing to " + handler );
-                try
-                {
-                    T state = handler.beforeCommit( data );
-                    states.add( new HandlerAndState( handler, state ) );
-                }
-                catch ( Exception e )
-                {
-                    // TODO
-                }
+                T state = handler.beforeCommit( data );
+                states.add( new HandlerAndState( handler, state ) );
             }
-        }
-        catch ( Throwable e )
-        {
-            e.printStackTrace();
+            catch ( Throwable t )
+            {
+                // TODO
+                transaction.failure();
+                throw new RuntimeException( t );
+            }
         }
     }
 

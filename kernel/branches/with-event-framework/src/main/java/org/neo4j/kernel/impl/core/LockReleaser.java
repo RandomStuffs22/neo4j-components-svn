@@ -760,7 +760,6 @@ public class LockReleaser
                 {
                     continue;
                 }
-                result.deleted( rel );
                 List<PropertyEventData> props = 
                     relImpl.getAllCommittedProperties();
                 for ( PropertyEventData data : props )

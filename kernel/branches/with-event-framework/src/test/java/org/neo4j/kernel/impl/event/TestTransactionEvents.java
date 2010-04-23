@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -16,7 +15,6 @@ import org.neo4j.kernel.impl.AbstractNeo4jTestCase;
 
 public class TestTransactionEvents extends AbstractNeo4jTestCase
 {
-    @Ignore
     @Test
     public void testRegisterUnregisterHandlers()
     {
@@ -117,6 +115,7 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
             expectedData.expectedCreatedRelationships.add( rel2 );
 
             node3.setProperty( "name", "Node 3" );
+            expectedData.assignedProperty( node3, "name", "Node 3", null );
 
             newTransaction();
             assertTrue( handler.hasBeenCalled() );
@@ -125,57 +124,60 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
         {
             getGraphDb().unregisterTransactionEventHandler( handler );
         }
+        
+        // Use the above data and modify it, change properties, delete stuff
+        expectedData = new TransactionDataSortOf();
+        handler = new VerifyingTransactionEventHandler( expectedData );
+        getGraphDb().registerTransactionEventHandler( handler );
+        newTransaction();
+        try
+        {
+            Node tempNode = getGraphDb().createNode();
+            Relationship tempRel = tempNode.createRelationshipTo( node1,
+                    RelTypes.TXEVENT );
+            tempNode.setProperty( "something", "Some value" );
+            tempRel.setProperty( "someproperty", 101010 );
+            tempNode.removeProperty( "nothing" );
 
-//        // Use the above data and modify it, change properties, delete stuff
-//        expectedData = new TransactionDataSortOf();
-//        handler = new VerifyingTransactionEventHandler( expectedData );
-//        getGraphDb().registerTransactionEventHandler( handler );
-//        newTransaction();
-//        try
-//        {
-//            Node tempNode = getGraphDb().createNode();
-//            Relationship tempRel = tempNode.createRelationshipTo( node1,
-//                    RelTypes.TXEVENT );
-//            tempNode.setProperty( "something", "Some value" );
-//            tempRel.setProperty( "someproperty", 101010 );
-//            tempNode.removeProperty( "nothing" );
-//
-//            node3.setProperty( "test", "hello" );
-//            node3.setProperty( "name", "No name" );
-//            node3.delete();
-//            expectedData.expectedDeletedNodes.add( node3 );
-//
-//            node1.setProperty( "new name", "A name" );
-//            node1.setProperty( "new name", "A better name" );
-//            expectedData.assignedProperty( node1, "new name", "A better name",
-//                    null );
-//            node1.setProperty( "name", "Nothing" );
-//            node1.setProperty( "name", "Mattias Persson" );
-//            expectedData.assignedProperty( node1, "name", "Mattias Persson",
-//                    "Mattias" );
-//            node1.removeProperty( "counter" );
-//            expectedData.removedProperty( node1, "counter", null, 10 );
-//            node1.removeProperty( "last name" );
-//            node1.setProperty( "last name", "Hi" );
-//            expectedData.assignedProperty( node1, "last name", "Hi", "Persson" );
-//
-//            rel2.delete();
-//            expectedData.expectedDeletedRelationships.add( rel2 );
-//
-//            rel1.removeProperty( "number" );
-//            expectedData.removedProperty( rel1, "number", null, 4.5D );
-//            rel1.setProperty( "description", "Ignored" );
-//            rel1.setProperty( "description", "New" );
-//            expectedData.assignedProperty( rel1, "description", "New",
-//                    "A description" );
-//
-//            tempRel.delete();
-//            tempNode.delete();
-//        }
-//        finally
-//        {
-//            getGraphDb().unregisterTransactionEventHandler( handler );
-//        }
+            node3.setProperty( "test", "hello" );
+            node3.setProperty( "name", "No name" );
+            node3.delete();
+            expectedData.expectedDeletedNodes.add( node3 );
+            expectedData.removedProperty( node3, "name", null, "Node 3" );
+
+            node1.setProperty( "new name", "A name" );
+            node1.setProperty( "new name", "A better name" );
+            expectedData.assignedProperty( node1, "new name", "A better name",
+                    null );
+            node1.setProperty( "name", "Nothing" );
+            node1.setProperty( "name", "Mattias Persson" );
+            expectedData.assignedProperty( node1, "name", "Mattias Persson",
+                    "Mattias" );
+            node1.removeProperty( "counter" );
+            expectedData.removedProperty( node1, "counter", null, 10 );
+            node1.removeProperty( "last name" );
+            node1.setProperty( "last name", "Hi" );
+            expectedData.assignedProperty( node1, "last name", "Hi", "Persson" );
+
+            rel2.delete();
+            expectedData.expectedDeletedRelationships.add( rel2 );
+
+            rel1.removeProperty( "number" );
+            expectedData.removedProperty( rel1, "number", null, 4.5D );
+            rel1.setProperty( "description", "Ignored" );
+            rel1.setProperty( "description", "New" );
+            expectedData.assignedProperty( rel1, "description", "New",
+                    "A description" );
+
+            tempRel.delete();
+            tempNode.delete();
+            
+            newTransaction();
+        }
+        finally
+        {
+            getGraphDb().unregisterTransactionEventHandler( handler );
+        }
     }
 
     private static enum RelTypes implements RelationshipType

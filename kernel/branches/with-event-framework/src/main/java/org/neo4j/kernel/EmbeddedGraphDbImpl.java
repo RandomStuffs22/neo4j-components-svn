@@ -244,28 +244,30 @@ class EmbeddedGraphDbImpl
             return placeboTransaction;
         }
         TransactionManager txManager = graphDbInstance.getTransactionManager();
+        Transaction result = null;
         try
         {
             txManager.begin();
-            registerTransactionEventHookIfNeeded( txManager );
+            result = new TransactionImpl( txManager );
+            registerTransactionEventHookIfNeeded( txManager, result );
         }
         catch ( Exception e )
         {
             throw new TransactionFailureException(
                 "Unable to begin transaction", e );
         }
-        return new TransactionImpl( txManager );
+        return result;
     }
 
     @SuppressWarnings("unchecked")
     private void registerTransactionEventHookIfNeeded(
-            TransactionManager txManager )
+            TransactionManager txManager, Transaction transaction )
             throws SystemException, RollbackException
     {
         if ( !this.transactionEventHandlers.isEmpty() )
         {
             txManager.getTransaction().registerSynchronization(
-                    new TransactionEventsSyncHook( this.nodeManager,
+                    new TransactionEventsSyncHook( this.nodeManager, transaction,
                             this.transactionEventHandlers ) );
         }
     }
@@ -299,7 +301,6 @@ class EmbeddedGraphDbImpl
 
         public void finish()
         {
-            System.out.println( "finish(fake)" );
         }
     }
 
@@ -346,7 +347,6 @@ class EmbeddedGraphDbImpl
 
         public void finish()
         {
-            System.out.println( "finish(real)" );
             try
             {
                 if ( success )
@@ -363,6 +363,10 @@ class EmbeddedGraphDbImpl
                         transactionManager.getTransaction().rollback();
                     }
                 }
+            }
+            catch ( RollbackException e )
+            {
+                throw new TransactionFailureException( "Unable to commit transaction", e );
             }
             catch ( Exception e )
             {
@@ -454,7 +458,6 @@ class EmbeddedGraphDbImpl
     <T> TransactionEventHandler<T> registerTransactionEventHandler(
             TransactionEventHandler<T> handler )
     {
-        System.out.println( "register" );
         this.transactionEventHandlers.add( handler );
         return handler;
     }
@@ -462,7 +465,6 @@ class EmbeddedGraphDbImpl
     <T> TransactionEventHandler<T> unregisterTransactionEventHandler(
             TransactionEventHandler<T> handler )
     {
-        System.out.println( "unregister" );
         return unregisterHandler( this.transactionEventHandlers, handler );
     }
     

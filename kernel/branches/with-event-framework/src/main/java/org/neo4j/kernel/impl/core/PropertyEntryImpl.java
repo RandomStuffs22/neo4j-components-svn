@@ -60,4 +60,11 @@ class PropertyEntryImpl<T extends PropertyContainer>
         }
         return this.value;
     }
+    
+    @Override
+    public String toString()
+    {
+        return "PropertyEntry[entity:" + entity + ", key:" + key + ", value:" + value +
+                ", valueBeforeTx:" + valueBeforeTransaction + "]";
+    }
 }
