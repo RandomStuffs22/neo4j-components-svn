@@ -879,20 +879,17 @@ public class LockReleaser
             TransactionDataImpl result )
     {
         IntArray createdNodes = nodeManager.getCreatedNodes();
-        if ( element != null )
+        for ( int nodeId : createdNodes.getArray() )
         {
-            for ( int nodeId : createdNodes.getArray() )
+            if ( element != null && element.nodes != null )
             {
-                if ( element.nodes != null )
+                CowNodeElement nodeElement = element.nodes.get( nodeId );
+                if ( nodeElement != null && nodeElement.deleted )
                 {
-                    CowNodeElement nodeElement = element.nodes.get( nodeId );
-                    if ( nodeElement != null && nodeElement.deleted )
-                    {
-                        continue;
-                    }
+                    continue;
                 }
-                result.created( new NodeProxy( nodeId, nodeManager ) );
             }
+            result.created( new NodeProxy( nodeId, nodeManager ) );
         }
     }
 }
