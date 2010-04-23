@@ -16,14 +16,15 @@ public class TransactionEventsSyncHook<T> implements Synchronization
     private final SynchronizedWriteSet<TransactionEventHandler<T>> handlers;
     private final List<HandlerAndState> states = new ArrayList<HandlerAndState>();
     private final NodeManager nodeManager;
-    
+
     /**
-     * This is null at construction time, then populated in beforeCompletion
-     * and used in afterCompletion.
+     * This is null at construction time, then populated in beforeCompletion and
+     * used in afterCompletion.
      */
     private TransactionData transactionData;
 
-    public TransactionEventsSyncHook( NodeManager nodeManager,
+    public TransactionEventsSyncHook(
+            NodeManager nodeManager,
             SynchronizedWriteSet<TransactionEventHandler<T>> transactionEventHandlers )
     {
         this.nodeManager = nodeManager;
@@ -37,26 +38,26 @@ public class TransactionEventsSyncHook<T> implements Synchronization
         try
         {
             data = nodeManager.getTransactionData();
+            for ( TransactionEventHandler<T> handler : this.handlers )
+            {
+                System.out.println( "passing to " + handler );
+                try
+                {
+                    T state = handler.beforeCommit( data );
+                    states.add( new HandlerAndState( handler, state ) );
+                }
+                catch ( Exception e )
+                {
+                    // TODO
+                }
+            }
         }
-        catch ( Exception e )
+        catch ( Throwable e )
         {
             e.printStackTrace();
         }
-        for ( TransactionEventHandler<T> handler : this.handlers )
-        {
-            System.out.println( "passing to " + handler );
-            try
-            {
-                T state = handler.beforeCommit( data );
-                states.add( new HandlerAndState( handler, state ) );
-            }
-            catch ( Exception e )
-            {
-                // TODO
-            }
-        }
     }
-    
+
     public void afterCompletion( int status )
     {
         if ( status == Status.STATUS_COMMITTED )
@@ -68,12 +69,12 @@ public class TransactionEventsSyncHook<T> implements Synchronization
         }
         // TODO
     }
-    
+
     private class HandlerAndState
     {
         private final TransactionEventHandler<T> handler;
         private final T state;
-        
+
         public HandlerAndState( TransactionEventHandler<T> handler, T state )
         {
             this.handler = handler;

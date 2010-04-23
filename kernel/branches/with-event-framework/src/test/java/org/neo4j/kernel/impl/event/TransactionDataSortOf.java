@@ -71,6 +71,7 @@ class TransactionDataSortOf
         
         for ( Relationship rel : data.createdRelationships() )
         {
+            System.out.println( "Created rel:" + rel );
             assertTrue( expectedCreatedRelationships.remove( rel ) );
         }
         assertTrue( expectedCreatedRelationships.isEmpty() );
