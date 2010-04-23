@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -16,7 +15,6 @@ import org.neo4j.kernel.impl.AbstractNeo4jTestCase;
 
 public class TestTransactionEvents extends AbstractNeo4jTestCase
 {
-    @Ignore
     @Test
     public void testRegisterUnregisterHandlers()
     {
@@ -73,7 +71,6 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
         getGraphDb().unregisterTransactionEventHandler( handler1 );
     }
 
-    @Ignore
     @Test
     public void shouldGetCorrectTransactionDataUponCommit()
     {

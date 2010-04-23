@@ -852,18 +852,24 @@ public class LockReleaser
             }
             else
             {
-                for ( PropertyData data : nodeElement.propertyAddMap.values() )
+                if ( nodeElement.propertyAddMap != null )
                 {
-                    String key = nodeManager.getKeyForProperty( data.getId() );
-                    Object oldValue = nodeImpl.getCommittedPropertyValue( key );
-                    Object newValue = data.getValue();
-                    result.assignedProperty( node, key, newValue, oldValue );
+                    for ( PropertyData data : nodeElement.propertyAddMap.values() )
+                    {
+                        String key = nodeManager.getKeyForProperty( data.getId() );
+                        Object oldValue = nodeImpl.getCommittedPropertyValue( key );
+                        Object newValue = data.getValue();
+                        result.assignedProperty( node, key, newValue, oldValue );
+                    }
                 }
-                for ( PropertyData data : nodeElement.propertyRemoveMap.values() )
+                if ( nodeElement.propertyRemoveMap != null )
                 {
-                    String key = nodeManager.getKeyForProperty( data.getId() );
-                    Object oldValue = nodeImpl.getCommittedPropertyValue( key );
-                    result.removedProperty( node, key, oldValue );
+                    for ( PropertyData data : nodeElement.propertyRemoveMap.values() )
+                    {
+                        String key = nodeManager.getKeyForProperty( data.getId() );
+                        Object oldValue = nodeImpl.getCommittedPropertyValue( key );
+                        result.removedProperty( node, key, oldValue );
+                    }
                 }
             }
         }
