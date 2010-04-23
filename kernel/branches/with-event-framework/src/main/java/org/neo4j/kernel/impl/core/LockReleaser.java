@@ -730,11 +730,11 @@ public class LockReleaser
     {
         TransactionDataImpl result = new TransactionDataImpl();
         PrimitiveElement element = cowMap.get( getTransaction() );
+        populateCreatedNodes( element, result );
         if ( element == null )
         {
             return result;
         }
-        populateCreatedNodes( element, result );
         if ( element.nodes != null )
         {
             populateNodeRelEvent( element, result );
