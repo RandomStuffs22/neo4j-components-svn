@@ -265,7 +265,8 @@ class EmbeddedGraphDbImpl
         if ( !this.transactionEventHandlers.isEmpty() )
         {
             txManager.getTransaction().registerSynchronization(
-                    new TransactionEventsSyncHook( nodeManager, transactionEventHandlers ) );
+                    new TransactionEventsSyncHook( this.nodeManager,
+                            this.transactionEventHandlers ) );
         }
     }
 
@@ -298,6 +299,7 @@ class EmbeddedGraphDbImpl
 
         public void finish()
         {
+            System.out.println( "finish(fake)" );
         }
     }
 
@@ -344,6 +346,7 @@ class EmbeddedGraphDbImpl
 
         public void finish()
         {
+            System.out.println( "finish(real)" );
             try
             {
                 if ( success )
@@ -451,6 +454,7 @@ class EmbeddedGraphDbImpl
     <T> TransactionEventHandler<T> registerTransactionEventHandler(
             TransactionEventHandler<T> handler )
     {
+        System.out.println( "register" );
         this.transactionEventHandlers.add( handler );
         return handler;
     }
@@ -458,6 +462,7 @@ class EmbeddedGraphDbImpl
     <T> TransactionEventHandler<T> unregisterTransactionEventHandler(
             TransactionEventHandler<T> handler )
     {
+        System.out.println( "unregister" );
         return unregisterHandler( this.transactionEventHandlers, handler );
     }
     

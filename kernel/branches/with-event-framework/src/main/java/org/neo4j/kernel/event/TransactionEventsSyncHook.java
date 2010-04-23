@@ -32,10 +32,19 @@ public class TransactionEventsSyncHook<T> implements Synchronization
 
     public void beforeCompletion()
     {
+        System.out.println( "beforeCompletion" );
         TransactionData data = null;
-//                nodeManager.getTransactionData();
+        try
+        {
+            data = nodeManager.getTransactionData();
+        }
+        catch ( Exception e )
+        {
+            e.printStackTrace();
+        }
         for ( TransactionEventHandler<T> handler : this.handlers )
         {
+            System.out.println( "passing to " + handler );
             try
             {
                 T state = handler.beforeCommit( data );
@@ -57,6 +66,7 @@ public class TransactionEventsSyncHook<T> implements Synchronization
                 state.handler.afterCommit( this.transactionData, state.state );
             }
         }
+        // TODO
     }
     
     private class HandlerAndState

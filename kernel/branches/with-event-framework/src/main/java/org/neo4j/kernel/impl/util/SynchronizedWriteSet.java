@@ -30,7 +30,7 @@ public class SynchronizedWriteSet<T> implements Iterable<T>
         set = newSet;
         return removed;
     }
-
+    
     public Iterator<T> iterator()
     {
         return set.iterator();
