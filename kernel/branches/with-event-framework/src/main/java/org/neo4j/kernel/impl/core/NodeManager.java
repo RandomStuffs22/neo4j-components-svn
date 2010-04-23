@@ -943,8 +943,9 @@ public class NodeManager
         return persistenceManager.isRelationshipCreated( relId );
     }
 
-    public String getKeyForProperty( int id )
+    public String getKeyForProperty( int propertyId )
     {
-        throw new RuntimeException();
+        int keyId = persistenceManager.getKeyIdForProperty( propertyId );
+        return propertyIndexManager.getIndexFor( keyId ).getKey();
     }
 }
