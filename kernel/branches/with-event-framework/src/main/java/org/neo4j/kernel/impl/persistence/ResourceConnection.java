@@ -100,4 +100,6 @@ public interface ResourceConnection
     public boolean isNodeCreated( int nodeId );
 
     public boolean isRelationshipCreated( int relId );
+
+    public int getKeyIdForProperty( int propertyId );
 }

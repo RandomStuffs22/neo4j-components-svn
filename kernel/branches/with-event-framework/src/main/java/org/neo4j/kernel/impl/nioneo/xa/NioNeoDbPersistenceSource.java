@@ -294,6 +294,11 @@ public class NioNeoDbPersistenceSource implements PersistenceSource
         {
             return false;
         }
+
+        public int getKeyIdForProperty( int propertyId )
+        {
+            return readTransaction.getKeyIdForProperty( propertyId );
+        }
     }
 
     private static class NioNeoDbResourceConnection implements
@@ -473,6 +478,11 @@ public class NioNeoDbPersistenceSource implements PersistenceSource
         public boolean isRelationshipCreated( int relId )
         {
             return relConsumer.isRelationshipCreated( relId );
+        }
+
+        public int getKeyIdForProperty( int propertyId )
+        {
+            throw new RuntimeException( "Not implemented" );
         }
     }
 

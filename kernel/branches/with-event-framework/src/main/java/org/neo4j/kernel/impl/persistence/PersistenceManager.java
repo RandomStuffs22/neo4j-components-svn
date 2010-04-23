@@ -338,4 +338,9 @@ public class PersistenceManager
         return getResource().isRelationshipCreated( relId );
     }
 
+    public int getKeyIdForProperty( int propertyId )
+    {
+        return getReadOnlyResource().getKeyIdForProperty( propertyId );
+    }
+
 }
