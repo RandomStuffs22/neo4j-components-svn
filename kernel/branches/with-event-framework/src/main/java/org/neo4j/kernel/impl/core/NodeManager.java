@@ -35,6 +35,7 @@ import org.neo4j.graphdb.ReturnableEvaluator;
 import org.neo4j.graphdb.StopEvaluator;
 import org.neo4j.graphdb.Traverser;
 import org.neo4j.graphdb.Traverser.Order;
+import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.kernel.impl.cache.AdaptiveCacheManager;
 import org.neo4j.kernel.impl.cache.Cache;
 import org.neo4j.kernel.impl.cache.LruCache;
@@ -515,7 +516,7 @@ public class NodeManager
         return relTypeHolder.getRelationshipType( id );
     }
 
-    Relationship getRelForProxy( int relId )
+    RelationshipImpl getRelForProxy( int relId )
     {
         RelationshipImpl relationship = relCache.get( relId );
         if ( relationship != null )
@@ -615,15 +616,18 @@ public class NodeManager
         return newRelationshipMap;
     }
     
-    ArrayMap<Integer,PropertyData> loadProperties( NodeImpl node )
+    ArrayMap<Integer,PropertyData> loadProperties( NodeImpl node, 
+            boolean light )
     {
-        return persistenceManager.loadNodeProperties( (int) node.getId() );
+        return persistenceManager.loadNodeProperties( (int) node.getId(), 
+                light );
     }
 
-    ArrayMap<Integer,PropertyData> loadProperties( RelationshipImpl relationship )
+    ArrayMap<Integer,PropertyData> loadProperties( 
+            RelationshipImpl relationship, boolean light )
     {
         return persistenceManager.loadRelProperties( 
-            (int) relationship.getId() );
+            (int) relationship.getId(), light );
     }
 
     int getNodeMaxCacheSize()
@@ -917,5 +921,30 @@ public class NodeManager
     void addPropertyIndex( PropertyIndexData index )
     {
         propertyIndexManager.addPropertyIndex( index );
+    }
+    
+    public TransactionData getTransactionData()
+    {
+        return lockReleaser.getTransactionData();
+    }
+
+    IntArray getCreatedNodes()
+    {
+        return persistenceManager.getCreatedNodes();
+    }
+
+    boolean nodeCreated( int nodeId )
+    {
+        return persistenceManager.isNodeCreated( nodeId );
+    }
+    
+    boolean relCreated( int relId )
+    {
+        return persistenceManager.isRelationshipCreated( relId );
+    }
+
+    public String getKeyForProperty( int id )
+    {
+        throw new RuntimeException();
     }
 }

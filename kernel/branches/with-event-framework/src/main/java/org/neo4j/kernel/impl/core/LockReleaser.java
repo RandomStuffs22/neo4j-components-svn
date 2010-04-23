@@ -32,6 +32,7 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 
 import org.neo4j.graphdb.NotInTransactionException;
+import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.kernel.impl.nioneo.store.PropertyData;
 import org.neo4j.kernel.impl.nioneo.store.PropertyIndexData;
 import org.neo4j.kernel.impl.nioneo.store.RelationshipTypeData;
@@ -723,5 +724,124 @@ public class LockReleaser
         {
             nodeManager.clearCache();
         }
+    }
+    
+    public TransactionData getTransactionData()
+    {
+        TransactionDataImpl result = new TransactionDataImpl();
+        PrimitiveElement primitiveElement = cowMap.get( getTransaction() );
+        IntArray createdNodes = nodeManager.getCreatedNodes();
+        for ( int nodeId : createdNodes.getArray() )
+        {
+            CowNodeElement nodeElement = primitiveElement.nodes.get( nodeId );
+            if ( nodeElement.deleted )
+            {
+                continue;
+            }
+            result.created( new NodeProxy( nodeId, nodeManager ) );
+        }
+        for ( int nodeId : primitiveElement.nodes.keySet() )
+        {
+            CowNodeElement nodeElement = primitiveElement.nodes.get( nodeId );
+            NodeProxy node = new NodeProxy( nodeId, nodeManager );
+            NodeImpl nodeImpl = nodeManager.getNodeForProxy( nodeId );
+            for ( String type : nodeElement.relationshipAddMap.keySet() )
+            {
+                int[] createdRels = 
+                    nodeElement.relationshipAddMap.get( type ).getArray();
+                for ( int relId: createdRels )
+                {
+                    CowRelElement relElement = 
+                        primitiveElement.relationships.get( relId );
+                    if ( relElement.deleted )
+                    {
+                        continue;
+                    }
+                    result.created( new RelationshipProxy( relId, nodeManager ) );
+                }
+            }
+            for ( String type : nodeElement.relationshipRemoveMap.keySet() )
+            {
+                int[] deletedRels = 
+                    nodeElement.relationshipRemoveMap.get( type ).getArray();
+                for ( int relId: deletedRels )
+                {
+                    if ( nodeManager.relCreated( relId ) )
+                    {
+                        continue;
+                    }
+                    result.deleted( new RelationshipProxy( relId, nodeManager ) );
+                }
+            }
+            
+            if ( nodeElement.deleted )
+            {
+                if ( nodeManager.nodeCreated( nodeId ) )
+                {
+                    continue;
+                }
+                result.deleted( node );
+                List<PropertyEventData> props = 
+                    nodeImpl.getAllCommittedProperties();
+                for ( PropertyEventData data : props )
+                {
+                    result.removedProperty( node, data.getKey(), 
+                            data.getValue() );
+                }
+            }
+            else
+            {
+                for ( PropertyData data : nodeElement.propertyAddMap.values() )
+                {
+                    String key = nodeManager.getKeyForProperty( data.getId() );
+                    Object oldValue = nodeImpl.getCommittedPropertyValue( key );
+                    Object newValue = data.getValue();
+                    result.assignedProperty( node, key, newValue, oldValue );
+                }
+                for ( PropertyData data : nodeElement.propertyRemoveMap.values() )
+                {
+                    String key = nodeManager.getKeyForProperty( data.getId() );
+                    Object oldValue = nodeImpl.getCommittedPropertyValue( key );
+                    result.removedProperty( node, key, oldValue );
+                }
+            }
+        }
+        for ( int relId : primitiveElement.relationships.keySet() )
+        {
+            CowRelElement relElement = primitiveElement.relationships.get( relId );
+            RelationshipProxy rel = new RelationshipProxy( relId, nodeManager );
+            RelationshipImpl relImpl = nodeManager.getRelForProxy( relId );
+            if ( relElement.deleted )
+            {
+                if ( nodeManager.relCreated( relId ) )
+                {
+                    continue;
+                }
+                result.deleted( rel );
+                List<PropertyEventData> props = 
+                    relImpl.getAllCommittedProperties();
+                for ( PropertyEventData data : props )
+                {
+                    result.removedProperty( rel, data.getKey(), data.getValue() );
+                }
+            }
+            else
+            {
+                for ( PropertyData data : relElement.propertyAddMap.values() )
+                {
+                    String key = nodeManager.getKeyForProperty( data.getId() );
+                    Object oldValue = relImpl.getCommittedPropertyValue( key );
+                    Object newValue = data.getValue();
+                    result.assignedProperty( rel, key, newValue, oldValue );
+                }
+                for ( PropertyData data : relElement.propertyRemoveMap.values() )
+                {
+                    String key = nodeManager.getKeyForProperty( data.getId() );
+                    Object oldValue = relImpl.getCommittedPropertyValue( key );
+                    result.removedProperty( rel, key, oldValue );
+                }
+            }
+        }
+        return result;
     }
 }
