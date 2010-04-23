@@ -257,6 +257,7 @@ class EmbeddedGraphDbImpl
         return new TransactionImpl( txManager );
     }
 
+    @SuppressWarnings("unchecked")
     private void registerTransactionEventHookIfNeeded(
             TransactionManager txManager )
             throws SystemException, RollbackException
@@ -264,7 +265,7 @@ class EmbeddedGraphDbImpl
         if ( !this.transactionEventHandlers.isEmpty() )
         {
             txManager.getTransaction().registerSynchronization(
-                    new TransactionEventsSyncHook( this.transactionEventHandlers ) );
+                    new TransactionEventsSyncHook( nodeManager, transactionEventHandlers ) );
         }
     }
 
