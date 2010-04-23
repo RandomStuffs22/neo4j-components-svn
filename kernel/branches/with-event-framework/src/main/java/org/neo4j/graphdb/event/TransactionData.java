@@ -3,9 +3,12 @@ package org.neo4j.graphdb.event;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 
-
 /**
  * Represents the data that has changed during the course of one transaction.
+ * This data represents a diff of what has happened in the transaction vs how
+ * it was before the transaction. This implies f.ex. that a node which is
+ * created, modified and then deleted in the same transaction won't be seen
+ * in the transaction data at all.
  *
  * @author Tobias Ivarsson
  */
