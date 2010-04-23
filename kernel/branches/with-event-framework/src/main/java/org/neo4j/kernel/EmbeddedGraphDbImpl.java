@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -41,9 +43,13 @@ import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
+import org.neo4j.graphdb.event.KernelEventHandler;
+import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.neo4j.kernel.ShellService.ShellNotAvailableException;
+import org.neo4j.kernel.event.TransactionEventsSyncHook;
 import org.neo4j.kernel.impl.core.NodeManager;
 import org.neo4j.kernel.impl.transaction.TransactionFailureException;
+import org.neo4j.kernel.impl.util.SynchronizedWriteSet;
 
 class EmbeddedGraphDbImpl
 {
@@ -55,6 +61,11 @@ class EmbeddedGraphDbImpl
     private final GraphDatabaseService graphDbService;
     private final NodeManager nodeManager;
     private final String storeDir;
+    
+    private final SynchronizedWriteSet<KernelEventHandler> kernelEventHandlers =
+            new SynchronizedWriteSet<KernelEventHandler>();
+    private final SynchronizedWriteSet<TransactionEventHandler<?>> transactionEventHandlers =
+            new SynchronizedWriteSet<TransactionEventHandler<?>>();
 
     /**
      * Creates an embedded {@link GraphDatabaseService} with a store located in
@@ -236,6 +247,7 @@ class EmbeddedGraphDbImpl
         try
         {
             txManager.begin();
+            registerTransactionEventHookIfNeeded( txManager );
         }
         catch ( Exception e )
         {
@@ -243,6 +255,17 @@ class EmbeddedGraphDbImpl
                 "Unable to begin transaction", e );
         }
         return new TransactionImpl( txManager );
+    }
+
+    private void registerTransactionEventHookIfNeeded(
+            TransactionManager txManager )
+            throws SystemException, RollbackException
+    {
+        if ( !this.transactionEventHandlers.isEmpty() )
+        {
+            txManager.getTransaction().registerSynchronization(
+                    new TransactionEventsSyncHook( this.transactionEventHandlers ) );
+        }
     }
 
     private static class PlaceboTransaction implements Transaction
@@ -422,5 +445,50 @@ class EmbeddedGraphDbImpl
         {
             throw new UnsupportedOperationException();
         }
+    }
+    
+    <T> TransactionEventHandler<T> registerTransactionEventHandler(
+            TransactionEventHandler<T> handler )
+    {
+        this.transactionEventHandlers.add( handler );
+        return handler;
+    }
+    
+    <T> TransactionEventHandler<T> unregisterTransactionEventHandler(
+            TransactionEventHandler<T> handler )
+    {
+        return unregisterHandler( this.transactionEventHandlers, handler );
+    }
+    
+    KernelEventHandler registerKernelEventHandler(
+            KernelEventHandler handler )
+    {
+        this.kernelEventHandlers.add( handler );
+        return handler;
+    }
+    
+    KernelEventHandler unregisterKernelEventHandler(
+            KernelEventHandler handler )
+    {
+        return unregisterHandler( this.kernelEventHandlers, handler );
+    }
+    
+    private <T> T unregisterHandler( SynchronizedWriteSet<?> setOfHandlers, T handler )
+    {
+        if ( !setOfHandlers.remove( handler ) )
+        {
+            throw new IllegalStateException( handler + " isn't registered" );
+        }
+        return handler;
+    }
+    
+    SynchronizedWriteSet<KernelEventHandler> getKernelEventHandlers()
+    {
+        return this.kernelEventHandlers;
+    }
+    
+    SynchronizedWriteSet<TransactionEventHandler<?>> getTransactionEventHandlers()
+    {
+        return this.transactionEventHandlers;
     }
 }

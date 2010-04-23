@@ -22,9 +22,8 @@ package org.neo4j.kernel;
 import java.util.Map;
 
 import org.neo4j.kernel.impl.cache.AdaptiveCacheManager;
-import org.neo4j.kernel.impl.core.LockReleaser;
 import org.neo4j.kernel.impl.core.GraphDbModule;
-import org.neo4j.kernel.impl.event.EventModule;
+import org.neo4j.kernel.impl.core.LockReleaser;
 import org.neo4j.kernel.impl.persistence.IdGeneratorModule;
 import org.neo4j.kernel.impl.persistence.PersistenceModule;
 import org.neo4j.kernel.impl.transaction.LockManager;
@@ -35,7 +34,7 @@ import org.neo4j.kernel.impl.transaction.TxModule;
  */
 public class Config
 {
-    private EventModule eventModule;
+//    private EventModule eventModule;
     private AdaptiveCacheManager cacheManager;
     private TxModule txModule;
     private LockManager lockManager;
@@ -75,7 +74,7 @@ public class Config
             backupSlave = false;
         }
         params.put( "read_only", readOnly );
-        eventModule = new EventModule();
+//        eventModule = new EventModule();
         cacheManager = new AdaptiveCacheManager();
         if ( !readOnly )
         {
@@ -110,10 +109,10 @@ public class Config
         return create;
     }
 
-    public EventModule getEventModule()
-    {
-        return eventModule;
-    }
+//    public EventModule getEventModule()
+//    {
+//        return eventModule;
+//    }
 
     public TxModule getTxModule()
     {

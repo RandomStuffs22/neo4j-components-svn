@@ -104,12 +104,19 @@ class GraphDbInstance
             throw new IllegalStateException( "Neo4j instance already started" );
         }
         Map<Object, Object> params = getDefaultParams();
+        boolean useMemoryMapped = true;
+        if ( "false".equals( params.get( "use_memory_mapped_buffers" ) ) )
+        {
+            useMemoryMapped = false;
+        }
+        storeDir = FileUtils.fixSeparatorsInPath( storeDir );
+        new AutoConfigurator( storeDir, useMemoryMapped ).configure( params );
         for ( Map.Entry<String, String> entry : stringParams.entrySet() )
         {
             params.put( entry.getKey(), entry.getValue() );
         }
         config = new Config( storeDir, params );
-        storeDir = FileUtils.fixSeparatorsInPath( storeDir );
+
         String separator = System.getProperty( "file.separator" );
         String store = storeDir + separator + "neostore";
         params.put( "store_dir", storeDir );
@@ -150,14 +157,14 @@ class GraphDbInstance
         config.setPersistenceSource( DEFAULT_DATA_SOURCE_NAME, create );
         config.getIdGeneratorModule().setPersistenceSourceInstance(
                 persistenceSource );
-        config.getEventModule().init();
+//        config.getEventModule().init();
         config.getTxModule().init();
         config.getPersistenceModule().init();
         persistenceSource.init();
         config.getIdGeneratorModule().init();
         config.getGraphDbModule().init();
 
-        config.getEventModule().start();
+//        config.getEventModule().start();
         config.getTxModule().start();
         config.getPersistenceModule().start(
                 config.getTxModule().getTxManager(), persistenceSource );
@@ -177,6 +184,20 @@ class GraphDbInstance
 //                    "lucene-fulltext" );
 //            luceneFulltext = null;
 //        }
+        if ( "true".equals( params.get( "dump_configuration" ) ) )
+        {
+            for ( Object key : params.keySet() )
+            {
+                if ( key instanceof String )
+                {
+                    Object value = params.get( key );
+                    if ( value instanceof String )
+                    {
+                        System.out.println( key + "=" + value );
+                    }
+                }
+            }
+        }
         started = true;
     }
 
@@ -234,13 +255,13 @@ class GraphDbInstance
             persistenceSource.stop();
             config.getPersistenceModule().stop();
             config.getTxModule().stop();
-            config.getEventModule().stop();
+//            config.getEventModule().stop();
             config.getGraphDbModule().destroy();
             config.getIdGeneratorModule().destroy();
             persistenceSource.destroy();
             config.getPersistenceModule().destroy();
             config.getTxModule().destroy();
-            config.getEventModule().destroy();
+//            config.getEventModule().destroy();
         }
         started = false;
     }
