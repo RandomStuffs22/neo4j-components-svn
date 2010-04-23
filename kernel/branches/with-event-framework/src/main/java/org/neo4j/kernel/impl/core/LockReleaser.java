@@ -816,7 +816,11 @@ public class LockReleaser
                         {
                             continue;
                         }
-                        result.created( new RelationshipProxy( relId, nodeManager ) );
+                        RelationshipProxy rel = new RelationshipProxy( relId, nodeManager );
+                        if ( rel.getStartNode().getId() == nodeId )
+                        {
+                            result.created( new RelationshipProxy( relId, nodeManager ) );
+                        }
                     }
                 }
             }
@@ -833,7 +837,11 @@ public class LockReleaser
                         {
                             continue;
                         }
-                        result.deleted( new RelationshipProxy( relId, nodeManager ) );
+                        RelationshipProxy rel = new RelationshipProxy( relId, nodeManager );
+                        if ( rel.getStartNode().getId() == nodeId )
+                        {
+                            result.deleted( new RelationshipProxy( relId, nodeManager ) );
+                        }
                     }
                 }
             }
