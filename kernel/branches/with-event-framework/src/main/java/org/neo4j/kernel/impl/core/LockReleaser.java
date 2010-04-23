@@ -805,10 +805,11 @@ public class LockReleaser
             {
                 for ( String type : nodeElement.relationshipAddMap.keySet() )
                 {
-                    int[] createdRels = 
-                        nodeElement.relationshipAddMap.get( type ).getArray();
-                    for ( int relId: createdRels )
+                    IntArray createdRels = 
+                        nodeElement.relationshipAddMap.get( type );
+                    for ( int i = 0; i < createdRels.length(); i++ )
                     {
+                        int relId = createdRels.get( i );
                         CowRelElement relElement = 
                             element.relationships.get( relId );
                         if ( relElement != null && relElement.deleted )
@@ -823,10 +824,11 @@ public class LockReleaser
             {
                 for ( String type : nodeElement.relationshipRemoveMap.keySet() )
                 {
-                    int[] deletedRels = 
-                        nodeElement.relationshipRemoveMap.get( type ).getArray();
-                    for ( int relId: deletedRels )
+                    IntArray deletedRels = 
+                        nodeElement.relationshipRemoveMap.get( type );
+                    for ( int i = 0; i < deletedRels.length(); i++ )
                     {
+                        int relId = deletedRels.get( i );
                         if ( nodeManager.relCreated( relId ) )
                         {
                             continue;
@@ -879,8 +881,9 @@ public class LockReleaser
             TransactionDataImpl result )
     {
         IntArray createdNodes = nodeManager.getCreatedNodes();
-        for ( int nodeId : createdNodes.getArray() )
+        for ( int i = 0; i < createdNodes.length(); i++ )
         {
+            int nodeId = createdNodes.get( i );
             if ( element != null && element.nodes != null )
             {
                 CowNodeElement nodeElement = element.nodes.get( nodeId );
