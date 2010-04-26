@@ -76,7 +76,7 @@ public class TestKernelEvents
     @Test
     public void testShutdownEvents()
     {
-        GraphDatabaseService graphDb = new EmbeddedGraphDatabase( "taget/var/neodb" );
+        GraphDatabaseService graphDb = new EmbeddedGraphDatabase( "target/var/neodb" );
         DummyKernelEventHandler handler1 = new DummyKernelEventHandler( RESOURCE1 )
         {
             public ExecutionOrder orderComparedTo( KernelEventHandler other )
