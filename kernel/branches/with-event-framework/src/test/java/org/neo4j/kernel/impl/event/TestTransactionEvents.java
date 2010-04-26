@@ -77,6 +77,24 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
         assertNotNull( handler1.receivedTransactionData );
         getGraphDb().unregisterTransactionEventHandler( handler1 );
     }
+    
+    @Test
+    public void makeSureHandlersCantBeRegisteredTwice()
+    {
+        commit();
+        DummyTransactionEventHandler<Object> handler =
+                new DummyTransactionEventHandler<Object>( null );
+        getGraphDb().registerTransactionEventHandler( handler );
+        getGraphDb().registerTransactionEventHandler( handler );
+        newTransaction();
+        commit();
+        
+        assertEquals( 0, handler.beforeCommit );
+        assertEquals( 1, handler.afterCommit );
+        assertNull( handler.afterRollback );
+        
+        getGraphDb().unregisterTransactionEventHandler( handler );
+    }
 
     @Test
     public void shouldGetCorrectTransactionDataUponCommit()
