@@ -5,12 +5,13 @@ import org.neo4j.graphdb.Relationship;
 
 /**
  * Represents the data that has changed during the course of one transaction.
- * This data represents a diff of what has happened in the transaction vs how
- * it was before the transaction. This implies f.ex. that a node which is
- * created, modified and then deleted in the same transaction won't be seen
+ * It consists of what has happened in the transaction compared to how
+ * it was before the transaction started. This implies f.ex. that a node which
+ * is created, modified and then deleted in the same transaction won't be seen
  * in the transaction data at all.
  *
  * @author Tobias Ivarsson
+ * @author Mattias Persson
  */
 public interface TransactionData
 {
@@ -29,13 +30,11 @@ public interface TransactionData
     Iterable<Node> deletedNodes();
 
     /**
-     * Get the properties that had a value assigned on a node during the
-     * transaction. If the property had a value on that node before the
-     * transaction started the previous value will be returned by
-     * {@link #removedNodeProperties()}. All the properties of nodes created
+     * Get the properties that had a value assigned or overwritten on a node
+     * during the transaction. All the properties of nodes created
      * during the transaction will be returned by this method as well. Only the
-     * values that are present at the end of the transaction will be returned by
-     * this method, all previously assigned values of properties that have been
+     * values that are present at the end of the transaction will be returned,
+     * whereas all previously assigned values of properties that have been
      * assigned multiple times during the transaction will not be returned.
      *
      * @return all properties that have been assigned on nodes.
@@ -52,7 +51,9 @@ public interface TransactionData
      * previous values of properties that have been assigned multiple times
      * during the transaction will not be returned. This is also true for
      * properties that had no value before the transaction, was assigned during
-     * the transaction, and then removed during the same transaction.
+     * the transaction, and then removed during the same transaction. Deleting
+     * a node will cause all its currently assigned properties to be added to
+     * this list as well.
      *
      * @return all properties that have been removed from nodes.
      */
@@ -98,7 +99,8 @@ public interface TransactionData
      * multiple times during the transaction will not be returned. This is also
      * true for properties that had no value before the transaction, was
      * assigned during the transaction, and then removed during the same
-     * transaction.
+     * transaction. Deleting a relationship will cause all its currently
+     * assigned properties to be added to this list as well.
      *
      * @return all properties that have been removed from relationships.
      */

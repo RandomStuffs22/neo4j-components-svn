@@ -23,14 +23,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.Serializable;
 import java.rmi.RemoteException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Logger;
 
 import javax.transaction.RollbackException;
@@ -47,9 +51,9 @@ import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.neo4j.kernel.ShellService.ShellNotAvailableException;
 import org.neo4j.kernel.event.TransactionEventsSyncHook;
+import org.neo4j.kernel.impl.core.KernelPanicEventGenerator;
 import org.neo4j.kernel.impl.core.NodeManager;
 import org.neo4j.kernel.impl.transaction.TransactionFailureException;
-import org.neo4j.kernel.impl.util.SynchronizedWriteSet;
 
 class EmbeddedGraphDbImpl
 {
@@ -62,10 +66,12 @@ class EmbeddedGraphDbImpl
     private final NodeManager nodeManager;
     private final String storeDir;
     
-    private final SynchronizedWriteSet<KernelEventHandler> kernelEventHandlers =
-            new SynchronizedWriteSet<KernelEventHandler>();
-    private final SynchronizedWriteSet<TransactionEventHandler<?>> transactionEventHandlers =
-            new SynchronizedWriteSet<TransactionEventHandler<?>>();
+    private final List<KernelEventHandler> kernelEventHandlers =
+            new CopyOnWriteArrayList<KernelEventHandler>();
+    private final Collection<TransactionEventHandler<?>> transactionEventHandlers =
+            new CopyOnWriteArraySet<TransactionEventHandler<?>>();
+    private final KernelPanicEventGenerator kernelPanicEventGenerator =
+            new KernelPanicEventGenerator( kernelEventHandlers );
 
     /**
      * Creates an embedded {@link GraphDatabaseService} with a store located in
@@ -172,11 +178,17 @@ class EmbeddedGraphDbImpl
 
     public void shutdown()
     {
+        if ( graphDbInstance.started() )
+        {
+            sendShutdownEvent();
+        }
+        
         if ( this.shellService != null )
         {
             try
             {
                 this.shellService.shutdown();
+                this.shellService = null;
             }
             catch ( Throwable t )
             {
@@ -184,6 +196,14 @@ class EmbeddedGraphDbImpl
             }
         }
         graphDbInstance.shutdown();
+    }
+
+    private void sendShutdownEvent()
+    {
+        for ( KernelEventHandler handler : this.kernelEventHandlers )
+        {
+            handler.beforeShutdown();
+        }
     }
 
     public boolean enableRemoteShell()
@@ -471,6 +491,29 @@ class EmbeddedGraphDbImpl
     KernelEventHandler registerKernelEventHandler(
             KernelEventHandler handler )
     {
+        if ( this.kernelEventHandlers.contains( handler ) )
+        {
+            return handler;
+        }
+        
+        // Some algo for putting it in the right place
+        for ( KernelEventHandler registeredHandler : this.kernelEventHandlers )
+        {
+            KernelEventHandler.ExecutionOrder order =
+                    handler.orderComparedTo( registeredHandler );
+            int index = this.kernelEventHandlers.indexOf( registeredHandler );
+            if ( order == KernelEventHandler.ExecutionOrder.BEFORE )
+            {
+                this.kernelEventHandlers.add( index, handler );
+                return handler;
+            }
+            else if ( order == KernelEventHandler.ExecutionOrder.AFTER )
+            {
+                this.kernelEventHandlers.add( index + 1, handler );
+                return handler;
+            }
+        }
+        
         this.kernelEventHandlers.add( handler );
         return handler;
     }
@@ -481,22 +524,12 @@ class EmbeddedGraphDbImpl
         return unregisterHandler( this.kernelEventHandlers, handler );
     }
     
-    private <T> T unregisterHandler( SynchronizedWriteSet<?> setOfHandlers, T handler )
+    private <T> T unregisterHandler( Collection<?> setOfHandlers, T handler )
     {
         if ( !setOfHandlers.remove( handler ) )
         {
             throw new IllegalStateException( handler + " isn't registered" );
         }
         return handler;
-    }
-    
-    SynchronizedWriteSet<KernelEventHandler> getKernelEventHandlers()
-    {
-        return this.kernelEventHandlers;
-    }
-    
-    SynchronizedWriteSet<TransactionEventHandler<?>> getTransactionEventHandlers()
-    {
-        return this.transactionEventHandlers;
     }
 }

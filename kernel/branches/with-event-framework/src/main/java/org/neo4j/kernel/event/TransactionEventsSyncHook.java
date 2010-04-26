@@ -1,6 +1,7 @@
 package org.neo4j.kernel.event;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.transaction.Status;
@@ -10,11 +11,10 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.neo4j.kernel.impl.core.NodeManager;
-import org.neo4j.kernel.impl.util.SynchronizedWriteSet;
 
 public class TransactionEventsSyncHook<T> implements Synchronization
 {
-    private final SynchronizedWriteSet<TransactionEventHandler<T>> handlers;
+    private final Collection<TransactionEventHandler<T>> handlers;
     private final NodeManager nodeManager;
     private final Transaction transaction;
 
@@ -27,7 +27,7 @@ public class TransactionEventsSyncHook<T> implements Synchronization
 
     public TransactionEventsSyncHook(
             NodeManager nodeManager, Transaction transaction,
-            SynchronizedWriteSet<TransactionEventHandler<T>> transactionEventHandlers )
+            Collection<TransactionEventHandler<T>> transactionEventHandlers )
     {
         this.nodeManager = nodeManager;
         this.transaction = transaction;
