@@ -2,8 +2,12 @@ package org.neo4j.kernel.impl.event;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Test;
 import org.neo4j.graphdb.Node;
@@ -12,6 +16,7 @@ import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.neo4j.kernel.impl.AbstractNeo4jTestCase;
+import org.neo4j.kernel.impl.transaction.TransactionFailureException;
 
 public class TestTransactionEvents extends AbstractNeo4jTestCase
 {
@@ -65,7 +70,9 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
         getGraphDb().registerTransactionEventHandler( handler1 );
         newTransaction();
         commit();
-        assertTrue( handler1.committed );
+        assertNotNull( handler1.beforeCommit );
+        assertNotNull( handler1.afterCommit );
+        assertNull( handler1.afterRollback );
         assertEquals( value1, handler1.receivedState );
         assertNotNull( handler1.receivedTransactionData );
         getGraphDb().unregisterTransactionEventHandler( handler1 );
@@ -179,10 +186,116 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
             getGraphDb().unregisterTransactionEventHandler( handler );
         }
     }
+    
+    @Test
+    public void makeSureBeforeAfterAreCalledCorrectly()
+    {
+        commit();
+        
+        List<TransactionEventHandler<Object>> handlers =
+                new ArrayList<TransactionEventHandler<Object>>(); 
+        handlers.add( new FailingEventHandler<Object>(
+                new DummyTransactionEventHandler<Object>( null ), false ) );
+        handlers.add( new FailingEventHandler<Object>(
+                new DummyTransactionEventHandler<Object>( null ), false ) );
+        handlers.add( new FailingEventHandler<Object>(
+                new DummyTransactionEventHandler<Object>( null ), true ) );
+        handlers.add( new FailingEventHandler<Object>(
+                new DummyTransactionEventHandler<Object>( null ), false ) );
+        for ( TransactionEventHandler<Object> handler : handlers )
+        {
+            getGraphDb().registerTransactionEventHandler( handler );
+        }
+        
+        try
+        {
+            newTransaction();
+            try
+            {
+                commit();
+                fail( "Should fail commit" );
+            }
+            catch ( TransactionFailureException e )
+            {
+                // OK
+            }
+            verifyHandlerCalls( handlers, false );
+            
+            getGraphDb().unregisterTransactionEventHandler( handlers.remove( 2 ) );
+            for ( TransactionEventHandler<Object> handler : handlers )
+            {
+                ((DummyTransactionEventHandler<Object>) ((FailingEventHandler<Object>)handler).source).reset();
+            }
+            newTransaction();
+            commit();
+            verifyHandlerCalls( handlers, true );
+        }
+        finally
+        {
+            for ( TransactionEventHandler<Object> handler : handlers )
+            {
+                getGraphDb().unregisterTransactionEventHandler( handler );
+            }
+        }
+    }
+    
+    private void verifyHandlerCalls(
+            List<TransactionEventHandler<Object>> handlers, boolean txSuccess )
+    {
+        for ( TransactionEventHandler<Object> handler : handlers )
+        {
+            DummyTransactionEventHandler<Object> realHandler =
+                    (DummyTransactionEventHandler<Object>) ((FailingEventHandler<Object>) handler).source;
+            if ( txSuccess )
+            {
+                assertEquals( 0, realHandler.beforeCommit );
+                assertEquals( 1, realHandler.afterCommit );
+            }
+            else
+            {
+                if ( realHandler.counter > 0 )
+                {
+                    assertEquals( 0, realHandler.beforeCommit );
+                    assertEquals( 1, realHandler.afterRollback );
+                }
+            }
+        }
+    }
 
     private static enum RelTypes implements RelationshipType
     {
         TXEVENT
+    }
+    
+    private static class FailingEventHandler<T> implements TransactionEventHandler<T>
+    {
+        private final TransactionEventHandler<T> source;
+        private final boolean willFail;
+
+        public FailingEventHandler( TransactionEventHandler<T> source, boolean willFail )
+        {
+            this.source = source;
+            this.willFail = willFail;
+        }
+        
+        public void afterCommit( TransactionData data, T state )
+        {
+            source.afterCommit( data, state );
+        }
+
+        public void afterRollback( TransactionData data, T state )
+        {
+            source.afterRollback( data, state );
+        }
+
+        public T beforeCommit( TransactionData data ) throws Exception
+        {
+            if ( willFail )
+            {
+                throw new Exception( "Just failing commit, that's all" );
+            }
+            return source.beforeCommit( data );
+        }
     }
 
     private static class DummyTransactionEventHandler<T> implements
@@ -191,7 +304,8 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
         private final T object;
         private TransactionData receivedTransactionData;
         private T receivedState;
-        private Boolean committed;
+        private int counter;
+        private Integer beforeCommit, afterCommit, afterRollback;
 
         public DummyTransactionEventHandler( T object )
         {
@@ -201,19 +315,34 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
         public void afterCommit( TransactionData data, T state )
         {
             this.receivedState = state;
-            this.committed = true;
+            this.afterCommit = counter++;
         }
 
         public void afterRollback( TransactionData data, T state )
         {
             this.receivedState = state;
-            this.committed = false;
+            this.afterRollback = counter++;
         }
 
         public T beforeCommit( TransactionData data ) throws Exception
         {
             this.receivedTransactionData = data;
+            this.beforeCommit = counter++;
+            if ( this.beforeCommit == 2 )
+            {
+                new Exception( "blabla" ).printStackTrace();
+            }
             return object;
+        }
+        
+        void reset()
+        {
+            receivedTransactionData = null;
+            receivedState = null;
+            counter = 0;
+            beforeCommit = null;
+            afterCommit = null;
+            afterRollback = null;
         }
     }
 }

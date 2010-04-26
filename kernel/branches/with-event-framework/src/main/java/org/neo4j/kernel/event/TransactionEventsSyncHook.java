@@ -15,15 +15,15 @@ import org.neo4j.kernel.impl.util.SynchronizedWriteSet;
 public class TransactionEventsSyncHook<T> implements Synchronization
 {
     private final SynchronizedWriteSet<TransactionEventHandler<T>> handlers;
-    private final List<HandlerAndState> states = new ArrayList<HandlerAndState>();
     private final NodeManager nodeManager;
+    private final Transaction transaction;
 
     /**
      * This is null at construction time, then populated in beforeCompletion and
      * used in afterCompletion.
      */
+    private List<HandlerAndState> states;
     private TransactionData transactionData;
-    private final Transaction transaction;
 
     public TransactionEventsSyncHook(
             NodeManager nodeManager, Transaction transaction,
@@ -38,6 +38,7 @@ public class TransactionEventsSyncHook<T> implements Synchronization
     {
         TransactionData data = null;
         data = nodeManager.getTransactionData();
+        states = new ArrayList<HandlerAndState>();
         for ( TransactionEventHandler<T> handler : this.handlers )
         {
             try
@@ -47,8 +48,12 @@ public class TransactionEventsSyncHook<T> implements Synchronization
             }
             catch ( Throwable t )
             {
-                // TODO
+                // TODO Do something more than calling failure and
+                // throw exception?
                 transaction.failure();
+                
+                // This will cause the transaction to throw a
+                // TransactionFailureException
                 throw new RuntimeException( t );
             }
         }
@@ -63,7 +68,17 @@ public class TransactionEventsSyncHook<T> implements Synchronization
                 state.handler.afterCommit( this.transactionData, state.state );
             }
         }
-        // TODO
+        else if ( status == Status.STATUS_ROLLEDBACK )
+        {
+            for ( HandlerAndState state : this.states )
+            {
+                state.handler.afterRollback( this.transactionData, state.state );
+            }
+        }
+        else
+        {
+            throw new RuntimeException( "Unknown status " + status );
+        }
     }
 
     private class HandlerAndState

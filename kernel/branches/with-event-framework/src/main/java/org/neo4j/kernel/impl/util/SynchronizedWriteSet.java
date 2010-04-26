@@ -1,8 +1,8 @@
 package org.neo4j.kernel.impl.util;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.Set;
 
 /**
  * Use when you want synchronized modification but snapshots to read,
@@ -13,31 +13,42 @@ import java.util.Set;
  */
 public class SynchronizedWriteSet<T> implements Iterable<T>
 {
-    private Set<T> set = new HashSet<T>();
+    private Collection<T> collection = newCollection();
+    
+    private static <R> Collection<R> newCollection()
+    {
+        return new ArrayList<R>();
+    }
     
     public synchronized boolean add( T item )
     {
-        Set<T> newSet = new HashSet<T>( set );
-        boolean added = newSet.add( item );
-        set = newSet;
+        Collection<T> newCollection = newCollection();
+        newCollection.addAll( collection );
+        boolean added = false;
+        if ( !newCollection.contains( item ) )
+        {
+            added = newCollection.add( item );
+        }
+        collection = newCollection;
         return added;
     }
     
     public synchronized boolean remove( Object item )
     {
-        Set<T> newSet = new HashSet<T>( set );
-        boolean removed = newSet.remove( item );
-        set = newSet;
+        Collection<T> newCollection = newCollection();
+        newCollection.addAll( collection );
+        boolean removed = newCollection.remove( item );
+        collection = newCollection;
         return removed;
     }
     
     public Iterator<T> iterator()
     {
-        return set.iterator();
+        return collection.iterator();
     }
     
     public boolean isEmpty()
     {
-        return set.isEmpty();
+        return collection.isEmpty();
     }
 }
