@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.neo4j.kernel.impl.cache.AdaptiveCacheManager;
 import org.neo4j.kernel.impl.core.GraphDbModule;
+import org.neo4j.kernel.impl.core.KernelPanicEventGenerator;
 import org.neo4j.kernel.impl.core.LockReleaser;
 import org.neo4j.kernel.impl.persistence.IdGeneratorModule;
 import org.neo4j.kernel.impl.persistence.PersistenceModule;
@@ -46,12 +47,15 @@ public class Config
     private GraphDbModule graphDbModule;
     private String storeDir;
     private final Map<Object, Object> params;
+    
+    private final KernelPanicEventGenerator kpe;
 
     private final boolean readOnly;
     private final boolean backupSlave;
     
-    Config( String storeDir, Map<Object, Object> params )
+    Config( String storeDir, Map<Object, Object> params, KernelPanicEventGenerator kpe )
     {
+        this.kpe = kpe;
         this.storeDir = storeDir;
         this.params = params;
         String readOnlyStr = (String) params.get( "read_only" );
@@ -78,11 +82,11 @@ public class Config
         cacheManager = new AdaptiveCacheManager();
         if ( !readOnly )
         {
-            txModule = new TxModule( this.storeDir );
+            txModule = new TxModule( this.storeDir, kpe );
         }
         else
         {
-            txModule = new TxModule( true );
+            txModule = new TxModule( true, kpe );
         }
         lockManager = new LockManager( txModule.getTxManager() );
         lockReleaser = new LockReleaser( lockManager, txModule.getTxManager() );

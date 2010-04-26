@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.transaction.TransactionManager;
 
 import org.neo4j.graphdb.RelationshipType;
+import org.neo4j.kernel.impl.core.KernelPanicEventGenerator;
 import org.neo4j.kernel.impl.core.LockReleaser;
 import org.neo4j.kernel.impl.nioneo.xa.NioNeoDbPersistenceSource;
 import org.neo4j.kernel.impl.transaction.LockManager;
@@ -64,9 +65,9 @@ class GraphDbInstance
         return config;
     }
 
-    public void start()
+    public void start( KernelPanicEventGenerator kpe )
     {
-        start( new HashMap<String, String>() );
+        start( new HashMap<String, String>(), kpe );
     }
 
     private Map<Object, Object> getDefaultParams()
@@ -97,7 +98,8 @@ class GraphDbInstance
      * @param configuration parameters
      * @throws StartupFailedException if unable to start
      */
-    public synchronized void start( Map<String, String> stringParams )
+    public synchronized void start( Map<String, String> stringParams, 
+            KernelPanicEventGenerator kpe )
     {
         if ( started )
         {
@@ -115,7 +117,7 @@ class GraphDbInstance
         {
             params.put( entry.getKey(), entry.getValue() );
         }
-        config = new Config( storeDir, params );
+        config = new Config( storeDir, params, kpe );
 
         String separator = System.getProperty( "file.separator" );
         String store = storeDir + separator + "neostore";
