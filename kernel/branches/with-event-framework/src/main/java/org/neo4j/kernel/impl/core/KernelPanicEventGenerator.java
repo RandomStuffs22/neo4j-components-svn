@@ -14,11 +14,18 @@ public class KernelPanicEventGenerator
         this.handlers = handlers;
     }
     
-    public void generateEvent( ErrorState error )
+    public void generateEvent( final ErrorState error )
     {
-        for ( KernelEventHandler handler : handlers )
+        new Thread( "Kernel panic event generator" )
         {
-            handler.kernelPanic( error );
-        }
+            @Override
+            public void run()
+            {
+                for ( KernelEventHandler handler : handlers )
+                {
+                    handler.kernelPanic( error );
+                }
+            }
+        }.start();
     }
 }
