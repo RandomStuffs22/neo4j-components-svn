@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.meta.input.rdfs.RdfsImporter;
@@ -96,6 +97,8 @@ public class TestImport extends MetaTestCase
 	 * @throws Exception if something goes wrong.
 	 */
     @Test
+    @Ignore
+    // TODO Enable this when this component depends on the latest meta-model
     public void testFoafImport() throws Exception
 	{
 		doAnImportOf(
