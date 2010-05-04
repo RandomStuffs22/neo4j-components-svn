@@ -83,9 +83,9 @@ class RelationshipImpl extends Primitive
 
     @Override
     protected ArrayMap<Integer, PropertyData> loadProperties(
-            NodeManager nodeManager )
+            NodeManager nodeManager, boolean light )
     {
-        return nodeManager.loadProperties( this );
+        return nodeManager.loadProperties( this, light );
     }
 
     public Node[] getNodes( NodeManager nodeManager )

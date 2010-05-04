@@ -26,15 +26,12 @@ import java.util.logging.Logger;
 
 import javax.transaction.TransactionManager;
 
-import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.graphdb.ReturnableEvaluator;
-import org.neo4j.graphdb.StopEvaluator;
-import org.neo4j.graphdb.Traverser;
-import org.neo4j.graphdb.Traverser.Order;
+import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.kernel.impl.cache.AdaptiveCacheManager;
 import org.neo4j.kernel.impl.cache.Cache;
 import org.neo4j.kernel.impl.cache.LruCache;
@@ -49,7 +46,6 @@ import org.neo4j.kernel.impl.persistence.PersistenceManager;
 import org.neo4j.kernel.impl.transaction.LockException;
 import org.neo4j.kernel.impl.transaction.LockManager;
 import org.neo4j.kernel.impl.transaction.LockType;
-import org.neo4j.kernel.impl.traversal.InternalTraverserFactory;
 import org.neo4j.kernel.impl.util.ArrayMap;
 import org.neo4j.kernel.impl.util.IntArray;
 
@@ -59,6 +55,7 @@ public class NodeManager
 
     private int referenceNodeId = 0;
 
+    private final GraphDatabaseService graphDbService;
     private final Cache<Integer,NodeImpl> nodeCache;
     private final Cache<Integer,RelationshipImpl> relCache;
     private final AdaptiveCacheManager cacheManager;
@@ -66,7 +63,6 @@ public class NodeManager
     private final TransactionManager transactionManager;
     private final LockReleaser lockReleaser;
     private final PropertyIndexManager propertyIndexManager;
-    private final InternalTraverserFactory traverserFactory;
     private final RelationshipTypeHolder relTypeHolder;
     private final PersistenceManager persistenceManager;
     private final IdGenerator idGenerator;
@@ -82,11 +78,13 @@ public class NodeManager
     private final ReentrantLock loadLocks[] =
         new ReentrantLock[LOCK_STRIPE_COUNT];
 
-    NodeManager( AdaptiveCacheManager cacheManager, LockManager lockManager,
-        LockReleaser lockReleaser, TransactionManager transactionManager,
-        PersistenceManager persistenceManager, IdGenerator idGenerator,
-        boolean useNewCaches )
+    NodeManager( GraphDatabaseService graphDb,
+            AdaptiveCacheManager cacheManager, LockManager lockManager,
+            LockReleaser lockReleaser, TransactionManager transactionManager,
+            PersistenceManager persistenceManager, IdGenerator idGenerator,
+            boolean useNewCaches )
     {
+        this.graphDbService = graphDb;
         this.cacheManager = cacheManager;
         this.lockManager = lockManager;
         this.transactionManager = transactionManager;
@@ -97,7 +95,6 @@ public class NodeManager
         lockReleaser.setPropertyIndexManager( propertyIndexManager );
         this.persistenceManager = persistenceManager;
         this.idGenerator = idGenerator;
-        this.traverserFactory = new InternalTraverserFactory();
         this.relTypeHolder = new RelationshipTypeHolder( transactionManager,
             persistenceManager, idGenerator );
         if ( useNewCaches )
@@ -118,6 +115,16 @@ public class NodeManager
         {
             loadLocks[i] = new ReentrantLock();
         }
+    }
+
+    public GraphDatabaseService getGraphDbService()
+    {
+        return graphDbService;
+    }
+
+    public boolean isUsingSoftReferenceCache()
+    {
+        return nodeCache instanceof SoftLruCache;
     }
 
     private void parseParams( Map<Object,Object> params )
@@ -615,27 +622,28 @@ public class NodeManager
         return newRelationshipMap;
     }
 
-    ArrayMap<Integer,PropertyData> loadProperties( NodeImpl node )
+    ArrayMap<Integer,PropertyData> loadProperties( NodeImpl node,
+            boolean light )
     {
-        return persistenceManager.loadNodeProperties( (int) node.getId() );
+        return persistenceManager.loadNodeProperties( (int) node.getId(),
+                light );
     }
 
-    ArrayMap<Integer,PropertyData> loadProperties( RelationshipImpl relationship )
+    ArrayMap<Integer,PropertyData> loadProperties(
+            RelationshipImpl relationship, boolean light )
     {
         return persistenceManager.loadRelProperties(
-            (int) relationship.getId() );
+            (int) relationship.getId(), light );
     }
 
-    int getNodeMaxCacheSize()
+    public int getNodeCacheSize()
     {
-        // return nodeCache.maxSize();
-        return -1;
+        return nodeCache.size();
     }
 
-    int getRelationshipMaxCacheSize()
+    public int getRelationshipCacheSize()
     {
-        // return relCache.maxSize();
-        return -1;
+        return relCache.size();
     }
 
     public void clearCache()
@@ -712,24 +720,6 @@ public class NodeManager
         relTypeHolder.removeRelType( id );
     }
 
-    Traverser createTraverser( Order traversalOrder, NodeImpl node,
-        RelationshipType relationshipType, Direction direction,
-        StopEvaluator stopEvaluator, ReturnableEvaluator returnableEvaluator )
-    {
-        return traverserFactory.createTraverser( traversalOrder, new NodeProxy(
-            (int) node.getId(), this ), relationshipType, direction,
-            stopEvaluator, returnableEvaluator );
-    }
-
-    Traverser createTraverser( Order traversalOrder, NodeImpl node,
-        RelationshipType[] types, Direction[] dirs,
-        StopEvaluator stopEvaluator, ReturnableEvaluator returnableEvaluator )
-    {
-        return traverserFactory.createTraverser( traversalOrder, new NodeProxy(
-            (int) node.getId(), this ), types, dirs, stopEvaluator,
-            returnableEvaluator );
-    }
-
     void addPropertyIndexes( PropertyIndexData[] propertyIndexes )
     {
         propertyIndexManager.addPropertyIndexes( propertyIndexes );
@@ -788,6 +778,7 @@ public class NodeManager
     void deleteNode( NodeImpl node )
     {
         int nodeId = (int) node.getId();
+        deletePrimitive( node );
         persistenceManager.nodeDelete( nodeId );
         // remove from node cache done via event
     }
@@ -813,6 +804,7 @@ public class NodeManager
     void deleteRelationship( RelationshipImpl rel )
     {
         int relId = (int) rel.getId();
+        deletePrimitive( rel );
         persistenceManager.relDelete( relId );
         // remove in rel cache done via event
     }
@@ -879,6 +871,11 @@ public class NodeManager
         return lockReleaser.getCowPropertyRemoveMap( primitive );
     }
 
+    private void deletePrimitive( Primitive primitive )
+    {
+        lockReleaser.deletePrimitive( primitive );
+    }
+
     public ArrayMap<Integer,PropertyData> getCowPropertyAddMap(
         Primitive primitive )
     {
@@ -910,5 +907,31 @@ public class NodeManager
     void addPropertyIndex( PropertyIndexData index )
     {
         propertyIndexManager.addPropertyIndex( index );
+    }
+
+    public TransactionData getTransactionData()
+    {
+        return lockReleaser.getTransactionData();
+    }
+
+    IntArray getCreatedNodes()
+    {
+        return persistenceManager.getCreatedNodes();
+    }
+
+    boolean nodeCreated( int nodeId )
+    {
+        return persistenceManager.isNodeCreated( nodeId );
+    }
+
+    boolean relCreated( int relId )
+    {
+        return persistenceManager.isRelationshipCreated( relId );
+    }
+
+    public String getKeyForProperty( int propertyId )
+    {
+        int keyId = persistenceManager.getKeyIdForProperty( propertyId );
+        return propertyIndexManager.getIndexFor( keyId ).getKey();
     }
 }
