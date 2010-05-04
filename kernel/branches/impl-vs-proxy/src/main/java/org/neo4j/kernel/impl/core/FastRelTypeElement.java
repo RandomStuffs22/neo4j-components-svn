@@ -32,7 +32,7 @@ class FastRelTypeElement extends RelTypeElementIterator
 
     private final NodeManager nodeManager;
 
-    FastRelTypeElement( NodeManager nodeManager, String type, NodeImpl node,
+    FastRelTypeElement( NodeManager nodeManager, String type, NodeState node,
             IntArray src )
     {
         super( type, node );

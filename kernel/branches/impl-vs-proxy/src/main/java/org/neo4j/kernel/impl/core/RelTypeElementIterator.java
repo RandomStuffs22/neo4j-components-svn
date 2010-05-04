@@ -24,15 +24,15 @@ import java.util.Iterator;
 public abstract class RelTypeElementIterator implements Iterator<Integer>
 {
     private final String type;
-    private final NodeImpl node;
+    private final NodeState node;
     
-    RelTypeElementIterator( String type, NodeImpl node )
+    RelTypeElementIterator( String type, NodeState node )
     {
         this.type = type;
         this.node = node;
     }
     
-    NodeImpl getNode()
+    NodeState getNode()
     {
         return node;
     }

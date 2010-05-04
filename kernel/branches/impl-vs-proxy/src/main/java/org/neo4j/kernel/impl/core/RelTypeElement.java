@@ -39,7 +39,7 @@ class RelTypeElement extends RelTypeElementIterator
     private final NodeManager nodeManager;
 
     static RelTypeElementIterator create( NodeManager nodeManager, String type,
-            NodeImpl node,
+            NodeState node,
         IntArray src, IntArray add, IntArray remove )
     {
         if ( add == null && remove == null )
@@ -50,7 +50,7 @@ class RelTypeElement extends RelTypeElementIterator
     }
 
     private RelTypeElement( NodeManager nodeManager, String type,
-            NodeImpl node, IntArray src,
+            NodeState node, IntArray src,
         IntArray add, IntArray remove )
     {
         super( type, node );

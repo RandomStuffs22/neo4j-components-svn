@@ -27,7 +27,7 @@ import org.neo4j.kernel.impl.transaction.LockException;
 import org.neo4j.kernel.impl.transaction.LockType;
 import org.neo4j.kernel.impl.util.ArrayMap;
 
-class RelationshipImpl extends Primitive
+class RelationshipState extends Primitive
 {
     private final int startNodeId;
     private final int endNodeId;
@@ -35,7 +35,7 @@ class RelationshipImpl extends Primitive
 
     // Dummy constructor for NodeManager to acquire read lock on relationship
     // when loading from PL.
-    RelationshipImpl( int id )
+    RelationshipState( int id )
     {
         super( id );
         this.startNodeId = -1;
@@ -43,7 +43,7 @@ class RelationshipImpl extends Primitive
         this.type = null;
     }
 
-    RelationshipImpl( int id, int startNodeId, int endNodeId,
+    RelationshipState( int id, int startNodeId, int endNodeId,
             RelationshipType type, boolean newRel )
     {
         super( id, newRel );
@@ -141,8 +141,8 @@ class RelationshipImpl extends Primitive
 
     public void delete( NodeManager nodeManager )
     {
-        NodeImpl startNode = null;
-        NodeImpl endNode = null;
+        NodeState startNode = null;
+        NodeState endNode = null;
         boolean startNodeLocked = false;
         boolean endNodeLocked = false;
         nodeManager.acquireLock( this, LockType.WRITE );
@@ -235,7 +235,7 @@ class RelationshipImpl extends Primitive
     public boolean equals( Object o )
     {
         // verify type and not null, should use Node inteface
-        if ( !( o instanceof RelationshipImpl ) )
+        if ( !( o instanceof RelationshipState ) )
         {
             return false;
         }
@@ -246,7 +246,7 @@ class RelationshipImpl extends Primitive
         // o transitive: ( x.equals(y) && y.equals(z) ) == true
         // then x.equals(z) == true
         // o consistent: the nodeId never changes
-        return this.getId() == ( (RelationshipImpl) o ).getId();
+        return this.getId() == ( (RelationshipState) o ).getId();
 
     }
 

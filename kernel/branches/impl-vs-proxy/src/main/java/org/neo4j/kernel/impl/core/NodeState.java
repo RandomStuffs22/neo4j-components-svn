@@ -40,20 +40,20 @@ import org.neo4j.kernel.impl.traversal.OldTraverserWrapper;
 import org.neo4j.kernel.impl.util.ArrayMap;
 import org.neo4j.kernel.impl.util.IntArray;
 
-class NodeImpl extends Primitive
+class NodeState extends Primitive
 {
     private ArrayMap<String,IntArray> relationshipMap = null;
     // private RelationshipGrabber relationshipGrabber = null;
     private RelationshipChainPosition relChainPosition = null;
 
 
-    NodeImpl( int id )
+    NodeState( int id )
     {
         super( id );
     }
 
     // newNode will only be true for NodeManager.createNode
-    NodeImpl( int id, boolean newNode )
+    NodeState( int id, boolean newNode )
     {
         super( id, newNode );
         if ( newNode )
@@ -245,7 +245,7 @@ class NodeImpl extends Primitive
     public boolean equals( Object o )
     {
         // verify type and not null, should use Node inteface
-        if ( !( o instanceof NodeImpl ) )
+        if ( !( o instanceof NodeState ) )
         {
             return false;
         }
@@ -256,7 +256,7 @@ class NodeImpl extends Primitive
         // o transitive: ( x.equals(y) && y.equals(z) ) == true
         // then x.equals(z) == true
         // o consistent: the nodeId never changes
-        return this.getId() == ( (NodeImpl) o ).getId();
+        return this.getId() == ( (NodeState) o ).getId();
 
     }
 

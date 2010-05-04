@@ -41,7 +41,7 @@ class IntArrayIterator implements Iterable<Relationship>,
 
     private Iterator<RelTypeElementIterator> typeIterator;
     private RelTypeElementIterator currentTypeIterator = null;
-    private NodeImpl fromNode;
+    private NodeState fromNode;
     private Direction direction = null;
     private Relationship nextElement = null;
     private final NodeManager nodeManager;
@@ -49,7 +49,7 @@ class IntArrayIterator implements Iterable<Relationship>,
 
     private Set<String> visitedTypes = new HashSet<String>();
 
-    IntArrayIterator( List<RelTypeElementIterator> rels, NodeImpl fromNode,
+    IntArrayIterator( List<RelTypeElementIterator> rels, NodeState fromNode,
         Direction direction, NodeManager nodeManager, RelationshipType[] types )
     {
         this.typeIterator = rels.iterator();

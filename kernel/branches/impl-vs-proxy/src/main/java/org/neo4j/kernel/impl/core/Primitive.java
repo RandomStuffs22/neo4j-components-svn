@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.kernel.impl.nioneo.store.PropertyData;
 import org.neo4j.kernel.impl.transaction.LockType;
@@ -50,11 +49,6 @@ abstract class Primitive
     Primitive( int id )
     {
         this.id = id;
-    }
-    
-    public GraphDatabaseService getGraphDatabase()
-    {
-        return nodeManager.getGraphDbService();
     }
 
     Primitive( int id, boolean newPrimitive )
@@ -594,40 +588,43 @@ abstract class Primitive
     {
         if ( propertyMap == null )
         {
-            this.propertyMap = loadProperties( true );
+            this.propertyMap = loadProperties( nodeManager, true );
             return true;
         }
         return false;
     }
-    
+
     protected void setRollbackOnly( NodeManager nodeManager )
     {
         nodeManager.setRollbackOnly();
     }
 
-    protected List<PropertyEventData> getAllCommittedProperties()
+    protected List<PropertyEventData> getAllCommittedProperties(
+            NodeManager nodeManager )
     {
-        ensureFullLightProperties();
-        List<PropertyEventData> props = 
+        ensureFullLightProperties( nodeManager );
+        List<PropertyEventData> props =
             new ArrayList<PropertyEventData>( propertyMap.size() );
         for ( Map.Entry<Integer,PropertyData> entry : propertyMap.entrySet() )
         {
             PropertyIndex index = nodeManager.getIndexFor( entry.getKey() );
-            Object value = getPropertyValue( propertyMap.get( index.getKeyId() ) );
+            Object value = getPropertyValue( nodeManager,
+                    propertyMap.get( index.getKeyId() ) );
             props.add( new PropertyEventData( index.getKey(), value ) );
         }
         return props;
    }
-    
-   protected Object getCommittedPropertyValue( String key )
+
+    protected Object getCommittedPropertyValue( NodeManager nodeManager,
+            String key )
    {
-       ensureFullLightProperties();
+        ensureFullLightProperties( nodeManager );
        for ( PropertyIndex index : nodeManager.index( key ) )
        {
            PropertyData property = propertyMap.get( index.getKeyId() );
            if ( property != null )
            {
-               return getPropertyValue( property );
+                return getPropertyValue( nodeManager, property );
            }
        }
        return null;

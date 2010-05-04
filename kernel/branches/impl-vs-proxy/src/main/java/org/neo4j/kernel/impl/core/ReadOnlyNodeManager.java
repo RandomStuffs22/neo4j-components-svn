@@ -50,7 +50,7 @@ class ReadOnlyNodeManager extends NodeManager
     }
 
     @Override
-    public Relationship createRelationship( NodeImpl startNode, Node endNode,
+    public Relationship createRelationship( NodeState startNode, Node endNode,
         RelationshipType type )
     {
         throw new ReadOnlyDbException();
@@ -63,49 +63,49 @@ class ReadOnlyNodeManager extends NodeManager
     }
 
     @Override
-    void deleteNode( NodeImpl node )
+    void deleteNode( NodeState node )
     {
         throw new ReadOnlyDbException();
     }
 
     @Override
-    int nodeAddProperty( NodeImpl node, PropertyIndex index, Object value )
+    int nodeAddProperty( NodeState node, PropertyIndex index, Object value )
     {
         throw new ReadOnlyDbException();
     }
 
     @Override
-    void nodeChangeProperty( NodeImpl node, int propertyId, Object value )
+    void nodeChangeProperty( NodeState node, int propertyId, Object value )
     {
         throw new ReadOnlyDbException();
     }
 
     @Override
-    void nodeRemoveProperty( NodeImpl node, int propertyId )
+    void nodeRemoveProperty( NodeState node, int propertyId )
     {
         throw new ReadOnlyDbException();
     }
 
     @Override
-    void deleteRelationship( RelationshipImpl rel )
+    void deleteRelationship( RelationshipState rel )
     {
         throw new ReadOnlyDbException();
     }
 
     @Override
-    int relAddProperty( RelationshipImpl rel, PropertyIndex index, Object value )
+    int relAddProperty( RelationshipState rel, PropertyIndex index, Object value )
     {
         throw new ReadOnlyDbException();
     }
 
     @Override
-    void relChangeProperty( RelationshipImpl rel, int propertyId, Object value )
+    void relChangeProperty( RelationshipState rel, int propertyId, Object value )
     {
         throw new ReadOnlyDbException();
     }
 
     @Override
-    void relRemoveProperty( RelationshipImpl rel, int propertyId )
+    void relRemoveProperty( RelationshipState rel, int propertyId )
     {
         throw new ReadOnlyDbException();
     }
