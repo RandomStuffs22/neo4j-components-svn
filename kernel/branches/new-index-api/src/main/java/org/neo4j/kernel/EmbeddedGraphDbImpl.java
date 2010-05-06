@@ -51,6 +51,8 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.TransactionFailureException;
 import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.event.TransactionEventHandler;
+import org.neo4j.graphdb.index.Index;
+import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.kernel.ShellService.ShellNotAvailableException;
 import org.neo4j.kernel.impl.core.KernelPanicEventGenerator;
 import org.neo4j.kernel.impl.core.NodeManager;
@@ -61,6 +63,8 @@ import org.neo4j.kernel.manage.Neo4jJmx;
 class EmbeddedGraphDbImpl
 {
     private static final String KERNEL_VERSION = Version.get();
+    private static final String LUCENE_INDEX_PROVIDER_CLASS =
+            "org.neo4j.index.future.lucene.LuceneIndexProvider";
 
     private static Logger log =
         Logger.getLogger( EmbeddedGraphDbImpl.class.getName() );
@@ -81,24 +85,8 @@ class EmbeddedGraphDbImpl
             new KernelPanicEventGenerator( kernelEventHandlers );
 
     private final Runnable jmxShutdownHook;
-
-    /**
-     * Creates an embedded {@link GraphDatabaseService} with a store located in
-     * <code>storeDir</code>, which will be created if it doesn't already exist.
-     *
-     * @param storeDir the store directory for the Neo4j db files
-     */
-    public EmbeddedGraphDbImpl( String storeDir, GraphDatabaseService graphDbService )
-    {
-        this.storeDir = storeDir;
-        graphDbInstance = new GraphDbInstance( storeDir, true );
-        Map<Object, Object> params = graphDbInstance.start( graphDbService,
-                kernelPanicEventGenerator );
-        nodeManager =
-            graphDbInstance.getConfig().getGraphDbModule().getNodeManager();
-        this.graphDbService = graphDbService;
-        jmxShutdownHook = initJMX( params );
-    }
+    private IndexProvider index;
+    private String indexInstantiationError;
 
     /**
      * A non-standard way of creating an embedded {@link GraphDatabaseService}
@@ -120,7 +108,37 @@ class EmbeddedGraphDbImpl
         this.graphDbService = graphDbService;
         jmxShutdownHook = initJMX( params );
     }
+    
+    void instantiateIndex()
+    {
+        this.index = tryToInstantiateIndexProvider();
+    }
 
+    private IndexProvider tryToInstantiateIndexProvider()
+    {
+        try
+        {
+            return (IndexProvider) Class.forName( getIndexProviderClass() ).getConstructor(
+                    GraphDatabaseService.class ).newInstance( this.graphDbService );
+        }
+        catch ( Exception e )
+        {
+            this.indexInstantiationError = e.toString();
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private String getIndexProviderClass()
+    {
+        String indexDescription = (String) getConfig().getParams().get( "index" );
+        if ( indexDescription == null )
+        {
+            indexDescription = LUCENE_INDEX_PROVIDER_CLASS;
+        }
+        return indexDescription;
+    }
+    
     private Runnable initJMX( final Map<Object, Object> params )
     {
         return Neo4jJmx.initJMX( new Neo4jJmx.Creator(
@@ -565,5 +583,25 @@ class EmbeddedGraphDbImpl
             throw new IllegalStateException( handler + " isn't registered" );
         }
         return handler;
+    }
+    
+    private IndexProvider getIndexProvider()
+    {
+        if ( this.index == null )
+        {
+            throw new RuntimeException( "Couldn't find the index '" + getIndexProviderClass() +
+                    "', not on classpath? [" + this.indexInstantiationError + "]" );
+        }
+        return this.index;
+    }
+    
+    Index<Node> nodeIndex( String indexName )
+    {
+        return getIndexProvider().nodeIndex( indexName );
+    }
+
+    Index<Relationship> relationshipIndex( String indexName )
+    {
+        return getIndexProvider().relationshipIndex( indexName );
     }
 }

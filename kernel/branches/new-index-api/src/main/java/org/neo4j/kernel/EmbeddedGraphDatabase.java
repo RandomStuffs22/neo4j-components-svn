@@ -30,6 +30,7 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.TransactionFailureException;
 import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.event.TransactionEventHandler;
+import org.neo4j.graphdb.index.Index;
 
 /**
  * An implementation of {@link GraphDatabaseService} that is used to embed Neo4j
@@ -59,7 +60,7 @@ public final class EmbeddedGraphDatabase implements GraphDatabaseService
      */
     public EmbeddedGraphDatabase( String storeDir )
     {
-        this.graphDbImpl = new EmbeddedGraphDbImpl( storeDir, this );
+        this( storeDir, null );
     }
 
     /**
@@ -76,6 +77,7 @@ public final class EmbeddedGraphDatabase implements GraphDatabaseService
     public EmbeddedGraphDatabase( String storeDir, Map<String,String> params )
     {
         this.graphDbImpl = new EmbeddedGraphDbImpl( storeDir, params, this );
+        this.graphDbImpl.instantiateIndex();
     }
 
     /**
@@ -190,5 +192,20 @@ public final class EmbeddedGraphDatabase implements GraphDatabaseService
             TransactionEventHandler<T> handler )
     {
         return this.graphDbImpl.unregisterTransactionEventHandler( handler );
+    }
+    
+    public static boolean isReadOnly( GraphDatabaseService graphDb )
+    {
+        return graphDb instanceof EmbeddedReadOnlyGraphDatabase;
+    }
+
+    public Index<Node> nodeIndex( String indexName )
+    {
+        return this.graphDbImpl.nodeIndex( indexName );
+    }
+
+    public Index<Relationship> relationshipIndex( String indexName )
+    {
+        return this.graphDbImpl.relationshipIndex( indexName );
     }
 }

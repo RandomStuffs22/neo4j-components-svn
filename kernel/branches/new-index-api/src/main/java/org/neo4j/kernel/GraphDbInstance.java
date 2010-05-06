@@ -67,12 +67,6 @@ class GraphDbInstance
         return config;
     }
 
-    public Map<Object, Object> start( GraphDatabaseService graphDb,
-            KernelPanicEventGenerator kpe )
-    {
-        return start( graphDb, new HashMap<String, String>(), kpe );
-    }
-
     private Map<Object, Object> getDefaultParams()
     {
         Map<Object, Object> params = new HashMap<Object, Object>();
@@ -104,7 +98,7 @@ class GraphDbInstance
      */
     public synchronized Map<Object, Object> start(
             GraphDatabaseService graphDb,
-            Map<String, String> stringParams, KernelPanicEventGenerator kpe )
+            Map<String, String> stringParamsOrNull, KernelPanicEventGenerator kpe )
     {
         if ( started )
         {
@@ -118,9 +112,9 @@ class GraphDbInstance
         }
         storeDir = FileUtils.fixSeparatorsInPath( storeDir );
         new AutoConfigurator( storeDir, useMemoryMapped ).configure( params );
-        for ( Map.Entry<String, String> entry : stringParams.entrySet() )
+        if ( stringParamsOrNull != null )
         {
-            params.put( entry.getKey(), entry.getValue() );
+            params.putAll( stringParamsOrNull );
         }
         config = new Config( graphDb, storeDir, params, kpe );
 

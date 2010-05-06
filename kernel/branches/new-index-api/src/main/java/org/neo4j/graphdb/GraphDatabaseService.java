@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.event.TransactionEventHandler;
+import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 /**
@@ -47,7 +48,7 @@ import org.neo4j.kernel.EmbeddedGraphDatabase;
  * invoked in a {@link Transaction transactional context}. Failure to do so will
  * result in a {@link NotInTransactionException} being thrown.
  */
-public interface GraphDatabaseService
+public interface GraphDatabaseService extends IndexProvider
 {
     /**
      * Creates a new node.
