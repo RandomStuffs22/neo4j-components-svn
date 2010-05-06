@@ -21,7 +21,7 @@ package org.neo4j.index.impl;
 
 import java.util.Iterator;
 
-import org.neo4j.index.IndexHits;
+import org.neo4j.graphdb.index.IndexHits;
 
 /**
  * A simple implementation of an {@link IndexHits} where the size is known at

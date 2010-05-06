@@ -1,4 +1,4 @@
-package org.neo4j.index.lucene;
+package org.neo4j.index.future.lucene;
 
 import java.util.Iterator;
 

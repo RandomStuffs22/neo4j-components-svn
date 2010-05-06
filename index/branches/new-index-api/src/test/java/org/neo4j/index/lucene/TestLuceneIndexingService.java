@@ -30,7 +30,7 @@ import java.util.Set;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.graphdb.Node;
-import org.neo4j.index.IndexHits;
+import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Isolation;
 import org.neo4j.index.Neo4jWithIndexTestCase;

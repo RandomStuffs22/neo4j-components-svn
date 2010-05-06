@@ -20,6 +20,7 @@
 package org.neo4j.index;
 
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.index.IndexHits;
 
 /**
  * Index service to index nodes with a key and a value. The Neo4j Kernel has no

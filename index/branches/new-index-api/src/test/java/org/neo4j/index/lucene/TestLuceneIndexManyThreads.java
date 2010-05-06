@@ -15,7 +15,7 @@ import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.index.IndexHits;
+import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Neo4jWithIndexTestCase;
 

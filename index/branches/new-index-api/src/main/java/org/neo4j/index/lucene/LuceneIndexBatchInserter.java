@@ -20,7 +20,7 @@
 package org.neo4j.index.lucene;
 
 import org.apache.lucene.index.IndexWriter;
-import org.neo4j.index.IndexHits;
+import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
 

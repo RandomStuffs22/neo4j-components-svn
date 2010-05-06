@@ -26,7 +26,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.util.Version;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
-import org.neo4j.index.IndexHits;
+import org.neo4j.graphdb.index.IndexHits;
 
 /**
  * A {@link LuceneFulltextIndexService} which treats the value in

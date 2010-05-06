@@ -19,9 +19,9 @@
  */
 package org.neo4j.index.lucene;
 
-import static org.junit.Assert.fail;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Iterator;
 
@@ -30,7 +30,7 @@ import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotInTransactionException;
 import org.neo4j.graphdb.Transaction;
-import org.neo4j.index.IndexHits;
+import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.Neo4jWithIndexTestCase;
 import org.neo4j.kernel.EmbeddedReadOnlyGraphDatabase;

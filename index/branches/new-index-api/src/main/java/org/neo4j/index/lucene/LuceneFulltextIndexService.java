@@ -31,7 +31,7 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
-import org.neo4j.index.IndexHits;
+import org.neo4j.graphdb.index.IndexHits;
 
 /**
  * A {@link LuceneIndexService} which indexes the values with fulltext indexing.

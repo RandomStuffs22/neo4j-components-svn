@@ -37,7 +37,7 @@ import org.neo4j.commons.iterator.CombiningIterator;
 import org.neo4j.commons.iterator.IteratorAsIterable;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
-import org.neo4j.index.IndexHits;
+import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.index.IndexService;
 import org.neo4j.index.ReadOnlyIndexException;
 import org.neo4j.index.impl.GenericIndexService;
