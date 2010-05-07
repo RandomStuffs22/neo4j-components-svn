@@ -22,6 +22,7 @@ package org.neo4j.index.future.lucene;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 
+import org.apache.lucene.search.Query;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.kernel.impl.transaction.xaframework.XaConnectionHelpImpl;
 import org.neo4j.kernel.impl.transaction.xaframework.XaResourceHelpImpl;
@@ -99,5 +100,11 @@ class LuceneXaConnection extends XaConnectionHelpImpl
             T entity, String key, Object value )
     {
         getLuceneTx().remove( index, entity, key, value );
+    }
+    
+    <T extends PropertyContainer> void remove( LuceneIndex<T> index,
+            Query query )
+    {
+        getLuceneTx().remove( index, query );
     }
 }

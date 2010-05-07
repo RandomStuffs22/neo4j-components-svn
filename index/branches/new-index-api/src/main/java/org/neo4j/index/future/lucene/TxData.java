@@ -16,8 +16,6 @@ import org.apache.lucene.store.RAMDirectory;
 
 class TxData
 {
-//    private final Map<String, Map<Object, Set<Long>>> map =
-//        new HashMap<String, Map<Object,Set<Long>>>();
     private final DirectoryAndWorkers luceneData;
     private final LuceneIndex index;
     private final Analyzer analyzer;
@@ -31,10 +29,15 @@ class TxData
     
     void add( Long entityId, String key, Object value )
     {
+        Document document = new Document();
+        index.getIndexType().fillDocument( document, entityId, key, value );
+        add( document );
+    }
+    
+    void add( Document document )
+    {
         try
         {
-            Document document = new Document();
-            index.getIndexType().fillDocument( document, entityId, key, value );
             luceneData.writer.addDocument( document );
         }
         catch ( IOException e )
@@ -45,11 +48,15 @@ class TxData
 
     void remove( Long entityId, String key, Object value )
     {
+        IndexType type = index.getIndexType();
+        remove( type.deletionQuery( entityId, key, value ) );
+    }
+    
+    void remove( Query query )
+    {
         try
         {
-            IndexType type = index.getIndexType();
-            Query deletionQuery = type.deletionQuery( entityId, key, value );
-            luceneData.writer.deleteDocuments( deletionQuery );
+            luceneData.writer.deleteDocuments( query );
             luceneData.invalidateSearcher();
         }
         catch ( IOException e )

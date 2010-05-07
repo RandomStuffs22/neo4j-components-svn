@@ -8,8 +8,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.neo4j.commons.iterator.CombiningIterator;
 import org.neo4j.commons.iterator.IteratorAsIterable;
 import org.neo4j.graphdb.Node;
@@ -59,6 +63,24 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         getConnection().remove( this, entity, key, value );
     }
     
+    public void remove( Object queryOrQueryObject )
+    {
+        getConnection().remove( this, getIndexType().query( null, queryOrQueryObject ) );
+    }
+    
+    public void remove( T entity, Object queryOrQueryObjectOrNull )
+    {
+        BooleanQuery queries = new BooleanQuery();
+        queries.add( new TermQuery( new Term( KEY_DOC_ID, "" + getEntityId( entity ) ) ),
+                Occur.MUST );
+        if ( queryOrQueryObjectOrNull != null )
+        {
+            queries.add( getIndexType().query( null, queryOrQueryObjectOrNull ),
+                    Occur.MUST );
+        }
+        remove( queries );
+    }
+    
     IndexType getIndexType()
     {
         return identifier.getType( service.dataSource.config );
@@ -71,16 +93,12 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
 
     public IndexHits<T> query( String key, Object queryOrQueryObject )
     {
-        Query query = queryOrQueryObject instanceof Query ? (Query) queryOrQueryObject :
-                getIndexType().query( key, queryOrQueryObject );
-        return query( query );
+        return query( getIndexType().query( key, queryOrQueryObject ) );
     }
 
     public IndexHits<T> query( Object queryOrQueryObject )
     {
-        Query query = queryOrQueryObject instanceof Query ? (Query) queryOrQueryObject :
-                getIndexType().query( null, queryOrQueryObject );
-        return query( query );
+        return query( getIndexType().query( null, queryOrQueryObject ) );
     }
     
     private IndexHits<T> query( Query query )
@@ -110,8 +128,8 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
             searcher = service.dataSource.getIndexSearcher( identifier );
             if ( searcher != null )
             {
-                DocToIdIterator searchedNodeIds = search( searcher,
-                        query, removedIds );
+                DocToIdIterator searchedNodeIds = new DocToIdIterator( search( searcher,
+                        query ), removedIds, searcher );
                 if ( searchedNodeIds.size() >= service.lazynessThreshold )
                 {
                     // Instantiate a lazy iterator
@@ -158,15 +176,13 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         return hits;
     }
 
-    private DocToIdIterator search( IndexSearcherRef searcher,
-            Query query, Set<Long> deletedNodes )
+    HitsIterator search( IndexSearcherRef searcher, Query query )
     {
         try
         {
             searcher.incRef();
             Hits hits = searcher.getSearcher().search( query );
-            return new DocToIdIterator( new HitsIterator( hits ), deletedNodes,
-                    searcher );
+            return new HitsIterator( hits );
         }
         catch ( IOException e )
         {
@@ -189,6 +205,8 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     
     protected abstract T getById( long id );
     
+    protected abstract long getEntityId( T entity );
+    
     static class NodeIndex extends LuceneIndex<Node>
     {
         NodeIndex( LuceneIndexProvider service,
@@ -201,6 +219,12 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         protected Node getById( long id )
         {
             return service.graphDb.getNodeById( id );
+        }
+        
+        @Override
+        protected long getEntityId( Node entity )
+        {
+            return entity.getId();
         }
     }
     
@@ -216,6 +240,12 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         protected Relationship getById( long id )
         {
             return service.graphDb.getRelationshipById( id );
+        }
+        
+        @Override
+        protected long getEntityId( Relationship entity )
+        {
+            return entity.getId();
         }
     }
 }

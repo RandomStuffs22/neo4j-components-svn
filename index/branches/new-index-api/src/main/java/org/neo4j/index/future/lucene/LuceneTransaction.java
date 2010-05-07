@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,7 @@ import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.index.future.lucene.LuceneCommand.AddCommand;
 import org.neo4j.index.future.lucene.LuceneCommand.RemoveCommand;
+import org.neo4j.index.future.lucene.LuceneCommand.RemoveQueryCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaLogicalLog;
 import org.neo4j.kernel.impl.transaction.xaframework.XaTransaction;
@@ -90,6 +92,26 @@ class LuceneTransaction extends XaTransaction
         insert( index, entity, key, value, data.removed( true ), data.added( false ) );
         queueCommand( new RemoveCommand( index.identifier,
                 getEntityId( entity ), key, value.toString() ) );
+    }
+    
+    <T extends PropertyContainer> void remove( LuceneIndex<T> index,
+            Query query )
+    {
+        TxDataBoth data = getTxData( index, true );
+        TxData added = data.added( false );
+        if ( added != null )
+        {
+            added.remove( query );
+        }
+        TxData removed = data.removed( true );
+        Iterator<Document> docs = index.search(
+                dataSource.getIndexSearcher( index.identifier ), query );
+        while ( docs.hasNext() )
+        {
+            removed.add( docs.next() );
+        }
+        queueCommand( new RemoveQueryCommand( index.identifier,
+                -1, "", query.toString() ) );
     }
     
     private void queueCommand( LuceneCommand command )
