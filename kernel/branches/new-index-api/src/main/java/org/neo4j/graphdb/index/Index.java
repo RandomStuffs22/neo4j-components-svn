@@ -8,6 +8,10 @@ public interface Index<T extends PropertyContainer>
     
     void remove( T entity, String key, Object value );
     
+    void remove( T entity, Object queryOrQueryObjectOrNull );
+    
+    void remove( Object queryOrQueryObject );
+    
     /**
      * Provides hits for exact matches of key and value.
      */
