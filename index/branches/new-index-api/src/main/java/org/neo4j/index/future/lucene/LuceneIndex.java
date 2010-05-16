@@ -8,9 +8,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.lucene.AllDocs;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
@@ -40,17 +40,17 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     
     LuceneXaConnection getConnection()
     {
-        if ( service.broker == null )
+        if ( service.getBroker() == null )
         {
             throw new ReadOnlyIndexException();
         }
-        return service.broker.acquireResourceConnection();
+        return service.getBroker().acquireResourceConnection();
     }
     
     LuceneXaConnection getReadOnlyConnection()
     {
-        return service.broker == null ? null :
-                service.broker.acquireReadOnlyResourceConnection();
+        return service.getBroker()== null ? null :
+                service.getBroker().acquireReadOnlyResourceConnection();
     }
     
     public void add( T entity, String key, Object value )
@@ -83,7 +83,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     
     IndexType getIndexType()
     {
-        return identifier.getType( service.dataSource.config );
+        return identifier.getType( service.getDataSource().config );
     }
     
     public IndexHits<T> get( String key, Object value )
@@ -118,14 +118,14 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
             ids.addAll( addedIds );
             removedIds = luceneTx.getRemovedIds( this, query );
         }
-        service.dataSource.getReadLock();
+        service.getDataSource().getReadLock();
         Iterator<Long> idIterator = null;
         Integer idIteratorSize = null;
         IndexSearcherRef searcher = null;
         boolean isLazy = false;
         try
         {
-            searcher = service.dataSource.getIndexSearcher( identifier );
+            searcher = service.getDataSource().getIndexSearcher( identifier );
             if ( searcher != null )
             {
                 DocToIdIterator searchedNodeIds = new DocToIdIterator( search( searcher,
@@ -151,7 +151,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         {
             // The DocToIdIterator closes the IndexSearchRef instance anyways,
             // or the LazyIterator if it's a lazy one. So no need here.
-            service.dataSource.releaseReadLock();
+            service.getDataSource().releaseReadLock();
         }
 
         if ( idIterator == null )
@@ -164,7 +164,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
                 new IteratorAsIterable<T>( new IdToEntityIterator<T>( idIterator )
                 {
                     @Override
-                    protected T getEntity( long id )
+                    protected T underlyingObjectToObject( Long id )
                     {
                         return getById( id );
                     }
@@ -176,13 +176,13 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         return hits;
     }
 
-    HitsIterator search( IndexSearcherRef searcher, Query query )
+    SearchResult search( IndexSearcherRef searcher, Query query )
     {
         try
         {
             searcher.incRef();
-            Hits hits = searcher.getSearcher().search( query );
-            return new HitsIterator( hits );
+            AllDocs hits = new AllDocs( searcher.getSearcher(), query, null );
+            return new SearchResult( new HitsIterator( hits ), hits.length() );
         }
         catch ( IOException e )
         {
@@ -190,7 +190,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
                                         + query, e );
         }
     }
-
+    
     private void readNodesFromHits( DocToIdIterator searchedIds,
             Collection<Long> ids )
     {

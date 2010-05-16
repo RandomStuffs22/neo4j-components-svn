@@ -105,7 +105,7 @@ class LuceneTransaction extends XaTransaction
         }
         TxData removed = data.removed( true );
         Iterator<Document> docs = index.search(
-                dataSource.getIndexSearcher( index.identifier ), query );
+                dataSource.getIndexSearcher( index.identifier ), query ).documents;
         while ( docs.hasNext() )
         {
             removed.add( docs.next() );

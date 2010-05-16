@@ -15,8 +15,6 @@ import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.index.Neo4jTestCase;
 import org.neo4j.index.future.lucene.LuceneIndexProvider;
-import org.neo4j.index.future.lucene.LuceneTimeline;
-import org.neo4j.index.timeline.TimelineIndex;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 public class TestFreshLuceneIndex
@@ -111,30 +109,5 @@ public class TestFreshLuceneIndex
         beginTx();
         nodeIndex.remove( node1, name, mattias );
         finishTransaction();
-    }
-    
-    @Test
-    public void testTimeline()
-    {
-        TimelineIndex timeline = new LuceneTimeline( graphDb, "noob" );
-        beginTx();
-        Node firstNode = graphDb.createNode();
-        Node secondNode = graphDb.createNode();
-        Node lastNode = graphDb.createNode();
-        System.out.println( "first:" + firstNode + ", second:" + secondNode +
-                ", last:" + lastNode );
-//        timeline.addNode( secondNode, 483313 );
-//        timeline.addNode( lastNode,   634121 );
-//        timeline.addNode( firstNode,  312214 );
-        ((LuceneTimeline) timeline).addNode( secondNode, "ceder" );
-        ((LuceneTimeline) timeline).addNode( lastNode, "zieger" );
-        ((LuceneTimeline) timeline).addNode( firstNode, "adam" );
-        finishTransaction();
-        
-//        for ( Node node : timeline.getAllNodes() )
-        for ( Node node : ((LuceneTimeline) timeline).rangeQueryName( "aaa", "zz" ) )
-        {
-            System.out.println( node );
-        }
     }
 }

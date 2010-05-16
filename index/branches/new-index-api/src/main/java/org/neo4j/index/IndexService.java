@@ -20,7 +20,9 @@
 package org.neo4j.index;
 
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexHits;
+import org.neo4j.graphdb.index.IndexProvider;
 
 /**
  * Index service to index nodes with a key and a value. The Neo4j Kernel has no
@@ -34,7 +36,11 @@ import org.neo4j.graphdb.index.IndexHits;
  * See more at <a
  * href="http://wiki.neo4j.org/content/Indexing_with_IndexService"> The Neo4j
  * wiki page on "Indexing with IndexService"</a>.
+ * 
+ * @deprecated Because of the new {@link IndexProvider} and {@link Index}
+ * interfaces.
  */
+@Deprecated
 public interface IndexService
 {
     /**

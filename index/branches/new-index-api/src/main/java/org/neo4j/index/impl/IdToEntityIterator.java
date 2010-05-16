@@ -2,44 +2,21 @@ package org.neo4j.index.impl;
 
 import java.util.Iterator;
 
-import org.neo4j.commons.iterator.PrefetchingIterator;
+import org.neo4j.commons.iterator.CatchingIteratorWrapper;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.PropertyContainer;
 
 public abstract class IdToEntityIterator<T extends PropertyContainer>
-        extends PrefetchingIterator<T>
+        extends CatchingIteratorWrapper<T, Long>
 {
-    private final Iterator<Long> ids;
-
     public IdToEntityIterator( Iterator<Long> ids )
     {
-        this.ids = ids;
+        super( ids );
     }
     
     @Override
-    protected T fetchNextOrNull()
+    protected boolean exceptionOk( Throwable t )
     {
-        T result = null;
-        while ( result == null )
-        {
-            if ( !ids.hasNext() )
-            {
-                return null;
-            }
-            
-            long id = ids.next();
-            try
-            {
-                return getEntity( id );
-            }
-            catch ( NotFoundException e )
-            {
-                // Rare exception which can occur under normal
-                // circumstances
-            }
-        }
-        return result;
+        return t instanceof NotFoundException;
     }
-
-    protected abstract T getEntity( long id );
 }

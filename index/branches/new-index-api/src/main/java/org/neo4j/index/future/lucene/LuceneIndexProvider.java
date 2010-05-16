@@ -31,28 +31,21 @@ import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.kernel.EmbeddedReadOnlyGraphDatabase;
 import org.neo4j.kernel.impl.transaction.TxModule;
 
-public class LuceneIndexProvider implements IndexProvider,
+public class LuceneIndexProvider extends IndexProvider implements
         KernelEventHandler
 {
     public static final int DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD = 100;
     private static final String DATA_SOURCE_NAME = "lucene-index";
     
-    final ConnectionBroker broker;
-    final LuceneDataSource dataSource;
+    private ConnectionBroker broker;
+    private LuceneDataSource dataSource;
     int lazynessThreshold = DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD;
     final GraphDatabaseService graphDb;
     
     public LuceneIndexProvider( GraphDatabaseService graphDb )
     {
+        super( "lucene", "lucene_fulltext" );
         this.graphDb = graphDb;
-        Config config = getGraphDbConfig();
-        TxModule txModule = config.getTxModule();
-        dataSource = (LuceneDataSource) txModule.registerDataSource( DATA_SOURCE_NAME,
-                LuceneDataSource.class.getName(), LuceneDataSource.DEFAULT_BRANCH_ID,
-                config.getParams(), true );
-        broker = EmbeddedGraphDatabase.isReadOnly( graphDb ) ?
-                new ReadOnlyConnectionBroker( txModule.getTxManager(), dataSource ) :
-                new ConnectionBroker( txModule.getTxManager(), dataSource );
     }
     
     private Config getGraphDbConfig()
@@ -61,20 +54,47 @@ public class LuceneIndexProvider implements IndexProvider,
                 ((EmbeddedReadOnlyGraphDatabase) graphDb).getConfig() :
                 ((EmbeddedGraphDatabase) graphDb).getConfig();
     }
+    
+    private void ensureDataSourceRegistered()
+    {
+        if ( this.dataSource == null )
+        {
+            Config config = getGraphDbConfig();
+            TxModule txModule = config.getTxModule();
+            dataSource = (LuceneDataSource) txModule.registerDataSource( DATA_SOURCE_NAME,
+                    LuceneDataSource.class.getName(), LuceneDataSource.DEFAULT_BRANCH_ID,
+                    config.getParams(), true );
+            broker = EmbeddedGraphDatabase.isReadOnly( graphDb ) ?
+                    new ReadOnlyConnectionBroker( txModule.getTxManager(), dataSource ) :
+                    new ConnectionBroker( txModule.getTxManager(), dataSource );
+        }
+    }
 
     private IndexType getIndexType( String indexName )
     {
         return IndexType.getIndexType( dataSource.config, indexName );
     }
     
+    ConnectionBroker getBroker()
+    {
+        return this.broker;
+    }
+    
+    LuceneDataSource getDataSource()
+    {
+        return this.dataSource;
+    }
+    
     public Index<Node> nodeIndex( String indexName )
     {
+        ensureDataSourceRegistered();
         return new LuceneIndex.NodeIndex( this, new IndexIdentifier(
                 Node.class, indexName, getIndexType( indexName ) ) );
     }
     
     public Index<Relationship> relationshipIndex( String indexName )
     {
+        ensureDataSourceRegistered();
         return new LuceneIndex.RelationshipIndex( this, new IndexIdentifier(
                 Relationship.class, indexName, getIndexType( indexName ) ) );
     }

@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.apache.lucene.AllDocs;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
@@ -37,7 +38,6 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
-import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
@@ -237,7 +237,7 @@ public class LuceneIndexBatchInserterImpl implements LuceneIndexBatchInserter
                 return new SimpleIndexHits<Long>(
                     Collections.<Long>emptyList(), 0 );
             }
-            Hits hits = searcher.search( query );
+            AllDocs hits = new AllDocs( searcher, query, null );
             for ( int i = 0; i < hits.length(); i++ )
             {
                 Document document = hits.doc( i );

@@ -35,8 +35,8 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 
+import org.apache.lucene.AllDocs;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.Hits;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.TermQuery;
@@ -417,9 +417,9 @@ public class LuceneIndexService extends GenericIndexService
         try
         {
             searcher.incRef();
-            Hits hits = sortingOrNull != null ? searcher.getSearcher().search(
-                    query, sortingOrNull ) : searcher.getSearcher().search(
-                    query );
+            AllDocs hits = sortingOrNull != null ?
+                    new AllDocs( searcher.getSearcher(), query, null, sortingOrNull ) :
+                    new AllDocs( searcher.getSearcher(), query, null );
             return new DocToIdIterator( new HitsIterator( hits ), deletedNodes,
                     searcher );
         }

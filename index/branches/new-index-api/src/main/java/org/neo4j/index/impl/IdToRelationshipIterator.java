@@ -17,7 +17,7 @@ public class IdToRelationshipIterator extends IdToEntityIterator<Relationship>
     }
 
     @Override
-    protected Relationship getEntity( long id )
+    protected Relationship underlyingObjectToObject( Long id )
     {
         return graphDb.getRelationshipById( id );
     }

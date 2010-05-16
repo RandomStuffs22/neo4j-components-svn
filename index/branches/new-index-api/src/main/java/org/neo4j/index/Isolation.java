@@ -28,7 +28,10 @@ package org.neo4j.index;
  * "http://wiki.neo4j.org/content/Indexing_with_IndexService#Isolation_levels">
  * The Isolation levels section of the Neo4j wiki page on
  * "Indexing with IndexService"</a>.
+ * 
+ * @deprecated Because {@link IndexService} is deprecated.
  */
+@Deprecated
 public enum Isolation
 {
     /**

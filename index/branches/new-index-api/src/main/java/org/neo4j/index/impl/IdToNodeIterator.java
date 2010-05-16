@@ -25,7 +25,7 @@ public class IdToNodeIterator extends IdToEntityIterator<Node>
     }
 
     @Override
-    protected Node getEntity( long id )
+    protected Node underlyingObjectToObject( Long id )
     {
         return graphDb.getNodeById( id );
     }
