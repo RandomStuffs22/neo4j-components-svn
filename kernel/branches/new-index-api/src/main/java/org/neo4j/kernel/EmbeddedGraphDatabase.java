@@ -77,7 +77,6 @@ public final class EmbeddedGraphDatabase implements GraphDatabaseService
     public EmbeddedGraphDatabase( String storeDir, Map<String,String> params )
     {
         this.graphDbImpl = new EmbeddedGraphDbImpl( storeDir, params, this );
-        this.graphDbImpl.instantiateIndex();
     }
 
     /**
@@ -170,28 +169,28 @@ public final class EmbeddedGraphDatabase implements GraphDatabaseService
         return graphDbImpl.getAllNodes();
     }
 
-    public KernelEventHandler registerKernelEventHandler(
+    public void registerKernelEventHandler(
             KernelEventHandler handler )
     {
-        return this.graphDbImpl.registerKernelEventHandler( handler );
+        this.graphDbImpl.registerKernelEventHandler( handler );
     }
 
-    public <T> TransactionEventHandler<T> registerTransactionEventHandler(
+    public <T> void registerTransactionEventHandler(
             TransactionEventHandler<T> handler )
     {
-        return this.graphDbImpl.registerTransactionEventHandler( handler );
+        this.graphDbImpl.registerTransactionEventHandler( handler );
     }
 
-    public KernelEventHandler unregisterKernelEventHandler(
+    public void unregisterKernelEventHandler(
             KernelEventHandler handler )
     {
-        return this.graphDbImpl.unregisterKernelEventHandler( handler );
+        this.graphDbImpl.unregisterKernelEventHandler( handler );
     }
 
-    public <T> TransactionEventHandler<T> unregisterTransactionEventHandler(
+    public <T> void unregisterTransactionEventHandler(
             TransactionEventHandler<T> handler )
     {
-        return this.graphDbImpl.unregisterTransactionEventHandler( handler );
+        this.graphDbImpl.unregisterTransactionEventHandler( handler );
     }
     
     public static boolean isReadOnly( GraphDatabaseService graphDb )

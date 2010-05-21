@@ -1,7 +1,6 @@
 package org.neo4j.kernel.impl.event;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
@@ -44,12 +43,9 @@ public class TestKernelEvents
         { /* Good */
         }
 
-        assertTrue( handler1 == graphDb.registerKernelEventHandler(
-                handler1 ) );
-        assertTrue( handler1 == graphDb.registerKernelEventHandler(
-                handler1 ) );
-        assertTrue( handler1 == graphDb.unregisterKernelEventHandler(
-                handler1 ) );
+        graphDb.registerKernelEventHandler( handler1 );
+        graphDb.registerKernelEventHandler( handler1 );
+        graphDb.unregisterKernelEventHandler( handler1 );
 
         try
         {
@@ -61,14 +57,10 @@ public class TestKernelEvents
         { /* Good */
         }
 
-        assertTrue( handler1 == graphDb.registerKernelEventHandler(
-                handler1 ) );
-        assertTrue( handler2 == graphDb.registerKernelEventHandler(
-                handler2 ) );
-        assertTrue( handler1 == graphDb.unregisterKernelEventHandler(
-                handler1 ) );
-        assertTrue( handler2 == graphDb.unregisterKernelEventHandler(
-                handler2 ) );
+        graphDb.registerKernelEventHandler( handler1 );
+        graphDb.registerKernelEventHandler( handler2 );
+        graphDb.unregisterKernelEventHandler( handler1 );
+        graphDb.unregisterKernelEventHandler( handler2 );
 
         graphDb.shutdown();
     }

@@ -1,19 +1,23 @@
-package org.neo4j.kernel.impl.traversal;
+package org.neo4j.kernel;
 
 import org.neo4j.graphdb.traversal.ExpansionSource;
 import org.neo4j.graphdb.traversal.SourceSelector;
-import org.neo4j.graphdb.traversal.TraversalRules;
 
-class DepthFirstSelector implements SourceSelector
+/**
+ * Selects {@link ExpansionSource}s according to preorder depth first pattern,
+ * the most natural ordering in a depth first search, see
+ * http://en.wikipedia.org/wiki/Depth-first_search
+ */
+class PreorderDepthFirstSelector implements SourceSelector
 {
     private ExpansionSource current;
     
-    DepthFirstSelector( ExpansionSource startSource )
+    PreorderDepthFirstSelector( ExpansionSource startSource )
     {
         this.current = startSource;
     }
     
-    public ExpansionSource nextPosition( TraversalRules rules )
+    public ExpansionSource nextPosition()
     {
         ExpansionSource result = null;
         while ( result == null )
@@ -22,7 +26,7 @@ class DepthFirstSelector implements SourceSelector
             {
                 return null;
             }
-            ExpansionSource next = current.next( rules );
+            ExpansionSource next = current.next();
             if ( next == null )
             {
                 current = current.parent();
@@ -34,10 +38,7 @@ class DepthFirstSelector implements SourceSelector
             }
             if ( current != null )
             {
-                if ( rules.okToReturn( current ) )
-                {
-                    result = current;
-                }
+                result = current;
             }
         }
         return result;

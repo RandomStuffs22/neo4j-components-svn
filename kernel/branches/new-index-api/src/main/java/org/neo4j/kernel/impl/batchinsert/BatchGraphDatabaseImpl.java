@@ -649,25 +649,25 @@ class BatchGraphDatabaseImpl implements GraphDatabaseService
         rels.clear();
     }
 
-    public KernelEventHandler registerKernelEventHandler(
+    public void registerKernelEventHandler(
             KernelEventHandler handler )
     {
         throw new UnsupportedOperationException();
     }
 
-    public <T> TransactionEventHandler<T> registerTransactionEventHandler(
+    public <T> void registerTransactionEventHandler(
             TransactionEventHandler<T> handler )
     {
         throw new UnsupportedOperationException();
     }
 
-    public KernelEventHandler unregisterKernelEventHandler(
+    public void unregisterKernelEventHandler(
             KernelEventHandler handler )
     {
         throw new UnsupportedOperationException();
     }
 
-    public <T> TransactionEventHandler<T> unregisterTransactionEventHandler(
+    public <T> void unregisterTransactionEventHandler(
             TransactionEventHandler<T> handler )
     {
         throw new UnsupportedOperationException();

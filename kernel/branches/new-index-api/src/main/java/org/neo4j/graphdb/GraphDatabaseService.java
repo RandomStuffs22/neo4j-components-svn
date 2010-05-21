@@ -24,7 +24,7 @@ import java.util.Map;
 
 import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.event.TransactionEventHandler;
-import org.neo4j.graphdb.index.IndexProvider;
+import org.neo4j.graphdb.index.Index;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 /**
@@ -48,7 +48,7 @@ import org.neo4j.kernel.EmbeddedGraphDatabase;
  * invoked in a {@link Transaction transactional context}. Failure to do so will
  * result in a {@link NotInTransactionException} being thrown.
  */
-public interface GraphDatabaseService extends IndexProvider
+public interface GraphDatabaseService
 {
     /**
      * Creates a new node.
@@ -184,9 +184,8 @@ public interface GraphDatabaseService extends IndexProvider
      * documentation about it at {@link TransactionEventHandler}.
      * @param handler the handler to receive events about different states
      * in transaction lifecycles.
-     * @return the handler passed in as the argument.
      */
-    public <T> TransactionEventHandler<T> registerTransactionEventHandler(
+    public <T> void registerTransactionEventHandler(
             TransactionEventHandler<T> handler );
     
     /**
@@ -201,11 +200,10 @@ public interface GraphDatabaseService extends IndexProvider
      * documentation about it at {@link TransactionEventHandler}.
      * @param handler the handler to receive events about different states
      * in transaction lifecycles.
-     * @return the handler passed in as the argument.
      * @throws IllegalStateException if {@code handler} wasn't registered prior
      * to calling this method.
      */
-    public <T> TransactionEventHandler<T> unregisterTransactionEventHandler(
+    public <T> void unregisterTransactionEventHandler(
             TransactionEventHandler<T> handler );
     
     /**
@@ -217,10 +215,8 @@ public interface GraphDatabaseService extends IndexProvider
      * 
      * @param handler the handler to receive events about different states
      * in the kernel lifecycle.
-     * @return the handler passed in as the argument.
      */
-    public KernelEventHandler registerKernelEventHandler(
-            KernelEventHandler handler );
+    public void registerKernelEventHandler( KernelEventHandler handler );
 
     /**
      * Unregisters {@code handler} from the list of kernel event handlers.
@@ -232,10 +228,12 @@ public interface GraphDatabaseService extends IndexProvider
      * 
      * @param handler the handler to receive events about different states
      * in the kernel lifecycle.
-     * @return the handler passed in as the argument.
      * @throws IllegalStateException if {@code handler} wasn't registered prior
      * to calling this method.
      */
-    public KernelEventHandler unregisterKernelEventHandler(
-            KernelEventHandler handler );
+    public void unregisterKernelEventHandler( KernelEventHandler handler );
+    
+    public Index<Node> nodeIndex( String indexName );
+    
+    public Index<Relationship> relationshipIndex( String indexName );
 }

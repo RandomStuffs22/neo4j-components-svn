@@ -4,10 +4,8 @@ import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.RelationshipExpander;
 import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.graphdb.traversal.ExpansionSource;
 import org.neo4j.graphdb.traversal.PruneEvaluator;
 import org.neo4j.graphdb.traversal.ReturnFilter;
-import org.neo4j.graphdb.traversal.SourceSelector;
 import org.neo4j.graphdb.traversal.SourceSelectorFactory;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Traverser;
@@ -17,27 +15,11 @@ import org.neo4j.kernel.TraversalFactory;
 
 public final class TraversalDescriptionImpl implements TraversalDescription
 {
-    public static final SourceSelectorFactory DEPTH_FIRST_SELECTOR =
-            new SourceSelectorFactory()
-            {
-                public SourceSelector create( ExpansionSource startSource )
-                {
-                    return new DepthFirstSelector( startSource );
-                }
-            };
-    public static final SourceSelectorFactory BREADTH_FIRST_SELECTOR =
-            new SourceSelectorFactory()
-            {
-                public SourceSelector create( ExpansionSource startSource )
-                {
-                    return new BreadthFirstSelector( startSource );
-                }
-            };
-    
     public TraversalDescriptionImpl()
     {
         this( TraversalFactory.expanderForAllTypes(), Uniqueness.NODE_GLOBAL, null,
-                PruneEvaluator.NONE, ReturnFilter.ALL, DEPTH_FIRST_SELECTOR );
+                PruneEvaluator.NONE, ReturnFilter.ALL,
+                TraversalFactory.preorderDepthFirstSelector() );
     }
 
     final RelationshipExpander expander;
@@ -196,12 +178,12 @@ public final class TraversalDescriptionImpl implements TraversalDescription
     
     public TraversalDescription depthFirst()
     {
-        return sourceSelector( DEPTH_FIRST_SELECTOR );
+        return sourceSelector( TraversalFactory.preorderDepthFirstSelector() );
     }
 
     public TraversalDescription breadthFirst()
     {
-        return sourceSelector( BREADTH_FIRST_SELECTOR );
+        return sourceSelector( TraversalFactory.preorderBreadthFirstSelector() );
     }
     
     /* (non-Javadoc)

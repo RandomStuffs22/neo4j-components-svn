@@ -42,6 +42,7 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.TransactionManager;
 
+import org.neo4j.commons.Service;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
@@ -85,8 +86,6 @@ class EmbeddedGraphDbImpl
             new KernelPanicEventGenerator( kernelEventHandlers );
 
     private final Runnable jmxShutdownHook;
-    private IndexProvider index;
-    private String indexInstantiationError;
 
     /**
      * A non-standard way of creating an embedded {@link GraphDatabaseService}
@@ -107,36 +106,6 @@ class EmbeddedGraphDbImpl
             graphDbInstance.getConfig().getGraphDbModule().getNodeManager();
         this.graphDbService = graphDbService;
         jmxShutdownHook = initJMX( params );
-    }
-    
-    void instantiateIndex()
-    {
-        this.index = tryToInstantiateIndexProvider();
-    }
-
-    private IndexProvider tryToInstantiateIndexProvider()
-    {
-        try
-        {
-            return (IndexProvider) Class.forName( getIndexProviderClass() ).getConstructor(
-                    GraphDatabaseService.class ).newInstance( this.graphDbService );
-        }
-        catch ( Exception e )
-        {
-            this.indexInstantiationError = e.toString();
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private String getIndexProviderClass()
-    {
-        String indexDescription = (String) getConfig().getParams().get( "index" );
-        if ( indexDescription == null )
-        {
-            indexDescription = LUCENE_INDEX_PROVIDER_CLASS;
-        }
-        return indexDescription;
     }
     
     private Runnable initJMX( final Map<Object, Object> params )
@@ -585,23 +554,20 @@ class EmbeddedGraphDbImpl
         return handler;
     }
     
-    private IndexProvider getIndexProvider()
+    private IndexProvider getIndexProvider( String indexName )
     {
-        if ( this.index == null )
-        {
-            throw new RuntimeException( "Couldn't find the index '" + getIndexProviderClass() +
-                    "', not on classpath? [" + this.indexInstantiationError + "]" );
-        }
-        return this.index;
+        String type = (String) getConfig().getParams().get( "index." + indexName );
+        type = type != null ? type : "lucene";
+        return Service.load( IndexProvider.class, type );
     }
     
     Index<Node> nodeIndex( String indexName )
     {
-        return getIndexProvider().nodeIndex( indexName );
+        return getIndexProvider( indexName ).nodeIndex( indexName );
     }
 
     Index<Relationship> relationshipIndex( String indexName )
     {
-        return getIndexProvider().relationshipIndex( indexName );
+        return getIndexProvider( indexName ).relationshipIndex( indexName );
     }
 }

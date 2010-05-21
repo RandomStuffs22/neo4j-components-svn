@@ -41,12 +41,9 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
         { /* Good */
         }
 
-        assertTrue( handler1 == getGraphDb().registerTransactionEventHandler(
-                handler1 ) );
-        assertTrue( handler1 == getGraphDb().registerTransactionEventHandler(
-                handler1 ) );
-        assertTrue( handler1 == getGraphDb().unregisterTransactionEventHandler(
-                handler1 ) );
+        getGraphDb().registerTransactionEventHandler( handler1 );
+        getGraphDb().registerTransactionEventHandler( handler1 );
+        getGraphDb().unregisterTransactionEventHandler( handler1 );
 
         try
         {
@@ -58,14 +55,10 @@ public class TestTransactionEvents extends AbstractNeo4jTestCase
         { /* Good */
         }
 
-        assertTrue( handler1 == getGraphDb().registerTransactionEventHandler(
-                handler1 ) );
-        assertTrue( handler2 == getGraphDb().registerTransactionEventHandler(
-                handler2 ) );
-        assertTrue( handler1 == getGraphDb().unregisterTransactionEventHandler(
-                handler1 ) );
-        assertTrue( handler2 == getGraphDb().unregisterTransactionEventHandler(
-                handler2 ) );
+        getGraphDb().registerTransactionEventHandler( handler1 );
+        getGraphDb().registerTransactionEventHandler( handler2 );
+        getGraphDb().unregisterTransactionEventHandler( handler1 );
+        getGraphDb().unregisterTransactionEventHandler( handler2 );
 
         getGraphDb().registerTransactionEventHandler( handler1 );
         newTransaction();
