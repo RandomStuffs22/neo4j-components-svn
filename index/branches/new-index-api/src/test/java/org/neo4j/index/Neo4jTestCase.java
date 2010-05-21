@@ -175,7 +175,7 @@ public abstract class Neo4jTestCase
         assertCollection( asCollection( items ), expectedItems );
     }
     
-    protected static <T> Collection<T> asCollection( Iterable<T> iterable )
+    public static <T> Collection<T> asCollection( Iterable<T> iterable )
     {
         List<T> list = new ArrayList<T>();
         for ( T item : iterable )
@@ -185,7 +185,7 @@ public abstract class Neo4jTestCase
         return list;
     }
 
-    protected static <T> String join( String delimiter, T... items )
+    public static <T> String join( String delimiter, T... items )
     {
         StringBuffer buffer = new StringBuffer();
         for ( T item : items )
