@@ -20,6 +20,7 @@
 package org.neo4j.kernel;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -60,7 +61,7 @@ public final class EmbeddedGraphDatabase implements GraphDatabaseService
      */
     public EmbeddedGraphDatabase( String storeDir )
     {
-        this( storeDir, null );
+        this( storeDir, new HashMap<String, String>() );
     }
 
     /**
