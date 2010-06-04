@@ -15,7 +15,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.neo4j.commons.iterator.CombiningIterator;
-import org.neo4j.commons.iterator.IteratorAsIterable;
+import org.neo4j.commons.iterator.IteratorUtil;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
@@ -161,7 +161,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         }
 
         IndexHits<T> hits = new SimpleIndexHits<T>(
-                new IteratorAsIterable<T>( new IdToEntityIterator<T>( idIterator )
+                IteratorUtil.asIterable( new IdToEntityIterator<T>( idIterator )
                 {
                     @Override
                     protected T underlyingObjectToObject( Long id )
