@@ -173,7 +173,7 @@ class Owl2GraphDbUtil
 	
 	private Collection<String> getStoredOntologies()
 	{
-		return new GraphDbStringSet( owl2GraphDb.getGraphDb(), getReferenceNode(),
+		return new GraphDbStringSet( getReferenceNode(),
 			RelTypes.OWL_2_NEO_ONTOLOGY ); 
 	}
 	
