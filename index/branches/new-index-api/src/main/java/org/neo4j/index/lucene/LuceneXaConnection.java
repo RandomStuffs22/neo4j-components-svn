@@ -22,7 +22,8 @@ package org.neo4j.index.lucene;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 
-import org.neo4j.graphdb.Node;
+import org.apache.lucene.search.Query;
+import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.kernel.impl.transaction.xaframework.XaConnectionHelpImpl;
 import org.neo4j.kernel.impl.transaction.xaframework.XaResourceHelpImpl;
 import org.neo4j.kernel.impl.transaction.xaframework.XaResourceManager;
@@ -31,7 +32,7 @@ import org.neo4j.kernel.impl.transaction.xaframework.XaResourceManager;
  * An XA connection used with {@link LuceneDataSource}.
  * This class is public because the XA framework requires it.
  */
-public class LuceneXaConnection extends XaConnectionHelpImpl
+class LuceneXaConnection extends XaConnectionHelpImpl
 {
     private final LuceneXaResource xaResource;
 
@@ -89,13 +90,21 @@ public class LuceneXaConnection extends XaConnectionHelpImpl
         return luceneTx;
     }
     
-    void index( Node node, String key, Object value )
+    <T extends PropertyContainer> void add( LuceneIndex<T> index,
+            T entity, String key, Object value )
     {
-        getLuceneTx().index( node, key, value );
+        getLuceneTx().add( index, entity, key, value );
     }
     
-    void removeIndex( Node node, String key, Object value )
+    <T extends PropertyContainer> void remove( LuceneIndex<T> index,
+            T entity, String key, Object value )
     {
-        getLuceneTx().removeIndex( node, key, value );
+        getLuceneTx().remove( index, entity, key, value );
+    }
+    
+    <T extends PropertyContainer> void remove( LuceneIndex<T> index,
+            Query query )
+    {
+        getLuceneTx().remove( index, query );
     }
 }

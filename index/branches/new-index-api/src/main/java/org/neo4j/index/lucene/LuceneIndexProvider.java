@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.neo4j.index.future.lucene;
+package org.neo4j.index.lucene;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -34,12 +34,12 @@ import org.neo4j.kernel.impl.transaction.TxModule;
 public class LuceneIndexProvider extends IndexProvider implements
         KernelEventHandler
 {
-    public static final int DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD = 100;
+    public static final int DEFAULT_LAZY_THRESHOLD = 100;
     private static final String DATA_SOURCE_NAME = "lucene-index";
     
     private ConnectionBroker broker;
     private LuceneDataSource dataSource;
-    int lazynessThreshold = DEFAULT_LAZY_SEARCH_RESULT_THRESHOLD;
+    int lazynessThreshold = DEFAULT_LAZY_THRESHOLD;
     final GraphDatabaseService graphDb;
     
     public LuceneIndexProvider( GraphDatabaseService graphDb )
@@ -101,13 +101,14 @@ public class LuceneIndexProvider extends IndexProvider implements
 
     public void beforeShutdown()
     {
-        TxModule txModule = ((EmbeddedGraphDatabase) graphDb).getConfig().getTxModule();
-        if ( txModule.getXaDataSourceManager().hasDataSource( DATA_SOURCE_NAME ) )
-        {
-            txModule.getXaDataSourceManager().unregisterDataSource(
-                    DATA_SOURCE_NAME );
-        }
-        dataSource.close();
+        // Won't this be handled by the TxModule?
+//        TxModule txModule = ((EmbeddedGraphDatabase) graphDb).getConfig().getTxModule();
+//        if ( txModule.getXaDataSourceManager().hasDataSource( DATA_SOURCE_NAME ) )
+//        {
+//            txModule.getXaDataSourceManager().unregisterDataSource(
+//                    DATA_SOURCE_NAME );
+//        }
+//        dataSource.close();
     }
 
     public Object getResource()

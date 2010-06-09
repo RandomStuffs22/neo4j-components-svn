@@ -1,4 +1,4 @@
-package org.neo4j.index.future.lucene;
+package org.neo4j.index.lucene;
 
 import javax.transaction.Synchronization;
 import javax.transaction.SystemException;

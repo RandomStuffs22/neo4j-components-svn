@@ -106,7 +106,7 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         assertNull( ( (LuceneIndexService) index() ).getEnabledCacheSize( key ) );
         ( ( LuceneIndexService ) index() ).enableCache( key, 1000 );
         assertEquals( ( Integer ) 1000,
-                ( (LuceneIndexService) index() ).getEnabledCacheSize( key ) );
+                ( Integer ) ( (LuceneIndexService) index() ).getEnabledCacheSize( key ) );
         Node node1 = graphDb().createNode();
         index().index( node1, key, value );
         index().getNodes( key, value );

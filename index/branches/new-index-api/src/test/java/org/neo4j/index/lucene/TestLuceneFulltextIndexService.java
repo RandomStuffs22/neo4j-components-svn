@@ -170,11 +170,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
     @Test
     public void testBreakLazyIteratorAfterRemove() throws Exception
     {
-        int oldLazyThreshold = ( ( LuceneFulltextIndexService )
-            index() ).getLazySearchResultThreshold();
-        int lazyThreshold = 5;
-        ( ( LuceneFulltextIndexService ) index() ).setLazySearchResultThreshold(
-            lazyThreshold );
+        int lazyThreshold = LuceneIndexService.DEFAULT_LAZY_THRESHOLD;
         List<Node> nodes = new ArrayList<Node>();
         String key = "lazykey";
         String value = "value";
@@ -214,8 +210,6 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         for ( Node hit : hits )
         {
         }
-        ( ( LuceneFulltextIndexService ) index() ).setLazySearchResultThreshold(
-            oldLazyThreshold );
     }
     
     @Test

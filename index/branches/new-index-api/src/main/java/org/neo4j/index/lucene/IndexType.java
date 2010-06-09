@@ -1,4 +1,4 @@
-package org.neo4j.index.future.lucene;
+package org.neo4j.index.lucene;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ abstract class IndexType
         public <T extends PropertyContainer> TxData newTxData(
                 LuceneIndex<T> index )
         {
-            return new TxData( index, LuceneDataSource.KEYWORD_ANALYZER );
+            return new TxData( index, getAnalyzer() );
         }
 
         @Override
@@ -52,7 +52,7 @@ abstract class IndexType
         @Override
         public Query query( String key, Object value )
         {
-            return parseQuery( key, value, LuceneDataSource.KEYWORD_ANALYZER );
+            return parseQuery( key, value, getAnalyzer() );
         }
 
         @Override
@@ -63,6 +63,11 @@ abstract class IndexType
                     Index.NOT_ANALYZED ) );
             document.add( new Field( key, value.toString(), Store.NO,
                     Index.NOT_ANALYZED ) );
+        }
+        
+        Analyzer getAnalyzer()
+        {
+            return LuceneDataSource.KEYWORD_ANALYZER;
         }
     };
     
@@ -121,6 +126,11 @@ abstract class IndexType
                     Index.NOT_ANALYZED ) );
             document.add( new Field( key, valueAsString, Store.NO,
                     Index.ANALYZED ) );
+        }
+        
+        Analyzer getAnalyzer()
+        {
+            return this.analyzer;
         }
     };
     
@@ -217,6 +227,8 @@ abstract class IndexType
 
     abstract void fillDocument( Document document, long entityId, String key,
             Object value );
+    
+    abstract Analyzer getAnalyzer();
     
     private static Query parseQuery( String key, Object value, Analyzer analyzer )
     {

@@ -12,7 +12,7 @@ class HitsIterator extends PrefetchingIterator<Document>
     private final int size;
     private int index;
     
-    HitsIterator( AllDocs hits )
+    public HitsIterator( AllDocs hits )
     {
         this.hits = hits;
         this.size = hits.length();
@@ -30,10 +30,5 @@ class HitsIterator extends PrefetchingIterator<Document>
         {
             throw new RuntimeException( e );
         }
-    }
-    
-    public int size()
-    {
-        return this.size;
     }
 }

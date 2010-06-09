@@ -1,4 +1,4 @@
-package org.neo4j.index.future.lucene;
+package org.neo4j.index.lucene;
 
 import java.util.Map;
 

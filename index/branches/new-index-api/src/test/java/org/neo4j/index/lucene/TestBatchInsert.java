@@ -113,7 +113,6 @@ public class TestBatchInsert
         {
             index.index( i, "mykey2", i );
         }
-        index.optimize();
         for ( int i = 0; i < 1000; i++ )
         {
             assertEquals( i, index.getSingleNode( "mykey2", i ) );
@@ -143,7 +142,6 @@ public class TestBatchInsert
             index.index( imageIdStart + i, "FILENAME", "filename" + i );
             index.index( imageIdStart + i, "TYPE", "type" );
         }
-        index.optimize();
         
         for ( int i = 0; i < 100; i++ )
         {

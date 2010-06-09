@@ -23,151 +23,159 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.search.Query;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.PropertyContainer;
+import org.neo4j.graphdb.Relationship;
 import org.neo4j.index.lucene.LuceneCommand.AddCommand;
 import org.neo4j.index.lucene.LuceneCommand.RemoveCommand;
+import org.neo4j.index.lucene.LuceneCommand.RemoveQueryCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaLogicalLog;
 import org.neo4j.kernel.impl.transaction.xaframework.XaTransaction;
 
 class LuceneTransaction extends XaTransaction
 {
-    private final Map<String,TxCache> txIndexed = new HashMap<String,TxCache>();
-    private final Map<String,TxCache> txRemoved = new HashMap<String,TxCache>();
+    private final Map<IndexIdentifier, TxDataBoth> txData =
+            new HashMap<IndexIdentifier, TxDataBoth>();
+    private final LuceneDataSource dataSource;
 
-    private final LuceneDataSource luceneDs;
-
-    private final Map<String,List<LuceneCommand>> commandMap = 
-        new HashMap<String,List<LuceneCommand>>();
+    private final Map<IndexIdentifier,List<LuceneCommand>> commandMap = 
+            new HashMap<IndexIdentifier,List<LuceneCommand>>();
 
     LuceneTransaction( int identifier, XaLogicalLog xaLog,
         LuceneDataSource luceneDs )
     {
         super( identifier, xaLog );
-        this.luceneDs = luceneDs;
+        this.dataSource = luceneDs;
     }
 
-    void index( Node node, String key, Object value )
+    <T extends PropertyContainer> void add( LuceneIndex<T> index, T entity,
+            String key, Object value )
     {
-        insert( node, key, value, txRemoved, txIndexed );
-        queueCommand( new AddCommand( node.getId(), key, value.toString() ) );
+        TxDataBoth data = getTxData( index, true );
+        insert( index, entity, key, value, data.added( true ), data.removed( false ) );
+        queueCommand( new AddCommand( index.identifier,
+                getEntityId( entity ), key, value.toString() ) );
     }
-
-    void removeIndex( Node node, String key, Object value )
+    
+    private long getEntityId( PropertyContainer entity )
     {
-        insert( node, key, value, txIndexed, txRemoved );
-        queueCommand( new RemoveCommand( node != null ? node.getId() : null,
-            key, value != null ? value.toString() : null ) );
+        return entity instanceof Node ? ((Node) entity).getId() :
+                ((Relationship) entity).getId();
+    }
+    
+    <T extends PropertyContainer> TxDataBoth getTxData( LuceneIndex<T> index,
+            boolean createIfNotExists )
+    {
+        IndexIdentifier identifier = index.identifier;
+        TxDataBoth data = txData.get( identifier );
+        if ( data == null && createIfNotExists )
+        {
+            data = new TxDataBoth( index );
+            txData.put( identifier, data );
+        }
+        return data;
     }
 
+    <T extends PropertyContainer> void remove( LuceneIndex<T> index, T entity,
+            String key, Object value )
+    {
+        TxDataBoth data = getTxData( index, true );
+        insert( index, entity, key, value, data.removed( true ), data.added( false ) );
+        queueCommand( new RemoveCommand( index.identifier,
+                getEntityId( entity ), key, value.toString() ) );
+    }
+    
+    <T extends PropertyContainer> void remove( LuceneIndex<T> index,
+            Query query )
+    {
+        TxDataBoth data = getTxData( index, true );
+        TxData added = data.added( false );
+        if ( added != null )
+        {
+            added.remove( query );
+        }
+        TxData removed = data.removed( true );
+        Iterator<Document> docs = index.search(
+                dataSource.getIndexSearcher( index.identifier ), query ).documents;
+        while ( docs.hasNext() )
+        {
+            removed.add( docs.next() );
+        }
+        queueCommand( new RemoveQueryCommand( index.identifier,
+                -1, "", query.toString() ) );
+    }
+    
     private void queueCommand( LuceneCommand command )
     {
-        String key = command.getKey();
-        List<LuceneCommand> commands = commandMap.get( key );
+        IndexIdentifier indexId = command.getIndexIdentifier();
+        List<LuceneCommand> commands = commandMap.get( indexId );
         if ( commands == null )
         {
             commands = new ArrayList<LuceneCommand>();
-            commandMap.put( key, commands );
+            commandMap.put( indexId, commands );
         }
         commands.add( command );
     }
     
-    private void insert( Node node, String key, Object value,
-        Map<String,TxCache> toRemoveFrom, Map<String,TxCache> toInsertInto )
+    private <T extends PropertyContainer> void insert( LuceneIndex<T> index,
+            T entity, String key, Object value, TxData insertInto, TxData removeFrom )
     {
-        delFromIndex( node, key, value, toRemoveFrom );
-        
-        TxCache keyIndex = toInsertInto.get( key );
-        if ( keyIndex == null )
+        long id = getEntityId( entity );
+        if ( removeFrom != null )
         {
-            keyIndex = new TxCache();
-            toInsertInto.put( key, keyIndex );
+            removeFrom.remove( id, key, value );
         }
-        keyIndex.add( node != null ? node.getId() : null, value );
+        insertInto.add( id, key, value );
     }
 
-    private boolean delFromIndex( Node node, String key, Object value,
-        Map<String,TxCache> map )
+    <T extends PropertyContainer> Set<Long> getRemovedIds( LuceneIndex<T> index,
+            Query query )
     {
-        TxCache keyIndex = map.get( key );
-        if ( keyIndex == null )
+        TxDataBoth data = getTxData( index, false );
+        if ( data == null )
         {
-            return false;
+            return Collections.emptySet();
         }
-        
-        boolean modified = false;
-        if ( node != null )
+        TxData removed = data.removed( false );
+        if ( removed == null )
         {
-            Long nodeId = node.getId();
-            if ( value != null )
-            {
-                keyIndex.remove( nodeId, value );
-            }
-            else
-            {
-                keyIndex.remove( nodeId );
-            }
+            return Collections.emptySet();
         }
-        else
-        {
-            keyIndex.remove();
-        }
-        return modified;
-    }
-
-    Set<Long> getDeletedNodesFor( String key, Object value, Object matching )
-    {
-        TxCache keyIndex = txRemoved.get( key );
-        LazyMergedSet<Long> result = null;
-        if ( keyIndex != null )
-        {
-            result = new LazyMergedSet<Long>();
-            result.add( keyIndex.map.get( value ) );
-            // the 'null' value represents those removed with
-            // removeIndex( Node, String )
-            result.add( keyIndex.map.get( null ) );
-        }
-        return result != null && result.get() != null ? result.get() :
-                Collections.<Long>emptySet();
+        Set<Long> ids = removed.getEntityIds( query );
+        return ids != null ? ids : Collections.<Long>emptySet();
     }
     
-    boolean getIndexDeleted( String key )
+    <T extends PropertyContainer> Set<Long> getAddedIds( LuceneIndex<T> index,
+            Query query )
     {
-        TxCache keyIndex = txRemoved.get( key );
-        return keyIndex != null ? keyIndex.all : false;
-    }
-    
-    Set<Long> getNodesFor( String key, Object value, Object matching )
-    {
-        TxCache keyIndex = txIndexed.get( key );
-        if ( keyIndex != null )
+        TxDataBoth data = getTxData( index, false );
+        if ( data == null )
         {
-            Set<Long> nodeIds = keyIndex.map.get( value );
-            if ( nodeIds != null )
-            {
-                return nodeIds;
-            }
+            return Collections.emptySet();
         }
-        return Collections.emptySet();
+        TxData added = data.added( false );
+        if ( added == null )
+        {
+            return Collections.emptySet();
+        }
+        Set<Long> ids = added.getEntityIds( query );
+        return ids != null ? ids : Collections.<Long>emptySet();
     }
     
-    protected LuceneDataSource getDataSource()
-    {
-        return this.luceneDs;
-    }
-    
-    private void indexWriter( IndexWriter writer, long nodeId, String key,
-        Object value )
+    private void writeToIndex( IndexWriter writer, IndexIdentifier identifier,
+            long entityId, String key, Object value )
     {
         Document document = new Document();
-        this.luceneDs.fillDocument( document, nodeId, key, value );
+        identifier.getType( dataSource.config ).fillDocument( document, entityId, key, value );
         try
         {
             writer.addDocument( document );
@@ -192,59 +200,60 @@ class LuceneTransaction extends XaTransaction
     @Override
     protected void doCommit()
     {
-        luceneDs.getWriteLock();
+        dataSource.getWriteLock();
         try
         {
-            for ( Map.Entry<String, List<LuceneCommand>> entry :
+            for ( Map.Entry<IndexIdentifier, List<LuceneCommand>> entry :
                 this.commandMap.entrySet() )
             {
-                String key = entry.getKey();
-                IndexWriter writer = luceneDs.getIndexWriter( key );
+                IndexIdentifier identifier = entry.getKey();
+                IndexWriter writer = dataSource.getIndexWriter( identifier );
                 for ( LuceneCommand command : entry.getValue() )
                 {
-                    Long nodeId = command.getNodeId();
+                    long entityId = command.getEntityId();
+                    String key = command.getKey();
                     String value = command.getValue();
                     if ( command instanceof AddCommand )
                     {
-                        indexWriter( writer, nodeId, key, value );
+                        writeToIndex( writer, identifier, entityId, key, value );
                     }
                     else if ( command instanceof RemoveCommand )
                     {
-                        luceneDs.deleteDocumentsUsingWriter(
-                            writer, nodeId, value );
+                        dataSource.deleteDocuments( writer, identifier,
+                                entityId, key, value );
                     }
                     else
                     {
                         throw new RuntimeException( "Unknown command type " +
                             command + ", " + command.getClass() );
                     }
-                    
-                    if ( value != null )
-                    {
-                        luceneDs.invalidateCache( key, value );
-                    }
-                    else
-                    {
-                        luceneDs.invalidateCache( key );
-                    }
                 }
-                luceneDs.removeWriter( key, writer );
-                luceneDs.invalidateIndexSearcher( key );
+                dataSource.removeWriter( writer );
+                dataSource.invalidateIndexSearcher( identifier );
             }
+            closeTxData();
         }
         finally
         {
-            luceneDs.releaseWriteLock();
+            dataSource.releaseWriteLock();
         }
+    }
+
+    private void closeTxData()
+    {
+        for ( TxDataBoth data : this.txData.values() )
+        {
+            data.close();
+        }
+        this.txData.clear();
     }
 
     @Override
     protected void doPrepare()
     {
-        for ( Map.Entry<String, List<LuceneCommand>> entry :
-            commandMap.entrySet() )
+        for ( List<LuceneCommand> list : commandMap.values() )
         {
-            for ( LuceneCommand command : entry.getValue() )
+            for ( LuceneCommand command : list )
             {
                 addCommand( command );
             }
@@ -256,8 +265,7 @@ class LuceneTransaction extends XaTransaction
     {
         // TODO Auto-generated method stub
         commandMap.clear();
-        txIndexed.clear();
-        txRemoved.clear();
+        closeTxData();
     }
 
     @Override
@@ -266,115 +274,48 @@ class LuceneTransaction extends XaTransaction
         return false;
     }
     
-    static class LazyMergedSet<T>
+    // Bad name
+    private class TxDataBoth
     {
-        private Set<T> set;
-        private int count;
+        private final LuceneIndex index;
+        private TxData add;
+        private TxData remove;
         
-        private void add( Set<T> setOrNull )
+        public TxDataBoth( LuceneIndex index )
         {
-            if ( setOrNull == null )
-            {
-                return;
-            }
-            
-            if ( this.count == 0 )
-            {
-                this.set = setOrNull;
-            }
-            else
-            {
-                if ( count == 1 )
-                {
-                    this.set = new HashSet<T>( this.set );
-                }
-                this.set.addAll( setOrNull );
-            }
-            this.count++;
+            this.index = index;
         }
         
-        private Set<T> get()
+        TxData added( boolean createIfNotExists )
         {
-            return this.set;
-        }
-    }
-    
-    private static class TxCache
-    {
-        private final Map<Object, Set<Long>> map =
-            new HashMap<Object, Set<Long>>();
-        private final Map<Long, Set<Object>> reverseMap =
-            new HashMap<Long, Set<Object>>();
-        boolean all;
-        
-        void add( Long nodeId, Object value )
-        {
-            if ( nodeId == null && value == null )
+            if ( this.add == null && createIfNotExists )
             {
-                all = true;
-                return;
+                this.add = index.identifier.getType( dataSource.config ).newTxData( index );
             }
-            
-            Set<Long> ids = map.get( value );
-            if ( ids == null )
-            {
-                ids = new HashSet<Long>();
-                map.put( value, ids );
-            }
-            ids.add( nodeId );
-            
-            Set<Object> values = reverseMap.get( nodeId );
-            if ( values == null )
-            {
-                values = new HashSet<Object>();
-                reverseMap.put( nodeId, values );
-            }
-            values.add( value );
+            return this.add;
         }
         
-        void remove( Long nodeId, Object value )
+        TxData removed( boolean createIfNotExists )
         {
-            Set<Long> ids = map.get( value );
-            if ( ids != null )
+            if ( this.remove == null && createIfNotExists )
             {
-                ids.remove( nodeId );
+                this.remove = index.identifier.getType( dataSource.config ).newTxData( index );
             }
-            
-            Set<Object> values = reverseMap.get( nodeId );
-            if ( values != null )
-            {
-                values.remove( value );
-            }
+            return this.remove;
         }
         
-        void remove( Long nodeId )
+        void close()
         {
-            Set<Object> values = reverseMap.get( nodeId );
-            if ( values == null )
-            {
-                return;
-            }
-            
-            for ( Object value : values.toArray() )
-            {
-                Set<Long> ids = map.get( value );
-                if ( ids != null )
-                {
-                    ids.remove( nodeId );
-                }
-                reverseMap.remove( value );
-            }
+            safeClose( add );
+            safeClose( remove );
         }
-        
-        void remove()
+
+        private void safeClose( TxData data )
         {
-            map.clear();
-            reverseMap.clear();
-        }
-        
-        Iterable<Long> getNodesForValue( Object value )
-        {
-            return map.get( value );
+            if ( data != null )
+            {
+                data.close();
+            }
         }
     }
 }

@@ -7,7 +7,7 @@ import org.apache.lucene.search.IndexSearcher;
 
 class IndexSearcherRef
 {
-    private final String key;
+    private final IndexIdentifier identifier;
     private final IndexSearcher searcher;
     private final AtomicInteger refCount = new AtomicInteger( 0 );
     private boolean isClosed;
@@ -20,28 +20,28 @@ class IndexSearcherRef
      */
     private boolean detached;
     
-    public IndexSearcherRef( String key, IndexSearcher searcher )
+    public IndexSearcherRef( IndexIdentifier identifier, IndexSearcher searcher )
     {
-        this.key = key;
+        this.identifier = identifier;
         this.searcher = searcher;
     }
     
-    IndexSearcher getSearcher()
+    public IndexSearcher getSearcher()
     {
         return this.searcher;
     }
     
-    String getKey()
+    public IndexIdentifier getIdentifier()
     {
-        return this.key;
+        return identifier;
     }
-    
+
     void incRef()
     {
         this.refCount.incrementAndGet();
     }
     
-    void dispose() throws IOException
+    public void dispose() throws IOException
     {
         if ( !this.isClosed )
         {
@@ -51,7 +51,7 @@ class IndexSearcherRef
         }
     }
     
-    void detachOrClose() throws IOException
+    public void detachOrClose() throws IOException
     {
         if ( this.refCount.get() == 0 )
         {
@@ -63,7 +63,7 @@ class IndexSearcherRef
         }
     }
     
-    boolean close() throws IOException
+    public boolean close() throws IOException
     {
         if ( this.isClosed || this.refCount.get() == 0 )
         {

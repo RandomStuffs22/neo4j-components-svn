@@ -24,30 +24,22 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.WhitespaceTokenizer;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
-import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.neo4j.kernel.impl.cache.LruCache;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommandFactory;
 import org.neo4j.kernel.impl.transaction.xaframework.XaConnection;
@@ -59,11 +51,13 @@ import org.neo4j.kernel.impl.transaction.xaframework.XaTransactionFactory;
 import org.neo4j.kernel.impl.util.ArrayMap;
 
 /**
- * An {@link XaDataSource} optimized for the {@link LuceneIndexService}.
+ * An {@link XaDataSource} optimized for the {@link LuceneIndexProvider}.
  * This class is public because the XA framework requires it.
  */
 public class LuceneDataSource extends XaDataSource
 {
+    public static final byte[] DEFAULT_BRANCH_ID = "lucene".getBytes();
+    
     /**
      * Default {@link Analyzer} for fulltext parsing.
      */
@@ -77,20 +71,26 @@ public class LuceneDataSource extends XaDataSource
         }
     };
 
+    public static final Analyzer WHITESPACE_ANALYZER = new Analyzer()
+    {
+        @Override
+        public TokenStream tokenStream( String fieldName, Reader reader )
+        {
+            return new WhitespaceTokenizer( reader );
+        }
+    };
     
-    private final ArrayMap<String,IndexSearcherRef> indexSearchers = 
-        new ArrayMap<String,IndexSearcherRef>( 6, true, true );
+    public static final Analyzer KEYWORD_ANALYZER = new KeywordAnalyzer();
+    
+    private final ArrayMap<IndexIdentifier,IndexSearcherRef> indexSearchers = 
+        new ArrayMap<IndexIdentifier,IndexSearcherRef>( 6, true, true );
 
     private final XaContainer xaContainer;
-    private final String storeDir;
+    private final String baseStorePath;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(); 
-    private final Analyzer fieldAnalyzer;
     private final LuceneIndexStore store;
-    private LuceneIndexService indexService;
-    
-    private Map<String,LruCache<String,Collection<Long>>> caching = 
-        Collections.synchronizedMap( 
-            new HashMap<String,LruCache<String,Collection<Long>>>() );
+    final Map<Object, Object> config;
+    private boolean closed;
 
     /**
      * Constructs this data source.
@@ -103,74 +103,68 @@ public class LuceneDataSource extends XaDataSource
         throws InstantiationException
     {
         super( params );
-        this.storeDir = (String) params.get( "dir" );
-        this.fieldAnalyzer = instantiateAnalyzer();
-        String dir = storeDir;
-        File file = new File( dir );
-        if ( !file.exists() )
-        {
-            try
-            {
-                autoCreatePath( dir );
-            }
-            catch ( IOException e )
-            {
-                throw new RuntimeException(
-                    "Unable to create directory " + dir, e );
-            }
-        }
-        this.store = new LuceneIndexStore( storeDir + "/lucene-store.db" );
+        this.baseStorePath = getStoreDir( params );
+        cleanWriteLocks( baseStorePath );
+        this.store = new LuceneIndexStore( baseStorePath + "/lucene-store.db" );
+        this.config = params;
         XaCommandFactory cf = new LuceneCommandFactory();
         XaTransactionFactory tf = new LuceneTransactionFactory( store );
-        xaContainer = XaContainer.create( dir + "/lucene.log", cf, tf, params );
+        xaContainer = XaContainer.create( this.baseStorePath + "/lucene.log", cf, tf, params );
         try
         {
             xaContainer.openLogicalLog();
         }
         catch ( IOException e )
         {
-            throw new RuntimeException( "Unable to open lucene log in " + dir,
-                e );
+            throw new RuntimeException( "Unable to open lucene log in " +
+                    this.baseStorePath, e );
         }
     }
     
-    /**
-     * This is here so that {@link LuceneIndexService#formQuery(String, Object)}
-     * can be used when getting stuff from inside a transaction.
-     * @param indexService the {@link LuceneIndexService} instance which
-     * created it.
-     */
-    protected void setIndexService( LuceneIndexService indexService )
+    private void cleanWriteLocks( String directory )
     {
-        this.indexService = indexService;
-    }
-    
-    public LuceneIndexService getIndexService()
-    {
-        return this.indexService;
-    }
-
-    private Analyzer instantiateAnalyzer()
-    {
-        return LOWER_CASE_WHITESPACE_ANALYZER;
-    }
-
-    private void autoCreatePath( String dirs ) throws IOException
-    {
-        File directories = new File( dirs );
-        if ( !directories.exists() )
+        File dir = new File( directory );
+        if ( !dir.isDirectory() )
         {
-            if ( !directories.mkdirs() )
+            return;
+        }
+        for ( File file : dir.listFiles() )
+        {
+            if ( file.isDirectory() )
             {
-                throw new IOException( "Unable to create directory path["
-                    + dirs + "] for Neo4j store." );
+                cleanWriteLocks( file.getAbsolutePath() );
+            }
+            else if ( file.getName().equals( "write.lock" ) )
+            {
+                boolean success = file.delete();
+                assert success;
             }
         }
+    }
+    
+    private String getStoreDir( Map<Object, Object> params )
+    {
+        String kernelStoreDir = (String) params.get( "store_dir" );
+        File dir = new File( new File( kernelStoreDir ), "index" );
+        if ( !dir.exists() )
+        {
+            if ( !dir.mkdirs() )
+            {
+                throw new RuntimeException( "Unable to create directory path["
+                    + dir.getAbsolutePath() + "] for Neo4j store." );
+            }
+        }
+        return dir.getAbsolutePath();
     }
 
     @Override
     public void close()
     {
+        if ( closed )
+        {
+            return;
+        }
+        
         for ( IndexSearcherRef searcher : indexSearchers.values() )
         {
             try
@@ -185,18 +179,14 @@ public class LuceneDataSource extends XaDataSource
         indexSearchers.clear();
         xaContainer.close();
         store.close();
+        closed = true;
     }
 
     @Override
     public XaConnection getXaConnection()
     {
-        return new LuceneXaConnection( storeDir, xaContainer
+        return new LuceneXaConnection( baseStorePath, xaContainer
             .getResourceManager(), getBranchId() );
-    }
-    
-    protected Analyzer getAnalyzer()
-    {
-        return this.fieldAnalyzer;
     }
     
     private class LuceneCommandFactory extends XaCommandFactory
@@ -290,7 +280,7 @@ public class LuceneDataSource extends XaDataSource
             {
                 IndexSearcher newSearcher = new IndexSearcher( reopened );
                 searcher.detachOrClose();
-                return new IndexSearcherRef( searcher.getKey(), newSearcher );
+                return new IndexSearcherRef( searcher.getIdentifier(), newSearcher );
             }
             return null;
         }
@@ -300,19 +290,35 @@ public class LuceneDataSource extends XaDataSource
         }
     }
     
-    private Directory getDirectory( String key ) throws IOException
+    static Directory getDirectory( String storeDir,
+            IndexIdentifier identifier ) throws IOException
     {
-        return FSDirectory.open( new File( storeDir, key ) );
+        String path = "lucene_";
+        if ( identifier.itemsClass.equals( Node.class ) )
+        {
+            path += "n";
+        }
+        else if ( identifier.itemsClass.equals( Relationship.class ) )
+        {
+            path += "r";
+        }
+        else
+        {
+            throw new RuntimeException( identifier.itemsClass.getName() );
+        }
+        
+        File parent = new File( storeDir, path );
+        return FSDirectory.open( new File( parent, identifier.indexName ) );
     }
     
-    IndexSearcherRef getIndexSearcher( String key )
+    IndexSearcherRef getIndexSearcher( IndexIdentifier identifier )
     {
         try
         {
-            IndexSearcherRef searcher = indexSearchers.get( key );
+            IndexSearcherRef searcher = indexSearchers.get( identifier );
             if ( searcher == null )
             {
-                Directory dir = getDirectory( key );
+                Directory dir = getDirectory( baseStorePath, identifier );
                 try
                 {
                     String[] files = dir.listAll();
@@ -327,8 +333,8 @@ public class LuceneDataSource extends XaDataSource
                 }
                 IndexReader indexReader = IndexReader.open( dir, false );
                 IndexSearcher indexSearcher = new IndexSearcher( indexReader );
-                searcher = new IndexSearcherRef( key, indexSearcher );
-                indexSearchers.put( key, searcher );
+                searcher = new IndexSearcherRef( identifier, indexSearcher );
+                indexSearchers.put( identifier, searcher );
             }
             return searcher;
         }
@@ -344,26 +350,26 @@ public class LuceneDataSource extends XaDataSource
         return new LuceneTransaction( identifier, logicalLog, this );
     }
 
-    void invalidateIndexSearcher( String key )
+    void invalidateIndexSearcher( IndexIdentifier identifier )
     {
-        IndexSearcherRef searcher = indexSearchers.get( key );
+        IndexSearcherRef searcher = indexSearchers.get( identifier );
         if ( searcher != null )
         {
             IndexSearcherRef refreshedSearcher = refreshSearcher( searcher );
             if ( refreshedSearcher != null )
             {
-                indexSearchers.put( key, refreshedSearcher );
+                indexSearchers.put( identifier, refreshedSearcher );
             }
         }
     }
 
-    synchronized IndexWriter getIndexWriter( String key )
+    synchronized IndexWriter getIndexWriter( IndexIdentifier identifier )
     {
         try
         {
-            Directory dir = getDirectory( key );
-            IndexWriter writer = new IndexWriter( dir, getAnalyzer(),
-                MaxFieldLength.UNLIMITED );
+            Directory dir = getDirectory( baseStorePath, identifier );
+            IndexWriter writer = new IndexWriter( dir, identifier.getType( config ).getAnalyzer(),
+                    MaxFieldLength.UNLIMITED );
             
             // TODO We should tamper with this value and see how it affects the
             // general performance. Lucene docs says rather <10 for mixed
@@ -378,42 +384,22 @@ public class LuceneDataSource extends XaDataSource
         }
     }
     
-    protected void deleteDocumentsUsingWriter( IndexWriter writer,
-        Long nodeId, Object value )
+    protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
+            long entityId, String key, Object value )
     {
         try
         {
-            if ( nodeId == null && value == null )
-            {
-                writer.deleteAll();
-            }
-            else
-            {
-                BooleanQuery query = new BooleanQuery();
-                if ( value != null )
-                {
-                    query.add( new TermQuery( new Term( getDeleteDocumentsKey(),
-                        value.toString() ) ), Occur.MUST );
-                }
-                query.add( new TermQuery( new Term(
-                    LuceneIndexService.DOC_ID_KEY, "" + nodeId ) ),
-                    Occur.MUST );
-                writer.deleteDocuments( query );
-            }
+            IndexType type = identifier.getType( this.config );
+            writer.deleteDocuments( type.deletionQuery( entityId, key, value ) );
         }
         catch ( IOException e )
         {
-            throw new RuntimeException( "Unable to delete for " + nodeId + ","
+            throw new RuntimeException( "Unable to delete for " + entityId + ","
                 + "," + value + " using" + writer, e );
         }
     }
     
-    protected String getDeleteDocumentsKey()
-    {
-        return LuceneIndexService.DOC_INDEX_KEY;
-    }
-
-    void removeWriter( String key, IndexWriter writer )
+    void removeWriter( IndexWriter writer )
     {
         try
         {
@@ -426,63 +412,62 @@ public class LuceneDataSource extends XaDataSource
         }
     }
 
-    LruCache<String,Collection<Long>> getFromCache( String key )
-    {
-        return caching.get( key );
-    }
+//    LruCache<String,Collection<Long>> getFromCache( String key )
+//    {
+//        return caching.get( key );
+//    }
+//
+//    void enableCache( String key, int maxNumberOfCachedEntries )
+//    {
+//        this.caching.put( key, new LruCache<String,Collection<Long>>( key,
+//            maxNumberOfCachedEntries, null ) );
+//    }
+//    
+//    /**
+//     * Returns the enabled cache size or {@code null} if not enabled
+//     * for {@code key}.
+//     * @param key the key to get the cache size for.
+//     * @return the cache size for {@code key} or {@code null}.
+//     */
+//    Integer getEnabledCacheSize( String key )
+//    {
+//        LruCache<String, Collection<Long>> cache = this.caching.get( key );
+//        return cache != null ? cache.maxSize() : null;
+//    }
+//
+//    void invalidateCache( String key, Object value )
+//    {
+//        LruCache<String,Collection<Long>> cache = caching.get( key );
+//        if ( cache != null )
+//        {
+//            cache.remove( value.toString() );
+//        }
+//    }
+//    
+//    void invalidateCache( String key )
+//    {
+//        caching.remove( key );
+//    }
+//    
+//    void invalidateCache()
+//    {
+//        caching.clear();
+//    }
 
-    void enableCache( String key, int maxNumberOfCachedEntries )
-    {
-        this.caching.put( key, new LruCache<String,Collection<Long>>( key,
-            maxNumberOfCachedEntries, null ) );
-    }
-    
-    /**
-     * Returns the enabled cache size or {@code null} if not enabled
-     * for {@code key}.
-     * @param key the key to get the cache size for.
-     * @return the cache size for {@code key} or {@code null}.
-     */
-    Integer getEnabledCacheSize( String key )
-    {
-        LruCache<String, Collection<Long>> cache = this.caching.get( key );
-        return cache != null ? cache.maxSize() : null;
-    }
-
-    void invalidateCache( String key, Object value )
-    {
-        LruCache<String,Collection<Long>> cache = caching.get( key );
-        if ( cache != null )
-        {
-            cache.remove( value.toString() );
-        }
-    }
-    
-    void invalidateCache( String key )
-    {
-        caching.remove( key );
-    }
-    
-    void invalidateCache()
-    {
-        caching.clear();
-    }
-
-    protected void fillDocument( Document document, long nodeId, String key,
-        Object value )
-    {
-        document.add( new Field( LuceneIndexService.DOC_ID_KEY,
-            String.valueOf( nodeId ), Field.Store.YES,
-            Field.Index.NOT_ANALYZED ) );
-        document.add( new Field( LuceneIndexService.DOC_INDEX_KEY,
-            value.toString(), Field.Store.NO,
-            getIndexStrategy( key, value ) ) );
-    }
-
-    protected Index getIndexStrategy( String key, Object value )
-    {
-        return Field.Index.NOT_ANALYZED;
-    }
+//    protected void fillDocument( Document document, long nodeId, String key,
+//        Object value )
+//    {
+//        document.add( new Field( LuceneIndex.KEY_DOC_ID,
+//            String.valueOf( nodeId ), Field.Store.YES,
+//            Field.Index.NOT_ANALYZED ) );
+//        document.add( new Field( key, value.toString(), Field.Store.NO,
+//            getIndexStrategy( key, value ) ) );
+//    }
+//
+//    protected Index getIndexStrategy( String key, Object value )
+//    {
+//        return Field.Index.NOT_ANALYZED;
+//    }
 
     @Override
     public void keepLogicalLogs( boolean keep )

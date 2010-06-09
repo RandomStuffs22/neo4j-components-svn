@@ -1,4 +1,4 @@
-package org.neo4j.index.future;
+package org.neo4j.index.lucene;
 
 import static org.neo4j.index.Neo4jTestCase.assertCollection;
 
@@ -14,10 +14,10 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.index.Neo4jTestCase;
-import org.neo4j.index.future.lucene.LuceneIndexProvider;
+import org.neo4j.index.lucene.LuceneIndexProvider;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 
-public class TestFreshLuceneIndex
+public class TestNewLuceneIndex
 {
     private static GraphDatabaseService graphDb;
     private static IndexProvider index;

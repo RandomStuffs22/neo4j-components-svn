@@ -1,4 +1,4 @@
-package org.neo4j.index.future.lucene;
+package org.neo4j.index.lucene;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -189,6 +189,16 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
             throw new RuntimeException( "Unable to query " + this + " with "
                                         + query, e );
         }
+    }
+    
+    public void enableCache( int size )
+    {
+        throw new UnsupportedOperationException();
+    }
+    
+    public int getCacheSize()
+    {
+        throw new UnsupportedOperationException();
     }
     
     private void readNodesFromHits( DocToIdIterator searchedIds,

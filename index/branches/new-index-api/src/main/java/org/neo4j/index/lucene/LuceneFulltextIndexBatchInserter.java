@@ -19,12 +19,8 @@
  */
 package org.neo4j.index.lucene;
 
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Index;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
+import org.neo4j.graphdb.index.BatchInserterIndex;
+import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
 
 /**
@@ -50,34 +46,17 @@ public class LuceneFulltextIndexBatchInserter extends
     {
         super( inserter );
     }
-
+    
     @Override
-    protected void fillDocument( Document document, long nodeId, String key,
-            Object value )
+    protected BatchInserterIndex getIndex( String indexName )
     {
-        super.fillDocument( document, nodeId, key, value );
-        document.add( new Field(
-                LuceneFulltextIndexService.DOC_INDEX_SOURCE_KEY,
-                value.toString(), Field.Store.NO, Field.Index.NOT_ANALYZED ) );
+        // TODO Make sure the index is a fulltext index
+        return super.getIndex( indexName );
     }
-
+    
     @Override
-    protected Index getIndexStrategy()
+    public IndexHits<Long> getNodes( String key, Object value )
     {
-        return Field.Index.ANALYZED;
-    }
-
-    @Override
-    protected String getDirName()
-    {
-        return super.getDirName()
-               + LuceneFulltextIndexService.FULLTEXT_DIR_NAME_POSTFIX;
-    }
-
-    @Override
-    protected Query formQuery( String key, Object value )
-    {
-        return new TermQuery( new Term( LuceneIndexService.DOC_INDEX_KEY,
-                value.toString().toLowerCase() ) );
+        return getIndex( key ).query( LuceneFulltextIndexService.toQuery( key, value ) );
     }
 }
