@@ -5,4 +5,6 @@ public interface BatchInserterIndexProvider
     BatchInserterIndex nodeIndex( String indexName );
     
     BatchInserterIndex relationshipIndex( String indexName );
+    
+    void shutdown();
 }

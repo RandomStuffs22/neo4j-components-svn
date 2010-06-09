@@ -19,7 +19,6 @@
  */
 package org.neo4j.kernel;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -135,19 +134,16 @@ class GraphDbInstance
         {
             try
             {
-                Class clazz = Class.forName( Config.LUCENE_DS_CLASS );
-                cleanWriteLocksInLuceneDirectory( storeDir + "/lucene" );
+                Class<?> clazz = Class.forName( Config.LUCENE_DS_CLASS );
                 byte luceneId[] = "162373".getBytes();
                 registerLuceneDataSource( "lucene", clazz.getName(),
-                        config.getTxModule(), storeDir + "/lucene",
-                        config.getLockManager(), luceneId );
+                        config.getTxModule(), config.getLockManager(), luceneId );
                 clazz = Class.forName( Config.LUCENE_FULLTEXT_DS_CLASS );
-                cleanWriteLocksInLuceneDirectory( storeDir + "/lucene-fulltext" );
-                luceneId = "262374".getBytes();
-                registerLuceneDataSource( "lucene-fulltext",
-                        clazz.getName(), config.getTxModule(),
-                        storeDir + "/lucene-fulltext", config.getLockManager(),
-                        luceneId );
+//                luceneId = "262374".getBytes();
+//                registerLuceneDataSource( "lucene-fulltext",
+//                        clazz.getName(), config.getTxModule(),
+//                        storeDir + "/lucene-fulltext", config.getLockManager(),
+//                        luceneId );
             }
             catch ( ClassNotFoundException e )
             { // ok index util not on class path
@@ -185,38 +181,23 @@ class GraphDbInstance
                 }
             }
         }
+        unregisterLuceneDataSource( "lucene", config.getTxModule() );
         started = true;
         return Collections.unmodifiableMap( params );
     }
 
-    private void cleanWriteLocksInLuceneDirectory( String luceneDir )
+    private void unregisterLuceneDataSource( String name, TxModule txModule )
     {
-        File dir = new File( luceneDir );
-        if ( !dir.isDirectory() )
-        {
-            return;
-        }
-        for ( File file : dir.listFiles() )
-        {
-            if ( file.isDirectory() )
-            {
-                cleanWriteLocksInLuceneDirectory( file.getAbsolutePath() );
-            }
-            else if ( file.getName().equals( "write.lock" ) )
-            {
-                boolean success = file.delete();
-                assert success;
-            }
-        }
+        txModule.getXaDataSourceManager().unregisterDataSource( name );
     }
 
     private XaDataSource registerLuceneDataSource( String name,
-            String className, TxModule txModule, String luceneDirectory,
+            String className, TxModule txModule,
             LockManager lockManager, byte[] resourceId )
     {
         Map<Object, Object> params = new HashMap<Object, Object>();
-        params.put( "dir", luceneDirectory );
         params.put( LockManager.class, lockManager );
+        params.put( "store_dir", this.storeDir );
         return txModule.registerDataSource( name, className, resourceId,
                 params, true );
     }
