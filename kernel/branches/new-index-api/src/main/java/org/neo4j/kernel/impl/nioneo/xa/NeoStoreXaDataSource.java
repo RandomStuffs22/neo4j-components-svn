@@ -39,11 +39,11 @@ import org.neo4j.kernel.impl.nioneo.store.Store;
 import org.neo4j.kernel.impl.nioneo.store.WindowPoolStats;
 import org.neo4j.kernel.impl.persistence.IdGenerationFailedException;
 import org.neo4j.kernel.impl.transaction.LockManager;
+import org.neo4j.kernel.impl.transaction.xaframework.LogBackedXaDataSource;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommandFactory;
 import org.neo4j.kernel.impl.transaction.xaframework.XaConnection;
 import org.neo4j.kernel.impl.transaction.xaframework.XaContainer;
-import org.neo4j.kernel.impl.transaction.xaframework.XaDataSource;
 import org.neo4j.kernel.impl.transaction.xaframework.XaTransaction;
 import org.neo4j.kernel.impl.transaction.xaframework.XaTransactionFactory;
 import org.neo4j.kernel.impl.util.ArrayMap;
@@ -57,7 +57,7 @@ import org.neo4j.kernel.impl.util.ArrayMap;
  * {@link XaResource XaResources} when running transactions and performing
  * operations on the node space.
  */
-public class NeoStoreXaDataSource extends XaDataSource
+public class NeoStoreXaDataSource extends LogBackedXaDataSource
 {
     private static Logger logger = Logger.getLogger( 
         NeoStoreXaDataSource.class.getName() );
@@ -130,6 +130,7 @@ public class NeoStoreXaDataSource extends XaDataSource
         {
             xaContainer.openLogicalLog();
         }
+        setLogicalLogAtCreationTime( xaContainer.getLogicalLog() );
         if ( !xaContainer.getResourceManager().hasRecoveredTransactions() )
         {
             neoStore.makeStoreOk();
@@ -193,6 +194,7 @@ public class NeoStoreXaDataSource extends XaDataSource
             neoStore ), new TransactionFactory(), null );
 
         xaContainer.openLogicalLog();
+        setLogicalLogAtCreationTime( xaContainer.getLogicalLog() );
         if ( !xaContainer.getResourceManager().hasRecoveredTransactions() )
         {
             neoStore.makeStoreOk();
@@ -358,18 +360,6 @@ public class NeoStoreXaDataSource extends XaDataSource
     }
     
     @Override
-    public void keepLogicalLogs( boolean keep )
-    {
-        xaContainer.getLogicalLog().setKeepLogs( keep );
-    }
-    
-    @Override
-    public boolean isLogicalLogKept()
-    {
-        return xaContainer.getLogicalLog().isLogsKept();
-    }
-    
-    @Override
     public long getCreationTime()
     {
         return neoStore.getCreationTime();
@@ -401,55 +391,7 @@ public class NeoStoreXaDataSource extends XaDataSource
     public void applyLog( ReadableByteChannel byteChannel ) throws IOException
     {
         logApplied = true;
-        xaContainer.getLogicalLog().applyLog( byteChannel );
-    }
-    
-    @Override
-    public void rotateLogicalLog() throws IOException
-    {
-        // flush done inside rotate
-        xaContainer.getLogicalLog().rotate();
-    }
-    
-    @Override
-    public ReadableByteChannel getLogicalLog( long version ) throws IOException
-    {
-        return xaContainer.getLogicalLog().getLogicalLog( version );
-    }
-    
-    public long getLogicalLogLength( long version )
-    {
-        return xaContainer.getLogicalLog().getLogicalLogLength( version );
-    }
-
-    @Override
-    public boolean hasLogicalLog( long version )
-    {
-        return xaContainer.getLogicalLog().hasLogicalLog( version );
-    }
-    
-    @Override
-    public boolean deleteLogicalLog( long version )
-    {
-        return xaContainer.getLogicalLog().deleteLogicalLog( version );
-    }
-    
-    @Override
-    public void setAutoRotate( boolean rotate )
-    {
-        xaContainer.getLogicalLog().setAutoRotateLogs( rotate );
-    }
-    
-    @Override
-    public void setLogicalLogTargetSize( long size )
-    {
-        xaContainer.getLogicalLog().setLogicalLogTargetSize( size );
-    }
-    
-    @Override
-    public void makeBackupSlave()
-    {
-        xaContainer.getLogicalLog().makeBackupSlave();
+        super.applyLog( byteChannel );
     }
     
     ReadTransaction getReadOnlyTransaction()
@@ -462,11 +404,6 @@ public class NeoStoreXaDataSource extends XaDataSource
         return readOnly;
     }
 
-    public String getFileName( long version )
-    {
-        return xaContainer.getLogicalLog().getFileName( version );
-    }
-    
     public List<WindowPoolStats> getWindowPoolStats()
     {
         return neoStore.getAllWindowPoolStats();
