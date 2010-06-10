@@ -201,11 +201,21 @@ public final class EmbeddedGraphDatabase implements GraphDatabaseService
 
     public Index<Node> nodeIndex( String indexName )
     {
-        return this.graphDbImpl.nodeIndex( indexName );
+        return this.graphDbImpl.nodeIndex( indexName, null );
+    }
+    
+    public Index<Node> nodeIndex( String indexName, Map<String, String> config )
+    {
+        return this.graphDbImpl.nodeIndex( indexName, config );
     }
 
     public Index<Relationship> relationshipIndex( String indexName )
     {
-        return this.graphDbImpl.relationshipIndex( indexName );
+        return this.graphDbImpl.relationshipIndex( indexName, null );
+    }
+
+    public Index<Relationship> relationshipIndex( String indexName, Map<String, String> config )
+    {
+        return this.graphDbImpl.relationshipIndex( indexName, config );
     }
 }

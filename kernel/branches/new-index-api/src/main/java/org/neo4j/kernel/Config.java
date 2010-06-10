@@ -43,8 +43,8 @@ public class Config
 
     static final String LUCENE_DS_CLASS =
         "org.neo4j.index.lucene.LuceneDataSource";
-    static final String LUCENE_FULLTEXT_DS_CLASS =
-        "org.neo4j.index.lucene.LuceneFulltextDataSource";
+    static final String LUCENE_DS_NAME = "lucene";
+    static final byte[] LUCENE_BRANCH_ID = "162373".getBytes();
 
     public static final String USE_MEMORY_MAPPED_BUFFERS = 
         "use_memory_mapped_buffers";

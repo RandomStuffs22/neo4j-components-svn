@@ -129,24 +129,19 @@ class GraphDbInstance
         params.put( LockReleaser.class, config.getLockReleaser() );
         config.getTxModule().registerDataSource( Config.DEFAULT_DATA_SOURCE_NAME,
                 Config.NIO_NEO_DB_CLASS, resourceId, params );
-        // hack for lucene index recovery if in path
+        
+        // Hack for lucene index recovery if on class path, so that a lucene
+        // data source can participate in recovery
         if ( !config.isReadOnly() || config.isBackupSlave() )
         {
             try
             {
                 Class<?> clazz = Class.forName( Config.LUCENE_DS_CLASS );
-                byte luceneId[] = "162373".getBytes();
-                registerLuceneDataSource( "lucene", clazz.getName(),
-                        config.getTxModule(), config.getLockManager(), luceneId );
-                clazz = Class.forName( Config.LUCENE_FULLTEXT_DS_CLASS );
-//                luceneId = "262374".getBytes();
-//                registerLuceneDataSource( "lucene-fulltext",
-//                        clazz.getName(), config.getTxModule(),
-//                        storeDir + "/lucene-fulltext", config.getLockManager(),
-//                        luceneId );
+                registerLuceneDataSource( Config.LUCENE_DS_NAME, clazz.getName(),
+                        config.getTxModule(), config.getLockManager(), Config.LUCENE_BRANCH_ID );
             }
             catch ( ClassNotFoundException e )
-            { // ok index util not on class path
+            { // Ok, lucene index not on class path
             }
         }
         persistenceSource = new NioNeoDbPersistenceSource();
@@ -181,14 +176,8 @@ class GraphDbInstance
                 }
             }
         }
-        unregisterLuceneDataSource( "lucene", config.getTxModule() );
         started = true;
         return Collections.unmodifiableMap( params );
-    }
-
-    private void unregisterLuceneDataSource( String name, TxModule txModule )
-    {
-        txModule.getXaDataSourceManager().unregisterDataSource( name );
     }
 
     private XaDataSource registerLuceneDataSource( String name,

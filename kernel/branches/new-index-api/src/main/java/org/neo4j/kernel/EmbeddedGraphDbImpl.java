@@ -64,8 +64,6 @@ import org.neo4j.kernel.manage.Neo4jJmx;
 class EmbeddedGraphDbImpl
 {
     private static final String KERNEL_VERSION = Version.get();
-    private static final String LUCENE_INDEX_PROVIDER_CLASS =
-            "org.neo4j.index.future.lucene.LuceneIndexProvider";
 
     private static Logger log =
         Logger.getLogger( EmbeddedGraphDbImpl.class.getName() );
@@ -471,21 +469,42 @@ class EmbeddedGraphDbImpl
         return handler;
     }
     
-    private IndexProvider getIndexProvider( String indexName )
+    private IndexProvider getIndexProvider( String indexName, Map<String, String> config )
     {
-        String type = (String) getConfig().getParams().get( "index." + indexName );
-        type = type != null ? type : "lucene";
-        return Service.load( IndexProvider.class, type );
+        String provider = config != null ? config.get( "provider" ) : null;
+        if ( provider == null )
+        {
+            provider = (String) getConfig().getParams().get( "index." + indexName );
+        }
+        if ( provider == null )
+        {
+            provider = (String) getConfig().getParams().get( "index" );
+        }
+        provider = provider != null ? provider : "org.neo4j.index.lucene.LuceneIndexProvider";
+        if ( provider.contains( "." ) )
+        {
+            try
+            {
+                return Class.forName( provider ).asSubclass( IndexProvider.class ).getConstructor(
+                        GraphDatabaseService.class ).newInstance( this.graphDbService );
+            }
+            catch ( Exception e )
+            {
+                // OK
+                e.printStackTrace();
+            }
+        }
+        return Service.load( IndexProvider.class, provider );
     }
     
-    Index<Node> nodeIndex( String indexName )
+    Index<Node> nodeIndex( String indexName, Map<String, String> config )
     {
-        return getIndexProvider( indexName ).nodeIndex( indexName );
+        return getIndexProvider( indexName, config ).nodeIndex( indexName, config );
     }
 
-    Index<Relationship> relationshipIndex( String indexName )
+    Index<Relationship> relationshipIndex( String indexName, Map<String, String> config )
     {
-        return getIndexProvider( indexName ).relationshipIndex( indexName );
+        return getIndexProvider( indexName, config ).relationshipIndex( indexName, config );
     }
 
     private class SyncHookFactory implements TxEventSyncHookFactory
