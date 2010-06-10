@@ -6,21 +6,22 @@ import java.io.File;
 
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.Index;
-import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.index.Neo4jTestCase;
-import org.neo4j.index.lucene.LuceneIndexProvider;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 public class TestNewLuceneIndex
 {
     private static GraphDatabaseService graphDb;
-    private static IndexProvider index;
     private Transaction tx;
     
     @BeforeClass
@@ -29,7 +30,6 @@ public class TestNewLuceneIndex
         String storeDir = "target/var/freshindex";
         Neo4jTestCase.deleteFileOrDirectory( new File( storeDir ) );
         graphDb = new EmbeddedGraphDatabase( storeDir );
-        index = new LuceneIndexProvider( graphDb );
     }
     
     @AfterClass
@@ -39,7 +39,7 @@ public class TestNewLuceneIndex
     }
     
     @After
-    public void finishTransaction()
+    public void commitTx()
     {
         if ( tx != null )
         {
@@ -49,13 +49,19 @@ public class TestNewLuceneIndex
         }
     }
     
-    private Transaction beginTx()
+    @Before
+    public void beginTx()
     {
         if ( tx == null )
         {
             tx = graphDb.beginTx();
         }
-        return tx;
+    }
+    
+    void restartTx()
+    {
+        commitTx();
+        beginTx();
     }
     
     @Test
@@ -66,10 +72,9 @@ public class TestNewLuceneIndex
         String title = "title";
         String hacker = "Hacker";
         
-        Index<Node> nodeIndex = index.nodeIndex( "default" );
+        Index<Node> nodeIndex = graphDb.nodeIndex( "default" );
         assertCollection( nodeIndex.get( name, mattias ) );
         
-        beginTx();
         Node node1 = graphDb.createNode();
         Node node2 = graphDb.createNode();
         
@@ -77,7 +82,7 @@ public class TestNewLuceneIndex
         assertCollection( nodeIndex.get( name, mattias ), node1 );
         assertCollection( nodeIndex.query( name, "\"" + mattias + "\"" ), node1 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\"" ), node1 );
-        finishTransaction();
+        commitTx();
         assertCollection( nodeIndex.get( name, mattias ), node1 );
         assertCollection( nodeIndex.query( name, "\"" + mattias + "\"" ), node1 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\"" ), node1 );
@@ -88,7 +93,7 @@ public class TestNewLuceneIndex
         assertCollection( nodeIndex.get( title, hacker ), node2 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\" OR title:\"" +
                 hacker + "\"" ), node1, node2 );
-        finishTransaction();
+        commitTx();
         assertCollection( nodeIndex.get( name, mattias ), node1 );
         assertCollection( nodeIndex.get( title, hacker ), node2 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\" OR title:\"" +
@@ -100,7 +105,7 @@ public class TestNewLuceneIndex
         assertCollection( nodeIndex.get( title, hacker ) );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\" OR title:\"" +
                 hacker + "\"" ), node1 );
-        finishTransaction();
+        commitTx();
         assertCollection( nodeIndex.get( name, mattias ), node1 );
         assertCollection( nodeIndex.get( title, hacker ) );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\" OR title:\"" +
@@ -108,6 +113,98 @@ public class TestNewLuceneIndex
         
         beginTx();
         nodeIndex.remove( node1, name, mattias );
-        finishTransaction();
+        commitTx();
+    }
+    
+    @Test
+    public void testFulltextNodeIndex()
+    {
+        Index<Node> index = ((EmbeddedGraphDatabase) graphDb).nodeIndex( "fulltext",
+                LuceneIndexProvider.FULLTEXT_CONFIG );
+        Node node1 = graphDb.createNode();
+        Node node2 = graphDb.createNode();
+        
+        String key = "name";
+        index.add( node1, key, "The quick brown fox" );
+        index.add( node2, key, "brown fox jumped over" );
+        restartTx();
+        
+        assertCollection( index.get( key, "The quick brown fox" ), node1 );
+        assertCollection( index.get( key, "brown fox jumped over" ), node2 );
+        assertCollection( index.query( key, "quick" ), node1 );
+        assertCollection( index.query( key, "brown" ), node1, node2 );
+        assertCollection( index.query( key, "quick OR jumped" ), node1, node2 );
+        assertCollection( index.query( key, "brown AND fox" ), node1, node2 );
+        
+        index.remove( node1, null );
+        index.remove( node2, null );
+        node1.delete();
+        node2.delete();
+    }
+    
+    @Test
+    public void testFulltextRelationshipIndex()
+    {
+        Index<Relationship> index = ((EmbeddedGraphDatabase) graphDb).relationshipIndex( "fulltext",
+                LuceneIndexProvider.FULLTEXT_CONFIG );
+        Node node1 = graphDb.createNode();
+        Node node2 = graphDb.createNode();
+        RelationshipType type = DynamicRelationshipType.withName( "mytype" );
+        Relationship rel1 = node1.createRelationshipTo( node2, type );
+        Relationship rel2 = node1.createRelationshipTo( node2, type );
+        
+        String key = "name";
+        index.add( rel1, key, "The quick brown fox" );
+        index.add( rel2, key, "brown fox jumped over" );
+        restartTx();
+        
+        assertCollection( index.get( key, "The quick brown fox" ), rel1 );
+        assertCollection( index.get( key, "brown fox jumped over" ), rel2 );
+        assertCollection( index.query( key, "quick" ), rel1 );
+        assertCollection( index.query( key, "brown" ), rel1, rel2 );
+        assertCollection( index.query( key, "quick OR jumped" ), rel1, rel2 );
+        assertCollection( index.query( key, "brown AND fox" ), rel1, rel2 );
+        
+        index.remove( rel1, null );
+        index.remove( rel2, null );
+        rel1.delete();
+        rel2.delete();
+        node1.delete();
+        node2.delete();
+    }
+    
+    @Test
+    public void testALot()
+    {
+        Index<Node> index = graphDb.nodeIndex( "alot" );
+        String key = "key";
+        for ( int i = 0; i < 500000; i++ )
+        {
+            Node node = graphDb.createNode();
+            String value = i == 100000 ? "yoyoyo" : "hejsan";
+            index.add( node, key, value );
+            if ( i % 10000 == 0 )
+            {
+                System.out.println( i );
+                restartTx();
+            }
+        }
+        restartTx();
+        long total = 0;
+        for ( int i = 0; i < 10; i++ )
+        {
+            long t = System.currentTimeMillis();
+            index.get( key, "hejsan" );
+            total += System.currentTimeMillis() - t;
+        }
+        System.out.println( "avg:" + (total/10d) );
+        
+        for ( int i = 0; i < 10; i++ )
+        {
+            long t = System.currentTimeMillis();
+            index.get( key, "yoyoyo" );
+            long time = System.currentTimeMillis() - t;
+            System.out.println( "yo:" + time );
+        }
     }
 }

@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.lucene.AllDocs;
-import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -17,20 +16,18 @@ import org.apache.lucene.store.RAMDirectory;
 class TxData
 {
     private final DirectoryAndWorkers luceneData;
-    private final LuceneIndex index;
-    private final Analyzer analyzer;
+    private final IndexType indexType;
     
-    TxData( LuceneIndex index, Analyzer analyzer )
+    TxData( IndexType indexType )
     {
-        this.index = index;
-        this.analyzer = analyzer;
+        this.indexType = indexType;
         this.luceneData = newDirectory();
     }
     
     void add( Long entityId, String key, Object value )
     {
         Document document = new Document();
-        index.getIndexType().fillDocument( document, entityId, key, value );
+        indexType.fillDocument( document, entityId, key, value );
         add( document );
     }
     
@@ -48,8 +45,7 @@ class TxData
 
     void remove( Long entityId, String key, Object value )
     {
-        IndexType type = index.getIndexType();
-        remove( type.deletionQuery( entityId, key, value ) );
+        remove( indexType.deletionQuery( entityId, key, value ) );
     }
     
     void remove( Query query )
@@ -105,8 +101,7 @@ class TxData
     private IndexWriter newIndexWriter( Directory directory )
             throws IOException
     {
-        return new IndexWriter( directory, analyzer,
-            MaxFieldLength.UNLIMITED );
+        return new IndexWriter( directory, indexType.analyzer, MaxFieldLength.UNLIMITED );
     }
     
     private class DirectoryAndWorkers

@@ -104,14 +104,16 @@ class LuceneTransaction extends XaTransaction
             added.remove( query );
         }
         TxData removed = data.removed( true );
-        Iterator<Document> docs = index.search(
-                dataSource.getIndexSearcher( index.identifier ), query ).documents;
-        while ( docs.hasNext() )
+        IndexSearcherRef searcher = dataSource.getIndexSearcher( index.identifier );
+        if ( searcher != null )
         {
-            removed.add( docs.next() );
+            Iterator<Document> docs = index.search( searcher, query ).documents;
+            while ( docs.hasNext() )
+            {
+                removed.add( docs.next() );
+            }
         }
-        queueCommand( new RemoveQueryCommand( index.identifier,
-                -1, "", query.toString() ) );
+        queueCommand( new RemoveQueryCommand( index.identifier, -1, "", query.toString() ) );
     }
     
     private void queueCommand( LuceneCommand command )
@@ -221,6 +223,10 @@ class LuceneTransaction extends XaTransaction
                     {
                         dataSource.deleteDocuments( writer, identifier,
                                 entityId, key, value );
+                    }
+                    else if ( command instanceof RemoveQueryCommand )
+                    {
+                        dataSource.deleteDocuments( writer, identifier, command.getValue() );
                     }
                     else
                     {

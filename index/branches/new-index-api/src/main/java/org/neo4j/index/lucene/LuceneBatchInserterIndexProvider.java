@@ -20,14 +20,14 @@ public class LuceneBatchInserterIndexProvider implements BatchInserterIndexProvi
         this.inserter = inserter;
     }
     
-    public BatchInserterIndex nodeIndex( String indexName )
+    public BatchInserterIndex nodeIndex( String indexName, Map<String, String> config )
     {
-        return index( new IndexIdentifier( Node.class, indexName ) );
+        return index( new IndexIdentifier( Node.class, indexName, config ) );
     }
 
-    public BatchInserterIndex relationshipIndex( String indexName )
+    public BatchInserterIndex relationshipIndex( String indexName, Map<String, String> config )
     {
-        return index( new IndexIdentifier( Relationship.class, indexName ) );
+        return index( new IndexIdentifier( Relationship.class, indexName, config ) );
     }
 
     private BatchInserterIndex index( IndexIdentifier identifier )

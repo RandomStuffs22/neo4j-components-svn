@@ -14,6 +14,11 @@ public class LuceneIndexService implements IndexService
 
     public LuceneIndexService( GraphDatabaseService graphDb )
     {
+        // TODO Check if we have an old lucene structure stored in this database,
+        // and if so convert... here?
+        //
+        // Or maybe don't convert at all, but instead supply a hook which makes
+        // the new index behave as the old?
         this.graphDb = graphDb;
     }
     

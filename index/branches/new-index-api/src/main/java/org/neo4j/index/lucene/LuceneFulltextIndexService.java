@@ -36,7 +36,10 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     @Override
     protected LuceneIndex<Node> getIndex( String key )
     {
-        // TODO Make sure the Index which key refers to is a fulltext index
+        // TODO Make sure the Index which key refers to is a fulltext index,
+        // maybe also with a prefix or something so that fulltext and
+        // non-fulltext (with same key) can live side by side, as they
+        // could in the old implementation.
         return super.getIndex( key );
     }
 

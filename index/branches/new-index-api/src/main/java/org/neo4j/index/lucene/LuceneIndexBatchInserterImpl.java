@@ -21,7 +21,6 @@ package org.neo4j.index.lucene;
 
 import java.util.Iterator;
 
-import org.apache.lucene.index.IndexWriter;
 import org.neo4j.commons.iterator.IterableWrapper;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.index.BatchInserterIndex;
@@ -35,9 +34,9 @@ import org.neo4j.kernel.impl.batchinsert.BatchInserter;
  */
 public class LuceneIndexBatchInserterImpl
 {
-    private final BatchInserter inserter;
-    private final IndexService asIndexService;
-    private final LuceneBatchInserterIndexProvider provider;
+    final BatchInserter inserter;
+    final IndexService asIndexService;
+    final LuceneBatchInserterIndexProvider provider;
     
     /**
      * @param inserter the {@link BatchInserter} to use.
@@ -51,7 +50,7 @@ public class LuceneIndexBatchInserterImpl
     
     protected BatchInserterIndex getIndex( String indexName )
     {
-        return this.provider.nodeIndex( indexName );
+        return this.provider.nodeIndex( indexName, null );
     }
     
     public void index( long node, String key, Object value )
@@ -133,18 +132,6 @@ public class LuceneIndexBatchInserterImpl
         public void shutdown()
         {
             LuceneIndexBatchInserterImpl.this.shutdown();
-        }
-    }
-    
-    private static class IndexWriterContext
-    {
-        private final IndexWriter writer;
-        private boolean modifiedFlag;
-        
-        IndexWriterContext( IndexWriter writer )
-        {
-            this.writer = writer;
-            this.modifiedFlag = true;
         }
     }
 }

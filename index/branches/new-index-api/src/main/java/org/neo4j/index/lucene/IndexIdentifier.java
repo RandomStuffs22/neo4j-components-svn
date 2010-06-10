@@ -6,28 +6,24 @@ class IndexIdentifier
 {
     final Class<?> itemsClass;
     final String indexName;
+    final Map<String, String> customConfig;
     private IndexType type;
     
-    public IndexIdentifier( Class<?> itemsClass, String indexName )
+    public IndexIdentifier( Class<?> itemsClass, String indexName,
+            Map<String, String> customConfig )
     {
         this.itemsClass = itemsClass;
         this.indexName = indexName;
+        this.customConfig = customConfig;
     }
     
-    public IndexIdentifier( Class<?> itemsClass, String indexName,
-            IndexType type )
-    {
-        this( itemsClass, indexName );
-        this.type = type;
-    }
-    
-    IndexType getType( Map<Object, Object> config )
+    IndexType getType( IndexConfig storedConfig )
     {
         if ( type == null )
         {
             // Two or more threads might do this at the same time, but it
             // is OK
-            type = IndexType.getIndexType( config, indexName );
+            type = IndexType.getIndexType( storedConfig, customConfig, indexName );
         }
         return type;
     }

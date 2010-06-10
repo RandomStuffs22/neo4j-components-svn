@@ -19,11 +19,13 @@
  */
 package org.neo4j.index.lucene;
 
+import java.util.Collections;
+import java.util.Map;
+
+import org.neo4j.commons.collection.MapUtil;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.event.ErrorState;
-import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.kernel.Config;
@@ -31,20 +33,27 @@ import org.neo4j.kernel.EmbeddedGraphDatabase;
 import org.neo4j.kernel.EmbeddedReadOnlyGraphDatabase;
 import org.neo4j.kernel.impl.transaction.TxModule;
 
-public class LuceneIndexProvider extends IndexProvider implements
-        KernelEventHandler
+public class LuceneIndexProvider extends IndexProvider
 {
+    public static final Map<String, String> EXACT_CONFIG =
+            Collections.unmodifiableMap( MapUtil.<String, String>genericOf(
+                    "provider", LuceneIndexProvider.class.getName(), "type", "exact" ) );
+    
+    public static final Map<String, String> FULLTEXT_CONFIG =
+            Collections.unmodifiableMap( MapUtil.<String, String>genericOf(
+                    "provider", LuceneIndexProvider.class.getName(), "type", "fulltext" ) );
+    
     public static final int DEFAULT_LAZY_THRESHOLD = 100;
-    private static final String DATA_SOURCE_NAME = "lucene-index";
+    private static final String DATA_SOURCE_NAME = "lucene";
     
     private ConnectionBroker broker;
     private LuceneDataSource dataSource;
-    int lazynessThreshold = DEFAULT_LAZY_THRESHOLD;
+    final int lazynessThreshold = DEFAULT_LAZY_THRESHOLD;
     final GraphDatabaseService graphDb;
     
     public LuceneIndexProvider( GraphDatabaseService graphDb )
     {
-        super( "lucene", "lucene_fulltext" );
+        super( "lucene" );
         this.graphDb = graphDb;
     }
     
@@ -70,11 +79,6 @@ public class LuceneIndexProvider extends IndexProvider implements
         }
     }
 
-    private IndexType getIndexType( String indexName )
-    {
-        return IndexType.getIndexType( dataSource.config, indexName );
-    }
-    
     ConnectionBroker getBroker()
     {
         return this.broker;
@@ -85,44 +89,17 @@ public class LuceneIndexProvider extends IndexProvider implements
         return this.dataSource;
     }
     
-    public Index<Node> nodeIndex( String indexName )
+    public Index<Node> nodeIndex( String indexName, Map<String, String> config )
     {
         ensureDataSourceRegistered();
         return new LuceneIndex.NodeIndex( this, new IndexIdentifier(
-                Node.class, indexName, getIndexType( indexName ) ) );
+                Node.class, indexName, config ) );
     }
     
-    public Index<Relationship> relationshipIndex( String indexName )
+    public Index<Relationship> relationshipIndex( String indexName, Map<String, String> config )
     {
         ensureDataSourceRegistered();
         return new LuceneIndex.RelationshipIndex( this, new IndexIdentifier(
-                Relationship.class, indexName, getIndexType( indexName ) ) );
-    }
-
-    public void beforeShutdown()
-    {
-        // Won't this be handled by the TxModule?
-//        TxModule txModule = ((EmbeddedGraphDatabase) graphDb).getConfig().getTxModule();
-//        if ( txModule.getXaDataSourceManager().hasDataSource( DATA_SOURCE_NAME ) )
-//        {
-//            txModule.getXaDataSourceManager().unregisterDataSource(
-//                    DATA_SOURCE_NAME );
-//        }
-//        dataSource.close();
-    }
-
-    public Object getResource()
-    {
-        return this;
-    }
-
-    public void kernelPanic( ErrorState error )
-    {
-        // Do nothing
-    }
-
-    public ExecutionOrder orderComparedTo( KernelEventHandler other )
-    {
-        return ExecutionOrder.DOESNT_MATTER;
+                Relationship.class, indexName, config ) );
     }
 }

@@ -19,6 +19,9 @@
  */
 package org.neo4j.index.lucene;
 
+import java.util.Map;
+
+import org.neo4j.commons.collection.MapUtil;
 import org.neo4j.graphdb.index.BatchInserterIndex;
 import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
@@ -39,6 +42,9 @@ import org.neo4j.kernel.impl.batchinsert.BatchInserter;
 public class LuceneFulltextIndexBatchInserter extends
         LuceneIndexBatchInserterImpl
 {
+    private static final Map<String, String> FULLTEXT_CONFIG =
+            MapUtil.<String, String>genericOf( "type", "fulltext" );
+    
     /**
      * @param inserter the {@link BatchInserter} to use.
      */
@@ -50,8 +56,7 @@ public class LuceneFulltextIndexBatchInserter extends
     @Override
     protected BatchInserterIndex getIndex( String indexName )
     {
-        // TODO Make sure the index is a fulltext index
-        return super.getIndex( indexName );
+        return this.provider.nodeIndex( indexName, FULLTEXT_CONFIG );
     }
     
     @Override

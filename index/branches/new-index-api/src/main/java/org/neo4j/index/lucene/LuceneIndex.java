@@ -133,6 +133,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
                 if ( searchedNodeIds.size() >= service.lazynessThreshold )
                 {
                     // Instantiate a lazy iterator
+                    System.out.println( "lazy" );
                     isLazy = true;
                     Collection<Iterator<Long>> iterators = new ArrayList<Iterator<Long>>();
                     iterators.add( ids.iterator() );

@@ -40,6 +40,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.kernel.impl.transaction.xaframework.LogBackedXaDataSource;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommandFactory;
 import org.neo4j.kernel.impl.transaction.xaframework.XaConnection;
@@ -54,9 +55,9 @@ import org.neo4j.kernel.impl.util.ArrayMap;
  * An {@link XaDataSource} optimized for the {@link LuceneIndexProvider}.
  * This class is public because the XA framework requires it.
  */
-public class LuceneDataSource extends XaDataSource
+public class LuceneDataSource extends LogBackedXaDataSource
 {
-    public static final byte[] DEFAULT_BRANCH_ID = "lucene".getBytes();
+    public static final byte[] DEFAULT_BRANCH_ID = "162373".getBytes();
     
     /**
      * Default {@link Analyzer} for fulltext parsing.
@@ -89,7 +90,7 @@ public class LuceneDataSource extends XaDataSource
     private final String baseStorePath;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(); 
     private final LuceneIndexStore store;
-    final Map<Object, Object> config;
+    final IndexConfig config;
     private boolean closed;
 
     /**
@@ -104,9 +105,9 @@ public class LuceneDataSource extends XaDataSource
     {
         super( params );
         this.baseStorePath = getStoreDir( params );
+        this.config = IndexConfig.load( baseStorePath );
         cleanWriteLocks( baseStorePath );
         this.store = new LuceneIndexStore( baseStorePath + "/lucene-store.db" );
-        this.config = params;
         XaCommandFactory cf = new LuceneCommandFactory();
         XaTransactionFactory tf = new LuceneTransactionFactory( store );
         xaContainer = XaContainer.create( this.baseStorePath + "/lucene.log", cf, tf, params );
@@ -119,6 +120,10 @@ public class LuceneDataSource extends XaDataSource
             throw new RuntimeException( "Unable to open lucene log in " +
                     this.baseStorePath, e );
         }
+        
+        xaContainer.getLogicalLog().setKeepLogs(
+                shouldKeepLog( (String) params.get( "keep_logical_logs" ), getName() ) );
+        setLogicalLogAtCreationTime( xaContainer.getLogicalLog() );
     }
     
     private void cleanWriteLocks( String directory )
@@ -368,7 +373,8 @@ public class LuceneDataSource extends XaDataSource
         try
         {
             Directory dir = getDirectory( baseStorePath, identifier );
-            IndexWriter writer = new IndexWriter( dir, identifier.getType( config ).getAnalyzer(),
+            directoryExists( dir );
+            IndexWriter writer = new IndexWriter( dir, identifier.getType( config ).analyzer,
                     MaxFieldLength.UNLIMITED );
             
             // TODO We should tamper with this value and see how it affects the
@@ -384,12 +390,40 @@ public class LuceneDataSource extends XaDataSource
         }
     }
     
+    private boolean directoryExists( Directory dir )
+    {
+        try
+        {
+            String[] files = dir.listAll();
+            return files != null && files.length > 0;
+        }
+        catch ( IOException e )
+        {
+            return false;
+        }
+    }
+    
+    protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
+            String queryAsString )
+    {
+        try
+        {
+            IndexType type = identifier.getType( config );
+            writer.deleteDocuments( type.query( null, queryAsString ) );
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( "Unable to delete query " + queryAsString +
+                    " using" + writer, e );
+        }
+    }
+
     protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
             long entityId, String key, Object value )
     {
         try
         {
-            IndexType type = identifier.getType( this.config );
+            IndexType type = identifier.getType( config );
             writer.deleteDocuments( type.deletionQuery( entityId, key, value ) );
         }
         catch ( IOException e )
@@ -454,27 +488,6 @@ public class LuceneDataSource extends XaDataSource
 //        caching.clear();
 //    }
 
-//    protected void fillDocument( Document document, long nodeId, String key,
-//        Object value )
-//    {
-//        document.add( new Field( LuceneIndex.KEY_DOC_ID,
-//            String.valueOf( nodeId ), Field.Store.YES,
-//            Field.Index.NOT_ANALYZED ) );
-//        document.add( new Field( key, value.toString(), Field.Store.NO,
-//            getIndexStrategy( key, value ) ) );
-//    }
-//
-//    protected Index getIndexStrategy( String key, Object value )
-//    {
-//        return Field.Index.NOT_ANALYZED;
-//    }
-
-    @Override
-    public void keepLogicalLogs( boolean keep )
-    {
-        xaContainer.getLogicalLog().setKeepLogs( keep );
-    }
-    
     @Override
     public long getCreationTime()
     {
@@ -491,64 +504,5 @@ public class LuceneDataSource extends XaDataSource
     public long getCurrentLogVersion()
     {
         return store.getVersion();
-    }
-    
-    @Override
-    public void applyLog( ReadableByteChannel byteChannel ) throws IOException
-    {
-        xaContainer.getLogicalLog().applyLog( byteChannel );
-    }
-    
-    @Override
-    public void rotateLogicalLog() throws IOException
-    {
-        // flush done inside rotate
-        xaContainer.getLogicalLog().rotate();
-    }
-    
-    @Override
-    public ReadableByteChannel getLogicalLog( long version ) throws IOException
-    {
-        return xaContainer.getLogicalLog().getLogicalLog( version );
-    }
-    
-    @Override
-    public boolean hasLogicalLog( long version )
-    {
-        return xaContainer.getLogicalLog().hasLogicalLog( version );
-    }
-    
-    @Override
-    public boolean deleteLogicalLog( long version )
-    {
-        return xaContainer.getLogicalLog().deleteLogicalLog( version );
-    }
-    
-    @Override
-    public void setAutoRotate( boolean rotate )
-    {
-        xaContainer.getLogicalLog().setAutoRotateLogs( rotate );
-    }
-    
-    @Override
-    public void setLogicalLogTargetSize( long size )
-    {
-        xaContainer.getLogicalLog().setLogicalLogTargetSize( size );
-    }
-    
-    @Override
-    public void makeBackupSlave()
-    {
-        xaContainer.getLogicalLog().makeBackupSlave();
-    }
-
-    public String getFileName( long version )
-    {
-        return xaContainer.getLogicalLog().getFileName( version );
-    }
-
-    public long getLogicalLogLength( long version )
-    {
-        return xaContainer.getLogicalLog().getLogicalLogLength( version );
     }
 }

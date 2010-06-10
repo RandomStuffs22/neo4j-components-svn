@@ -15,19 +15,16 @@ import java.util.Map;
 class IndexConfig
 {
     private final Map<String, Map<String, String>> config;
-    private final Map<String, String> defaultParams;
     
-    private IndexConfig( Map<String, Map<String, String>> readConfig,
-            Map<String, String> defaultParams )
+    private IndexConfig( Map<String, Map<String, String>> readConfig )
     {
         this.config = readConfig;
-        this.defaultParams = defaultParams;
     }
     
-    static IndexConfig load( String baseStorePath, Map<String, String> defaultParams )
+    static IndexConfig load( String baseStorePath )
     {
         // TODO
-        return null;
+        return new IndexConfig( new HashMap<String, Map<String,String>>() );
     }
     
     void store()
@@ -42,19 +39,7 @@ class IndexConfig
     
     String get( String indexName, String key, String defaultValue )
     {
-        String value = inner( indexName ).get( key );
-        if ( value != null )
-        {
-            return value;
-        }
-        value = getFromDefault( indexName, key );
-        return value != null ? value : defaultValue;
-    }
-    
-    private String getFromDefault( String indexName, String key )
-    {
-        String paramsKey = "index." + indexName + "." + key;
-        return defaultParams.get( paramsKey );
+        return inner( indexName ).get( key );
     }
 
     Map<String, String> getAll( String indexName )
@@ -62,6 +47,11 @@ class IndexConfig
         Map<String, String> map = inner( indexName );
         return map == null ? Collections.<String, String>emptyMap() :
                 Collections.unmodifiableMap( map );
+    }
+    
+    boolean has( String indexName )
+    {
+        return config.containsKey( indexName );
     }
 
     private Map<String, String> inner( String indexName )

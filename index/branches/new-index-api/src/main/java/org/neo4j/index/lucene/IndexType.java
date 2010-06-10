@@ -24,15 +24,8 @@ abstract class IndexType
     private static final Map<String, IndexType> TYPES =
             Collections.synchronizedMap( new HashMap<String, IndexType>() );
     
-    private static final IndexType EXACT = new IndexType( "e" )
+    private static final IndexType EXACT = new IndexType( LuceneDataSource.KEYWORD_ANALYZER )
     {
-        @Override
-        public <T extends PropertyContainer> TxData newTxData(
-                LuceneIndex<T> index )
-        {
-            return new TxData( index, getAnalyzer() );
-        }
-
         @Override
         public Query deletionQuery( long entityId, String key, Object value )
         {
@@ -50,44 +43,22 @@ abstract class IndexType
         }
 
         @Override
-        public Query query( String key, Object value )
-        {
-            return parseQuery( key, value, getAnalyzer() );
-        }
-
-        @Override
         public void fillDocument( Document document, long entityId, String key,
                 Object value )
         {
             document.add( new Field( LuceneIndex.KEY_DOC_ID, "" + entityId, Store.YES,
                     Index.NOT_ANALYZED ) );
-            document.add( new Field( key, value.toString(), Store.NO,
-                    Index.NOT_ANALYZED ) );
-        }
-        
-        Analyzer getAnalyzer()
-        {
-            return LuceneDataSource.KEYWORD_ANALYZER;
+            document.add( new Field( key, value.toString(), Store.NO, Index.NOT_ANALYZED ) );
         }
     };
     
     private static class FulltextType extends IndexType
     {
-        private final Analyzer analyzer;
-        
-        FulltextType( String shortName, Analyzer analyzer )
+        FulltextType( Analyzer analyzer )
         {
-            super( shortName );
-            this.analyzer = analyzer;
+            super( analyzer );
         }
         
-        @Override
-        public <T extends PropertyContainer> TxData newTxData(
-                LuceneIndex<T> index )
-        {
-            return new TxData( index, analyzer );
-        }
-
         @Override
         public Query deletionQuery( long entityId, String key, Object value )
         {
@@ -104,12 +75,6 @@ abstract class IndexType
             return new TermQuery( new Term( exactKey( key ), value.toString() ) );
         }
 
-        @Override
-        public Query query( String key, Object value )
-        {
-            return parseQuery( key, value, this.analyzer );
-        }
-        
         private String exactKey( String key )
         {
             return key + "_e";
@@ -124,39 +89,30 @@ abstract class IndexType
                     Store.YES, Index.NOT_ANALYZED ) );
             document.add( new Field( exactKey( key ), valueAsString, Store.NO,
                     Index.NOT_ANALYZED ) );
-            document.add( new Field( key, valueAsString, Store.NO,
-                    Index.ANALYZED ) );
-        }
-        
-        Analyzer getAnalyzer()
-        {
-            return this.analyzer;
+            document.add( new Field( key, valueAsString, Store.NO, Index.ANALYZED ) );
         }
     };
     
-    private final String shortName;
+    final Analyzer analyzer;
     
-    private IndexType( String shortName )
+    private IndexType( Analyzer analyzer )
     {
-        this.shortName = shortName;
+        this.analyzer = analyzer;
     }
     
-    public String shortName()
+    private static String configKey( String indexName, String property )
     {
-        return this.shortName;
+//        String key = "index." + indexName;
+//        if ( property != null )
+//        {
+//            key += "." + property;
+//        }
+//        return key;
+        return property;
     }
     
-    private static String key( String indexName, String property )
-    {
-        String key = "index." + indexName;
-        if ( property != null )
-        {
-            key += "." + property;
-        }
-        return key;
-    }
-    
-    static IndexType getIndexType( Map<Object, Object> config, String indexName )
+    static IndexType getIndexType( IndexConfig storedConfig,
+            Map<String, String> config, String indexName )
     {
         IndexType existingType = TYPES.get( indexName );
         if ( existingType != null )
@@ -164,19 +120,18 @@ abstract class IndexType
             return existingType;
         }
         
-        String type = (String) config.get( key( indexName, null ) );
+        Map<String, String> prioConfig = storedConfig.has( indexName ) ?
+                storedConfig.getAll( indexName ) : config;
+        prioConfig = prioConfig != null ? prioConfig : Collections.<String, String>emptyMap();
+        String type = prioConfig.get( configKey( indexName, "type" ) );
         IndexType result = null;
-        if ( type == null )
-        {
-            result = EXACT;
-        }
-        else if ( type.equals( "exact" ) )
+        if ( type == null || type.equals( "exact" ) )
         {
             result = EXACT;
         }
         else if ( type.equals( "fulltext" ) )
         {
-            result = new FulltextType( type, getAnalyzer( config, indexName ) );
+            result = new FulltextType( getAnalyzer( prioConfig, indexName ) );
         }
         else
         {
@@ -190,10 +145,9 @@ abstract class IndexType
         return result;
     }
     
-    private static Analyzer getAnalyzer( Map<Object, Object> config,
-            String indexName )
+    private static Analyzer getAnalyzer( Map<String, String> config, String indexName )
     {
-        String analyzerClass = (String) config.get( key( indexName, "analyzer" ) );
+        String analyzerClass = config.get( configKey( indexName, "analyzer" ) );
         if ( analyzerClass != null )
         {
             try
@@ -206,7 +160,7 @@ abstract class IndexType
             }
         }
         
-        String lowerCase = (String) config.get( key( indexName, "to_lower_case" ) );
+        String lowerCase = config.get( configKey( indexName, "to_lower_case" ) );
         if ( lowerCase == null || Boolean.parseBoolean( lowerCase ) )
         {
             return LuceneDataSource.LOWER_CASE_WHITESPACE_ANALYZER;
@@ -217,28 +171,23 @@ abstract class IndexType
         }
     }
 
-    abstract <T extends PropertyContainer> TxData newTxData( LuceneIndex<T> index );
+    <T extends PropertyContainer> TxData newTxData( LuceneIndex<T> index )
+    {
+        return new TxData( index.getIndexType() );
+    }
     
     abstract Query deletionQuery( long entityId, String key, Object value );
     
     abstract Query get( String key, Object value );
     
-    abstract Query query( String key, Object value );
-
-    abstract void fillDocument( Document document, long entityId, String key,
-            Object value );
-    
-    abstract Analyzer getAnalyzer();
-    
-    private static Query parseQuery( String key, Object value, Analyzer analyzer )
+    Query query( String keyOrNull, Object value )
     {
         if ( value instanceof Query )
         {
             return (Query) value;
         }
         
-        QueryParser parser = new QueryParser( Version.LUCENE_29, key,
-                analyzer );
+        QueryParser parser = new QueryParser( Version.LUCENE_30, keyOrNull, analyzer );
         parser.setAllowLeadingWildcard( true );
         try
         {
@@ -249,4 +198,7 @@ abstract class IndexType
             throw new RuntimeException( e );
         }
     }
+
+    abstract void fillDocument( Document document, long entityId, String key,
+            Object value );
 }

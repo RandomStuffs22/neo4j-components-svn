@@ -237,7 +237,7 @@ abstract class LuceneCommand extends XaCommand
         {
             return null;
         }
-        return new CommandData( new IndexIdentifier( itemsClass, indexName ),
+        return new CommandData( new IndexIdentifier( itemsClass, indexName, null ),
                 entityId, key, value );
     }
     
@@ -282,8 +282,7 @@ abstract class LuceneCommand extends XaCommand
     }
     
     static XaCommand readCommand( ReadableByteChannel channel, 
-        ByteBuffer buffer )
-        throws IOException
+        ByteBuffer buffer ) throws IOException
     {
         buffer.clear(); buffer.limit( 1 );
         if ( channel.read( buffer ) != buffer.limit() )

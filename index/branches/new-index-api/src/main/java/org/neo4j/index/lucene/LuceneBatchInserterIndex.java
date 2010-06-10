@@ -57,7 +57,7 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
         try
         {
             this.writer = new IndexWriter( LuceneDataSource.getDirectory( null, identifier ),
-                    indexType().getAnalyzer(), MaxFieldLength.UNLIMITED );
+                    indexType().analyzer, MaxFieldLength.UNLIMITED );
             return this.writer;
         }
         catch ( IOException e )
