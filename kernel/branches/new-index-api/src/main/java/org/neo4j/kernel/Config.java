@@ -49,6 +49,7 @@ public class Config
     public static final String USE_MEMORY_MAPPED_BUFFERS = 
         "use_memory_mapped_buffers";
     public static final String DUMP_CONFIGURATION = "dump_configuration";
+    public static final String KEEP_LOGICAL_LOGS = "keep_logical_logs";
     
     private AdaptiveCacheManager cacheManager;
     private TxModule txModule;
@@ -61,8 +62,6 @@ public class Config
     private GraphDbModule graphDbModule;
     private String storeDir;
     private final Map<Object, Object> params;
-    
-    private final KernelPanicEventGenerator kpe;
 
     private final boolean readOnly;
     private final boolean backupSlave;
@@ -70,7 +69,6 @@ public class Config
     Config( GraphDatabaseService graphDb, String storeDir, Map<Object, Object> params,
             KernelPanicEventGenerator kpe )
     {
-        this.kpe = kpe;
         this.storeDir = storeDir;
         this.params = params;
         String readOnlyStr = (String) params.get( "read_only" );

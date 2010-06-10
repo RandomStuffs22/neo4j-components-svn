@@ -104,7 +104,7 @@ public class XaLogicalLog
     private boolean useMemoryMapped = true;
 
     XaLogicalLog( String fileName, XaResourceManager xaRm, XaCommandFactory cf,
-        XaTransactionFactory xaTf, Map<Object,Object> config )
+        XaTransactionFactory xaTf, Map<?,?> config )
     {
         this.fileName = fileName;
         this.xaRm = xaRm;
@@ -116,7 +116,7 @@ public class XaLogicalLog
             + Xid.MAXBQUALSIZE * 10 );
     }
     
-    private boolean getMemoryMapped( Map<Object,Object> config )
+    private boolean getMemoryMapped( Map<?,?> config )
     {
         if ( config != null )
         {
@@ -242,11 +242,14 @@ public class XaLogicalLog
     private void fixCleanKill( String fileName ) throws IOException
     {
         File file = new File( fileName );
-        if ( !keepLogs && !file.delete() )
+        if ( !keepLogs )
         {
-            throw new IllegalStateException( 
-                "Active marked as clean and unable to delete log " + 
-                fileName );
+            if ( !file.delete() )
+            {
+                throw new IllegalStateException( 
+                    "Active marked as clean and unable to delete log " + 
+                    fileName );
+            }
         }
         else
         {
@@ -756,6 +759,25 @@ public class XaLogicalLog
             lastEntryPos = fileChannel.position();
         }
         // make sure we overwrite any broken records
+        fileChannel.position( lastEntryPos );
+        // zero out the slow way since windows don't support truncate very well
+        buffer.clear();
+        while ( buffer.hasRemaining() )
+        {
+            buffer.put( (byte)0 );
+        }
+        buffer.flip();
+        long endPosition = fileChannel.size();
+        do
+        {
+            long bytesLeft = fileChannel.size() - fileChannel.position();
+            if ( bytesLeft < buffer.capacity() )
+            {
+                buffer.limit( (int) bytesLeft );
+            }
+            fileChannel.write( buffer );
+            buffer.flip();
+        } while ( fileChannel.position() < endPosition );
         fileChannel.position( lastEntryPos );
         scanIsComplete = true;
         log.fine( "Internal recovery completed, scanned " + logEntriesFound

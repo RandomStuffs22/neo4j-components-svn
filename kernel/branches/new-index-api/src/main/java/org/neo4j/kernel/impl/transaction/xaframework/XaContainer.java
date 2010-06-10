@@ -54,7 +54,7 @@ public class XaContainer
      * @param config Configuration map or null if no config needed
      */
     public static XaContainer create( String logicalLog, XaCommandFactory cf,
-        XaTransactionFactory tf, Map<Object,Object> config )
+        XaTransactionFactory tf, Map<?,?> config )
     {
         if ( logicalLog == null || cf == null || tf == null )
         {
@@ -66,7 +66,7 @@ public class XaContainer
     }
 
     private XaContainer( String logicalLog, XaCommandFactory cf,
-        XaTransactionFactory tf, Map<Object,Object> config )
+        XaTransactionFactory tf, Map<?,?> config )
     {
         this.cf = cf;
         this.tf = tf;

@@ -138,7 +138,8 @@ class GraphDbInstance
             {
                 Class<?> clazz = Class.forName( Config.LUCENE_DS_CLASS );
                 registerLuceneDataSource( Config.LUCENE_DS_NAME, clazz.getName(),
-                        config.getTxModule(), config.getLockManager(), Config.LUCENE_BRANCH_ID );
+                        config.getTxModule(), config.getLockManager(), Config.LUCENE_BRANCH_ID,
+                        params );
             }
             catch ( ClassNotFoundException e )
             { // Ok, lucene index not on class path
@@ -182,9 +183,9 @@ class GraphDbInstance
 
     private XaDataSource registerLuceneDataSource( String name,
             String className, TxModule txModule,
-            LockManager lockManager, byte[] resourceId )
+            LockManager lockManager, byte[] resourceId, 
+            Map<Object,Object> params )
     {
-        Map<Object, Object> params = new HashMap<Object, Object>();
         params.put( LockManager.class, lockManager );
         params.put( "store_dir", this.storeDir );
         return txModule.registerDataSource( name, className, resourceId,

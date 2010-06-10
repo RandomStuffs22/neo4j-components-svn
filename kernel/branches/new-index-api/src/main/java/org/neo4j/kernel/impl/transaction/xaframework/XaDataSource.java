@@ -22,6 +22,7 @@ package org.neo4j.kernel.impl.transaction.xaframework;
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * <CODE>XaDataSource</CODE> is as a factory for creating
@@ -129,16 +130,16 @@ public abstract class XaDataSource
     {
         throw new UnsupportedOperationException();
     }
-    
+
     /**
-     * Returns a random identifier that gets generated when the data source is 
-     * created. Note with "created" we mean first time data source is created 
-     * and not object creatoin.
+     * Returns a random identifier that gets generated when the data source is
+     * created. Note with "created" we mean first time data source is created
+     * and not object creation.
      * <p>
-     * Creation time together with random identifier can be used to uniqley 
-     * identify a data source (since it is possible to have multiple sources 
-     * of same type).
-     *  
+     * Creation time together with the random identifier can be used to uniquely
+     * identify a data source (since it is possible to have multiple sources of
+     * the same type).
+     * 
      * @return random identifier for this data source
      */
     public long getRandomIdentifier()
@@ -238,6 +239,11 @@ public abstract class XaDataSource
         throw new UnsupportedOperationException();
     }
     
+    public boolean isLogicalLogKept()
+    {
+        throw new UnsupportedOperationException();
+    }
+    
     /**
      * Used by the container to assign a name to this resource. 
      * 
@@ -290,5 +296,22 @@ public abstract class XaDataSource
     public void setLogicalLogTargetSize( long size )
     {
         throw new UnsupportedOperationException();
+    }
+
+    protected boolean shouldKeepLog( String config, String resourceName )
+    {
+        if ( config != null )
+        {
+            StringTokenizer tok = new StringTokenizer( config, "," );
+            while ( tok.hasMoreTokens() )
+            {
+                String element = tok.nextToken().trim();
+                if ( resourceName.equals( element ) )
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
