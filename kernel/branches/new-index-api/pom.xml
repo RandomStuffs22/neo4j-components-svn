@@ -10,8 +10,8 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
-  <artifactId>neo4j-kernel</artifactId>
-  <version>new-index-api-SNAPSHOT</version>
+  <artifactId>neo4j-kernel-new-index-api</artifactId>
+  <version>1.1-SNAPSHOT</version>
   <name>Neo4j - Graph Database Kernel</name>
   <description>
 Neo4j kernel is a lightweight, embedded Java database designed to store data structured
