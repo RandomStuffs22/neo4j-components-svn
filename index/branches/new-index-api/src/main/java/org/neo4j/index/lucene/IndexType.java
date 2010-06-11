@@ -45,9 +45,13 @@ abstract class IndexType
         public void fillDocument( Document document, long entityId, String key,
                 Object value )
         {
-            document.add( new Field( LuceneIndex.KEY_DOC_ID, "" + entityId, Store.YES,
-                    Index.NOT_ANALYZED ) );
+            addIdToDocument( document, entityId );
             document.add( new Field( key, value.toString(), Store.NO, Index.NOT_ANALYZED ) );
+        }
+        
+        public TxData newTxData(LuceneIndex index)
+        {
+            return new ExactTxData( index );
         }
     };
     
@@ -84,11 +88,16 @@ abstract class IndexType
                 Object value )
         {
             String valueAsString = value.toString();
-            document.add( new Field( LuceneIndex.KEY_DOC_ID, "" + entityId,
-                    Store.YES, Index.NOT_ANALYZED ) );
+            addIdToDocument( document, entityId );
             document.add( new Field( exactKey( key ), valueAsString, Store.NO,
                     Index.NOT_ANALYZED ) );
             document.add( new Field( key, valueAsString, Store.NO, Index.ANALYZED ) );
+        }
+        
+        @Override
+        public TxData newTxData( LuceneIndex index )
+        {
+            return new FullTxData( index );
         }
     };
     
@@ -101,12 +110,6 @@ abstract class IndexType
     
     private static String configKey( String indexName, String property )
     {
-//        String key = "index." + indexName;
-//        if ( property != null )
-//        {
-//            key += "." + property;
-//        }
-//        return key;
         return property;
     }
     
@@ -182,6 +185,8 @@ abstract class IndexType
     
     abstract Query get( String key, Object value );
     
+    abstract TxData newTxData( LuceneIndex index );
+    
     Query query( String keyOrNull, Object value )
     {
         if ( value instanceof Query )
@@ -203,4 +208,9 @@ abstract class IndexType
 
     abstract void fillDocument( Document document, long entityId, String key,
             Object value );
+    
+    void addIdToDocument( Document document, long id )
+    {
+        document.add( new Field( LuceneIndex.KEY_DOC_ID, "" + id, Store.YES, Index.NOT_ANALYZED ) );
+    }
 }

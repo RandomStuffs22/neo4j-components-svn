@@ -1,0 +1,139 @@
+package org.neo4j.index.lucene;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.lucene.document.Document;
+import org.apache.lucene.search.Query;
+
+public class ExactTxData extends TxData
+{
+    private Map<String, Map<Object, Set<Long>>> data;
+    
+    ExactTxData( LuceneIndex index )
+    {
+        super( index );
+    }
+
+    @Override
+    TxData add( Long entityId, String key, Object value )
+    {
+        idCollection( key, value, true ).add( entityId );
+        return this;
+    }
+    
+    private Set<Long> idCollection( String key, Object value, boolean create )
+    {
+        Map<Object, Set<Long>> keyMap = keyMap( key, create );
+        if ( keyMap == null )
+        {
+            return null;
+        }
+        
+        Set<Long> ids = keyMap.get( value );
+        if ( ids == null && create )
+        {
+            ids = new HashSet<Long>();
+            keyMap.put( value, ids );
+        }
+        return ids;
+    }
+
+    private Map<Object, Set<Long>> keyMap( String key, boolean create )
+    {
+        if ( data == null )
+        {
+            if ( create )
+            {
+                data = new HashMap<String, Map<Object,Set<Long>>>();
+            }
+            else
+            {
+                return null;
+            }
+        }
+        
+        Map<Object, Set<Long>> inner = data.get( key );
+        if ( inner == null && create )
+        {
+            inner = new HashMap<Object, Set<Long>>();
+            data.put( key, inner );
+        }
+        return inner;
+    }
+
+    @Override
+    TxData add( Document document )
+    {
+        TxData data = toFullTxData();
+        return data.add( document );
+    }
+
+    private TxData toFullTxData()
+    {
+        FullTxData data = new FullTxData( index );
+        if ( this.data != null )
+        {
+            for ( Map.Entry<String, Map<Object, Set<Long>>> entry : this.data.entrySet() )
+            {
+                String key = entry.getKey();
+                for ( Map.Entry<Object, Set<Long>> valueEntry : entry.getValue().entrySet() )
+                {
+                    Object value = valueEntry.getKey();
+                    for ( long id : valueEntry.getValue() )
+                    {
+                        data.add( id, key, value );
+                    }
+                }
+            }
+        }
+        return data;
+    }
+
+    @Override
+    void close()
+    {
+    }
+
+    @Override
+    Map.Entry<Set<Long>, TxData> getEntityIds( Query query )
+    {
+        return toFullTxData().getEntityIds( query );
+    }
+
+    @Override
+    TxData remove( Long entityId, String key, Object value )
+    {
+        if ( data == null )
+        {
+            return this;
+        }
+        Collection<Long> ids = idCollection( key, value, false );
+        if ( ids != null )
+        {
+            ids.remove( entityId );
+        }
+        return this;
+    }
+
+    @Override
+    TxData remove( Query query )
+    {
+        return toFullTxData().remove( query );
+    }
+
+    @Override
+    Map.Entry<Set<Long>, TxData> getEntityIds( String key, Object value )
+    {
+        Set<Long> ids = idCollection( key, value, false );
+        if ( ids == null )
+        {
+            return new MapEntry<Set<Long>, TxData>( Collections.<Long>emptySet(), this );
+        }
+        return new MapEntry<Set<Long>, TxData>( ids, this );
+    }
+}

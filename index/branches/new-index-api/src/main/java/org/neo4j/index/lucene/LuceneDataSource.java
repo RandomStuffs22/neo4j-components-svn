@@ -32,10 +32,12 @@ import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.WhitespaceTokenizer;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.graphdb.Node;
@@ -402,33 +404,46 @@ public class LuceneDataSource extends LogBackedXaDataSource
         }
     }
     
-    protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
-            String queryAsString )
+    protected void addDocument( IndexWriter writer, IndexIdentifier identifier,
+            long entityId, String key, Object value )
     {
+        Document document = new Document();
+        identifier.getType( store.indexConfig ).fillDocument(
+                document, entityId, key, value );
         try
         {
-            IndexType type = identifier.getType( store.indexConfig );
-            writer.deleteDocuments( type.query( null, queryAsString ) );
+            writer.addDocument( document );
         }
         catch ( IOException e )
         {
-            throw new RuntimeException( "Unable to delete query " + queryAsString +
-                    " using" + writer, e );
+            throw new RuntimeException( e );
         }
+    }
+    
+    protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
+            String queryAsString )
+    {
+        deleteDocuments( writer, identifier.getType( store.indexConfig ).query(
+                null, queryAsString ) );
     }
 
     protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
             long entityId, String key, Object value )
     {
+        deleteDocuments( writer, identifier.getType( store.indexConfig ).deletionQuery(
+                entityId, key, value ) );
+    }
+    
+    protected void deleteDocuments( IndexWriter writer, Query query )
+    {
         try
         {
-            IndexType type = identifier.getType( store.indexConfig );
-            writer.deleteDocuments( type.deletionQuery( entityId, key, value ) );
+            // TODO
+            writer.deleteDocuments( query );
         }
         catch ( IOException e )
         {
-            throw new RuntimeException( "Unable to delete for " + entityId + ","
-                + "," + value + " using" + writer, e );
+            throw new RuntimeException( "Unable to delete for " + query + " using" + writer, e );
         }
     }
     

@@ -8,6 +8,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -177,5 +178,34 @@ public class TestNewLuceneIndex
         rel2.delete();
         node1.delete();
         node2.delete();
+    }
+    
+    @Ignore
+    @Test
+    public void testMan()
+    {
+        Index<Node> index = graphDb.nodeIndex( "yeah" );
+        Node node = graphDb.createNode();
+        long t = System.currentTimeMillis();
+        for ( int i = 0; i < 5000000; i++ )
+        {
+            index.add( node, "key", "value" + i );
+            if ( i % 100000 == 0 )
+            {
+                restartTx();
+                System.out.print( "." );
+            }
+        }
+        commitTx();
+        System.out.println( "insert:" + (System.currentTimeMillis() - t) );
+        
+        t = System.currentTimeMillis();
+        for ( int i = 0; i < 100; i++ )
+        {
+            for ( Node n : index.get( "key", "value" + i ) )
+            {
+            }
+        }
+        System.out.println( "get:" + (System.currentTimeMillis() - t) );
     }
 }

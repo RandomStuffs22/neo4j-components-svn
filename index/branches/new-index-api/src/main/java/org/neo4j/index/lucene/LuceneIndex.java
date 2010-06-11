@@ -86,20 +86,21 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     
     public IndexHits<T> get( String key, Object value )
     {
-        return query( type.get( key, value ) );
+        return query( type.get( key, value ), key, value );
     }
 
     public IndexHits<T> query( String key, Object queryOrQueryObject )
     {
-        return query( type.query( key, queryOrQueryObject ) );
+        return query( type.query( key, queryOrQueryObject ), null, null );
     }
 
     public IndexHits<T> query( Object queryOrQueryObject )
     {
-        return query( type.query( null, queryOrQueryObject ) );
+        return query( type.query( null, queryOrQueryObject ), null, null );
     }
     
-    private IndexHits<T> query( Query query )
+    private IndexHits<T> query( Query query, String keyForDirectLookup,
+            Object valueForDirectLookup )
     {
         List<Long> ids = new ArrayList<Long>();
         LuceneXaConnection con = getReadOnlyConnection();
@@ -112,9 +113,13 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         Set<Long> removedIds = Collections.emptySet();
         if ( luceneTx != null )
         {
-            addedIds = luceneTx.getAddedIds( this, query );
+            addedIds = keyForDirectLookup != null ?
+                    luceneTx.getAddedIds( this, keyForDirectLookup, valueForDirectLookup ) :
+                    luceneTx.getAddedIds( this, query );
             ids.addAll( addedIds );
-            removedIds = luceneTx.getRemovedIds( this, query );
+            removedIds = keyForDirectLookup != null ?
+                    luceneTx.getRemovedIds( this, keyForDirectLookup, valueForDirectLookup ) :
+                    luceneTx.getRemovedIds( this, query );
         }
         service.getDataSource().getReadLock();
         Iterator<Long> idIterator = null;

@@ -19,7 +19,6 @@
  */
 package org.neo4j.index.lucene;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,8 +46,8 @@ class LuceneTransaction extends XaTransaction
             new HashMap<IndexIdentifier, TxDataBoth>();
     private final LuceneDataSource dataSource;
 
-    private final Map<IndexIdentifier,List<LuceneCommand>> commandMap = 
-            new HashMap<IndexIdentifier,List<LuceneCommand>>();
+    private final Map<IndexIdentifier,CommandList> commandMap = 
+            new HashMap<IndexIdentifier,CommandList>();
 
     LuceneTransaction( int identifier, XaLogicalLog xaLog,
         LuceneDataSource luceneDs )
@@ -63,7 +62,7 @@ class LuceneTransaction extends XaTransaction
         TxDataBoth data = getTxData( index, true );
         insert( index, entity, key, value, data.added( true ), data.removed( false ) );
         queueCommand( new AddCommand( index.identifier,
-                getEntityId( entity ), key, value.toString() ) );
+                getEntityId( entity ), key, value.toString() ) ).addCount++;
     }
     
     private long getEntityId( PropertyContainer entity )
@@ -79,7 +78,7 @@ class LuceneTransaction extends XaTransaction
         TxDataBoth data = txData.get( identifier );
         if ( data == null && createIfNotExists )
         {
-            data = new TxDataBoth( index.type );
+            data = new TxDataBoth( index );
             txData.put( identifier, data );
         }
         return data;
@@ -91,19 +90,19 @@ class LuceneTransaction extends XaTransaction
         TxDataBoth data = getTxData( index, true );
         insert( index, entity, key, value, data.removed( true ), data.added( false ) );
         queueCommand( new RemoveCommand( index.identifier,
-                getEntityId( entity ), key, value.toString() ) );
+                getEntityId( entity ), key, value.toString() ) ).removeCount++;
     }
     
     <T extends PropertyContainer> void remove( LuceneIndex<T> index,
             Query query )
     {
         TxDataBoth data = getTxData( index, true );
-        TxData added = data.added( false );
+        TxDataHolder added = data.added( false );
         if ( added != null )
         {
             added.remove( query );
         }
-        TxData removed = data.removed( true );
+        TxDataHolder removed = data.removed( true );
         IndexSearcherRef searcher = dataSource.getIndexSearcher( index.identifier );
         if ( searcher != null )
         {
@@ -113,23 +112,25 @@ class LuceneTransaction extends XaTransaction
                 removed.add( docs.next() );
             }
         }
-        queueCommand( new RemoveQueryCommand( index.identifier, -1, "", query.toString() ) );
+        queueCommand( new RemoveQueryCommand(
+                index.identifier, -1, "", query.toString() ) ).removeQueryCount++;
     }
     
-    private void queueCommand( LuceneCommand command )
+    private CommandList queueCommand( LuceneCommand command )
     {
         IndexIdentifier indexId = command.getIndexIdentifier();
-        List<LuceneCommand> commands = commandMap.get( indexId );
+        CommandList commands = commandMap.get( indexId );
         if ( commands == null )
         {
-            commands = new ArrayList<LuceneCommand>();
+            commands = new CommandList();
             commandMap.put( indexId, commands );
         }
         commands.add( command );
+        return commands;
     }
     
     private <T extends PropertyContainer> void insert( LuceneIndex<T> index,
-            T entity, String key, Object value, TxData insertInto, TxData removeFrom )
+            T entity, String key, Object value, TxDataHolder insertInto, TxDataHolder removeFrom )
     {
         long id = getEntityId( entity );
         if ( removeFrom != null )
@@ -142,12 +143,7 @@ class LuceneTransaction extends XaTransaction
     <T extends PropertyContainer> Set<Long> getRemovedIds( LuceneIndex<T> index,
             Query query )
     {
-        TxDataBoth data = getTxData( index, false );
-        if ( data == null )
-        {
-            return Collections.emptySet();
-        }
-        TxData removed = data.removed( false );
+        TxDataHolder removed = removedTxDataOrNull( index );
         if ( removed == null )
         {
             return Collections.emptySet();
@@ -156,15 +152,22 @@ class LuceneTransaction extends XaTransaction
         return ids != null ? ids : Collections.<Long>emptySet();
     }
     
-    <T extends PropertyContainer> Set<Long> getAddedIds( LuceneIndex<T> index,
-            Query query )
+    <T extends PropertyContainer> Set<Long> getRemovedIds( LuceneIndex<T> index,
+            String key, Object value )
     {
-        TxDataBoth data = getTxData( index, false );
-        if ( data == null )
+        TxDataHolder removed = removedTxDataOrNull( index );
+        if ( removed == null )
         {
             return Collections.emptySet();
         }
-        TxData added = data.added( false );
+        Set<Long> ids = removed.getEntityIds( key, value );
+        return ids != null ? ids : Collections.<Long>emptySet();
+    }
+    
+    <T extends PropertyContainer> Set<Long> getAddedIds( LuceneIndex<T> index,
+            Query query )
+    {
+        TxDataHolder added = addedTxDataOrNull( index );
         if ( added == null )
         {
             return Collections.emptySet();
@@ -173,22 +176,38 @@ class LuceneTransaction extends XaTransaction
         return ids != null ? ids : Collections.<Long>emptySet();
     }
     
-    private void writeToIndex( IndexWriter writer, IndexIdentifier identifier,
-            long entityId, String key, Object value )
+    <T extends PropertyContainer> Set<Long> getAddedIds( LuceneIndex<T> index,
+            String key, Object value )
     {
-        Document document = new Document();
-        identifier.getType( dataSource.store.indexConfig ).fillDocument(
-                document, entityId, key, value );
-        try
+        TxDataHolder added = addedTxDataOrNull( index );
+        if ( added == null )
         {
-            writer.addDocument( document );
+            return Collections.emptySet();
         }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
+        Set<Long> ids = added.getEntityIds( key, value );
+        return ids != null ? ids : Collections.<Long>emptySet();
     }
-
+    
+    private <T extends PropertyContainer> TxDataHolder addedTxDataOrNull( LuceneIndex<T> index )
+    {
+        TxDataBoth data = getTxData( index, false );
+        if ( data == null )
+        {
+            return null;
+        }
+        return data.added( false );
+    }
+    
+    private <T extends PropertyContainer> TxDataHolder removedTxDataOrNull( LuceneIndex<T> index )
+    {
+        TxDataBoth data = getTxData( index, false );
+        if ( data == null )
+        {
+            return null;
+        }
+        return data.removed( false );
+    }
+    
     @Override
     protected void doAddCommand( XaCommand command )
     { // we override inject command and manage our own in memory command list
@@ -197,7 +216,7 @@ class LuceneTransaction extends XaTransaction
     @Override
     protected void injectCommand( XaCommand command )
     {
-        queueCommand( ( LuceneCommand ) command );
+        queueCommand( ( LuceneCommand ) command ).incCounter( (LuceneCommand ) command );
     }
 
     @Override
@@ -206,19 +225,25 @@ class LuceneTransaction extends XaTransaction
         dataSource.getWriteLock();
         try
         {
-            for ( Map.Entry<IndexIdentifier, List<LuceneCommand>> entry :
+            for ( Map.Entry<IndexIdentifier, CommandList> entry :
                 this.commandMap.entrySet() )
             {
                 IndexIdentifier identifier = entry.getKey();
                 IndexWriter writer = dataSource.getIndexWriter( identifier );
-                for ( LuceneCommand command : entry.getValue() )
+                CommandList commandList = entry.getValue();
+                writer.setMaxBufferedDocs( commandList.addCount + 100 );
+                // Why multiple with 5 here? One remove command could remove
+                // many terms.
+                writer.setMaxBufferedDeleteTerms( commandList.removeCount + 100 +
+                        commandList.removeQueryCount * 5 );
+                for ( LuceneCommand command : commandList.commands )
                 {
                     long entityId = command.getEntityId();
                     String key = command.getKey();
                     String value = command.getValue();
                     if ( command instanceof AddCommand )
                     {
-                        writeToIndex( writer, identifier, entityId, key, value );
+                        dataSource.addDocument( writer, identifier, entityId, key, value );
                     }
                     else if ( command instanceof RemoveCommand )
                     {
@@ -258,9 +283,9 @@ class LuceneTransaction extends XaTransaction
     @Override
     protected void doPrepare()
     {
-        for ( List<LuceneCommand> list : commandMap.values() )
+        for ( CommandList list : commandMap.values() )
         {
-            for ( LuceneCommand command : list )
+            for ( LuceneCommand command : list.commands )
             {
                 addCommand( command );
             }
@@ -284,29 +309,29 @@ class LuceneTransaction extends XaTransaction
     // Bad name
     private class TxDataBoth
     {
-        private final IndexType indexType;
-        private TxData add;
-        private TxData remove;
+        private TxDataHolder add;
+        private TxDataHolder remove;
+        private final LuceneIndex index;
         
-        public TxDataBoth( IndexType indexType )
+        public TxDataBoth( LuceneIndex index )
         {
-            this.indexType = indexType;
+            this.index = index;
         }
         
-        TxData added( boolean createIfNotExists )
+        TxDataHolder added( boolean createIfNotExists )
         {
             if ( this.add == null && createIfNotExists )
             {
-                this.add = new TxData( indexType );
+                this.add = new TxDataHolder( index, index.type.newTxData( index ) );
             }
             return this.add;
         }
         
-        TxData removed( boolean createIfNotExists )
+        TxDataHolder removed( boolean createIfNotExists )
         {
             if ( this.remove == null && createIfNotExists )
             {
-                this.remove = new TxData( indexType );
+                this.remove = new TxDataHolder( index, index.type.newTxData( index ) );
             }
             return this.remove;
         }
@@ -317,11 +342,40 @@ class LuceneTransaction extends XaTransaction
             safeClose( remove );
         }
 
-        private void safeClose( TxData data )
+        private void safeClose( TxDataHolder data )
         {
             if ( data != null )
             {
                 data.close();
+            }
+        }
+    }
+    
+    private static class CommandList
+    {
+        private final List<LuceneCommand> commands = new ArrayList<LuceneCommand>();
+        private int addCount;
+        private int removeCount;
+        private int removeQueryCount;
+        
+        void add( LuceneCommand command )
+        {
+            this.commands.add( command );
+        }
+        
+        void incCounter( LuceneCommand command )
+        {
+            if ( command instanceof AddCommand )
+            {
+                this.addCount++;
+            }
+            else if ( command instanceof RemoveCommand )
+            {
+                this.removeCount++;
+            }
+            else if ( command instanceof RemoveQueryCommand )
+            {
+                this.removeQueryCount++;
             }
         }
     }
