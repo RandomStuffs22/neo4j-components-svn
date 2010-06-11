@@ -17,7 +17,7 @@ class IndexIdentifier
         this.customConfig = customConfig;
     }
     
-    IndexType getType( IndexConfig storedConfig )
+    IndexType getType( Map<String, Map<String, String>> storedConfig )
     {
         if ( type == null )
         {

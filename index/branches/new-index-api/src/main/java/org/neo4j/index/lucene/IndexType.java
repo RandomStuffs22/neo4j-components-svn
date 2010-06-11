@@ -17,7 +17,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.util.Version;
-import org.neo4j.graphdb.PropertyContainer;
 
 abstract class IndexType
 {
@@ -111,8 +110,8 @@ abstract class IndexType
         return property;
     }
     
-    static IndexType getIndexType( IndexConfig storedConfig,
-            Map<String, String> config, String indexName )
+    static IndexType getIndexType( Map<String, Map<String, String>> storedConfig,
+            Map<String, String> customConfig, String indexName )
     {
         IndexType existingType = TYPES.get( indexName );
         if ( existingType != null )
@@ -120,9 +119,13 @@ abstract class IndexType
             return existingType;
         }
         
-        Map<String, String> prioConfig = storedConfig.has( indexName ) ?
-                storedConfig.getAll( indexName ) : config;
+        Map<String, String> prioConfig = storedConfig.containsKey( indexName ) ?
+                storedConfig.get( indexName ) : customConfig;
         prioConfig = prioConfig != null ? prioConfig : Collections.<String, String>emptyMap();
+        
+        // TODO If it exists in the storedConfig then verify against customConfig
+        // and tell user to f-ck off if they differ?
+        
         String type = prioConfig.get( configKey( indexName, "type" ) );
         IndexType result = null;
         if ( type == null || type.equals( "exact" ) )
@@ -142,6 +145,10 @@ abstract class IndexType
         // representing the same type more than once (if done simultaneously),
         // and it's OK.
         TYPES.put( indexName, result );
+        if ( prioConfig == customConfig )
+        {
+            storedConfig.put( indexName, new HashMap<String, String>( customConfig ) );
+        }
         return result;
     }
     
@@ -171,11 +178,6 @@ abstract class IndexType
         }
     }
 
-    <T extends PropertyContainer> TxData newTxData( LuceneIndex<T> index )
-    {
-        return new TxData( index.getIndexType() );
-    }
-    
     abstract Query deletionQuery( long entityId, String key, Object value );
     
     abstract Query get( String key, Object value );

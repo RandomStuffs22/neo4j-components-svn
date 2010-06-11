@@ -31,11 +31,14 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     
     final LuceneIndexProvider service;
     final IndexIdentifier identifier;
+    final IndexType type;
 
     LuceneIndex( LuceneIndexProvider service, IndexIdentifier identifier )
     {
         this.service = service;
         this.identifier = identifier;
+        this.type = IndexType.getIndexType( service.getDataSource().store.indexConfig,
+                identifier.customConfig, identifier.indexName );
     }
     
     LuceneXaConnection getConnection()
@@ -65,7 +68,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     
     public void remove( Object queryOrQueryObject )
     {
-        getConnection().remove( this, getIndexType().query( null, queryOrQueryObject ) );
+        getConnection().remove( this, type.query( null, queryOrQueryObject ) );
     }
     
     public void remove( T entity, Object queryOrQueryObjectOrNull )
@@ -75,30 +78,25 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
                 Occur.MUST );
         if ( queryOrQueryObjectOrNull != null )
         {
-            queries.add( getIndexType().query( null, queryOrQueryObjectOrNull ),
+            queries.add( type.query( null, queryOrQueryObjectOrNull ),
                     Occur.MUST );
         }
         remove( queries );
     }
     
-    IndexType getIndexType()
-    {
-        return identifier.getType( service.getDataSource().config );
-    }
-    
     public IndexHits<T> get( String key, Object value )
     {
-        return query( getIndexType().get( key, value ) );
+        return query( type.get( key, value ) );
     }
 
     public IndexHits<T> query( String key, Object queryOrQueryObject )
     {
-        return query( getIndexType().query( key, queryOrQueryObject ) );
+        return query( type.query( key, queryOrQueryObject ) );
     }
 
     public IndexHits<T> query( Object queryOrQueryObject )
     {
-        return query( getIndexType().query( null, queryOrQueryObject ) );
+        return query( type.query( null, queryOrQueryObject ) );
     }
     
     private IndexHits<T> query( Query query )
@@ -133,7 +131,6 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
                 if ( searchedNodeIds.size() >= service.lazynessThreshold )
                 {
                     // Instantiate a lazy iterator
-                    System.out.println( "lazy" );
                     isLazy = true;
                     Collection<Iterator<Long>> iterators = new ArrayList<Iterator<Long>>();
                     iterators.add( ids.iterator() );

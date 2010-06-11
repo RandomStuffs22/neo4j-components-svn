@@ -10,8 +10,8 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
-  <artifactId>neo4j-index</artifactId>
-  <version>new-index-api-SNAPSHOT</version>
+  <artifactId>neo4j-index-new-index-api</artifactId>
+  <version>1.1-SNAPSHOT</version>
   <name>Neo4j - Index</name>
   <description>
     Utility classes to add various indexing functionality in Neo4j.
@@ -68,8 +68,8 @@
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
-      <artifactId>neo4j-kernel</artifactId>
-      <version>new-index-api-SNAPSHOT</version>
+      <artifactId>neo4j-kernel-new-index-api</artifactId>
+      <version>1.1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.apache.lucene</groupId>

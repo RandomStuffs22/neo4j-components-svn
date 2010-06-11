@@ -79,7 +79,7 @@ class LuceneTransaction extends XaTransaction
         TxDataBoth data = txData.get( identifier );
         if ( data == null && createIfNotExists )
         {
-            data = new TxDataBoth( index );
+            data = new TxDataBoth( index.type );
             txData.put( identifier, data );
         }
         return data;
@@ -177,7 +177,8 @@ class LuceneTransaction extends XaTransaction
             long entityId, String key, Object value )
     {
         Document document = new Document();
-        identifier.getType( dataSource.config ).fillDocument( document, entityId, key, value );
+        identifier.getType( dataSource.store.indexConfig ).fillDocument(
+                document, entityId, key, value );
         try
         {
             writer.addDocument( document );
@@ -283,20 +284,20 @@ class LuceneTransaction extends XaTransaction
     // Bad name
     private class TxDataBoth
     {
-        private final LuceneIndex index;
+        private final IndexType indexType;
         private TxData add;
         private TxData remove;
         
-        public TxDataBoth( LuceneIndex index )
+        public TxDataBoth( IndexType indexType )
         {
-            this.index = index;
+            this.indexType = indexType;
         }
         
         TxData added( boolean createIfNotExists )
         {
             if ( this.add == null && createIfNotExists )
             {
-                this.add = index.identifier.getType( dataSource.config ).newTxData( index );
+                this.add = new TxData( indexType );
             }
             return this.add;
         }
@@ -305,7 +306,7 @@ class LuceneTransaction extends XaTransaction
         {
             if ( this.remove == null && createIfNotExists )
             {
-                this.remove = index.identifier.getType( dataSource.config ).newTxData( index );
+                this.remove = new TxData( indexType );
             }
             return this.remove;
         }

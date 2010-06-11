@@ -89,8 +89,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
     private final XaContainer xaContainer;
     private final String baseStorePath;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(); 
-    private final LuceneIndexStore store;
-    final IndexConfig config;
+    final LuceneIndexStore store;
     private boolean closed;
 
     /**
@@ -105,7 +104,6 @@ public class LuceneDataSource extends LogBackedXaDataSource
     {
         super( params );
         this.baseStorePath = getStoreDir( params );
-        this.config = IndexConfig.load( baseStorePath );
         cleanWriteLocks( baseStorePath );
         this.store = new LuceneIndexStore( baseStorePath + "/lucene-store.db" );
         XaCommandFactory cf = new LuceneCommandFactory();
@@ -298,22 +296,23 @@ public class LuceneDataSource extends LogBackedXaDataSource
     static Directory getDirectory( String storeDir,
             IndexIdentifier identifier ) throws IOException
     {
-        String path = "lucene_";
+        File path = new File( storeDir, "lucene" );
+        String extra = null;
         if ( identifier.itemsClass.equals( Node.class ) )
         {
-            path += "n";
+            extra = "node";
         }
         else if ( identifier.itemsClass.equals( Relationship.class ) )
         {
-            path += "r";
+            extra = "relationship";
         }
         else
         {
             throw new RuntimeException( identifier.itemsClass.getName() );
         }
         
-        File parent = new File( storeDir, path );
-        return FSDirectory.open( new File( parent, identifier.indexName ) );
+        path = new File( path, extra );
+        return FSDirectory.open( new File( path, identifier.indexName ) );
     }
     
     IndexSearcherRef getIndexSearcher( IndexIdentifier identifier )
@@ -374,8 +373,8 @@ public class LuceneDataSource extends LogBackedXaDataSource
         {
             Directory dir = getDirectory( baseStorePath, identifier );
             directoryExists( dir );
-            IndexWriter writer = new IndexWriter( dir, identifier.getType( config ).analyzer,
-                    MaxFieldLength.UNLIMITED );
+            IndexWriter writer = new IndexWriter( dir, identifier.getType(
+                    store.indexConfig ).analyzer, MaxFieldLength.UNLIMITED );
             
             // TODO We should tamper with this value and see how it affects the
             // general performance. Lucene docs says rather <10 for mixed
@@ -408,7 +407,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
     {
         try
         {
-            IndexType type = identifier.getType( config );
+            IndexType type = identifier.getType( store.indexConfig );
             writer.deleteDocuments( type.query( null, queryAsString ) );
         }
         catch ( IOException e )
@@ -423,7 +422,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
     {
         try
         {
-            IndexType type = identifier.getType( config );
+            IndexType type = identifier.getType( store.indexConfig );
             writer.deleteDocuments( type.deletionQuery( entityId, key, value ) );
         }
         catch ( IOException e )

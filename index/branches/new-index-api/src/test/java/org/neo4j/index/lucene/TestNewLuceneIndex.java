@@ -127,8 +127,14 @@ public class TestNewLuceneIndex
         String key = "name";
         index.add( node1, key, "The quick brown fox" );
         index.add( node2, key, "brown fox jumped over" );
-        restartTx();
         
+        assertCollection( index.get( key, "The quick brown fox" ), node1 );
+        assertCollection( index.get( key, "brown fox jumped over" ), node2 );
+        assertCollection( index.query( key, "quick" ), node1 );
+        assertCollection( index.query( key, "brown" ), node1, node2 );
+        assertCollection( index.query( key, "quick OR jumped" ), node1, node2 );
+        assertCollection( index.query( key, "brown AND fox" ), node1, node2 );
+        restartTx();
         assertCollection( index.get( key, "The quick brown fox" ), node1 );
         assertCollection( index.get( key, "brown fox jumped over" ), node2 );
         assertCollection( index.query( key, "quick" ), node1 );
@@ -171,40 +177,5 @@ public class TestNewLuceneIndex
         rel2.delete();
         node1.delete();
         node2.delete();
-    }
-    
-    @Test
-    public void testALot()
-    {
-        Index<Node> index = graphDb.nodeIndex( "alot" );
-        String key = "key";
-        for ( int i = 0; i < 500000; i++ )
-        {
-            Node node = graphDb.createNode();
-            String value = i == 100000 ? "yoyoyo" : "hejsan";
-            index.add( node, key, value );
-            if ( i % 10000 == 0 )
-            {
-                System.out.println( i );
-                restartTx();
-            }
-        }
-        restartTx();
-        long total = 0;
-        for ( int i = 0; i < 10; i++ )
-        {
-            long t = System.currentTimeMillis();
-            index.get( key, "hejsan" );
-            total += System.currentTimeMillis() - t;
-        }
-        System.out.println( "avg:" + (total/10d) );
-        
-        for ( int i = 0; i < 10; i++ )
-        {
-            long t = System.currentTimeMillis();
-            index.get( key, "yoyoyo" );
-            long time = System.currentTimeMillis() - t;
-            System.out.println( "yo:" + time );
-        }
     }
 }
