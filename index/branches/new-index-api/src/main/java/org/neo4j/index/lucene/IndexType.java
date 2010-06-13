@@ -46,7 +46,7 @@ abstract class IndexType
                 Object value )
         {
             addIdToDocument( document, entityId );
-            document.add( new Field( key, value.toString(), Store.YES, Index.NOT_ANALYZED ) );
+            document.add( new Field( key, value.toString(), Store.NO, Index.NOT_ANALYZED ) );
         }
         
         public TxData newTxData(LuceneIndex index)
@@ -89,9 +89,9 @@ abstract class IndexType
         {
             String valueAsString = value.toString();
             addIdToDocument( document, entityId );
-            document.add( new Field( exactKey( key ), valueAsString, Store.YES,
+            document.add( new Field( exactKey( key ), valueAsString, Store.NO,
                     Index.NOT_ANALYZED ) );
-            document.add( new Field( key, valueAsString, Store.YES, Index.ANALYZED ) );
+            document.add( new Field( key, valueAsString, Store.NO, Index.ANALYZED ) );
         }
         
         @Override

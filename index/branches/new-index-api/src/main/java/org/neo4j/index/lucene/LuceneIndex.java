@@ -83,7 +83,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
             queries.add( type.query( null, queryOrQueryObjectOrNull ),
                     Occur.MUST );
         }
-        remove( queries );
+        getConnection().remove( this, queries );
     }
     
     public IndexHits<T> get( String key, Object value )

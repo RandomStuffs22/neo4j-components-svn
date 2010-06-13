@@ -54,7 +54,6 @@ public class LuceneIndexProvider extends IndexProvider
     public LuceneIndexProvider( GraphDatabaseService graphDb )
     {
         super( "lucene" );
-        new Exception( "skdjskjdk" ).printStackTrace();
         this.graphDb = graphDb;
 
         Config config = getGraphDbConfig();
