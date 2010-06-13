@@ -33,6 +33,8 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -84,6 +86,8 @@ class EmbeddedGraphDbImpl
             new KernelPanicEventGenerator( kernelEventHandlers );
 
     private final Runnable jmxShutdownHook;
+    private final ConcurrentMap<String, IndexProvider> indexProviders =
+            new ConcurrentHashMap<String, IndexProvider>();
 
     /**
      * A non-standard way of creating an embedded {@link GraphDatabaseService}
@@ -486,12 +490,20 @@ class EmbeddedGraphDbImpl
             provider = (String) getConfig().getParams().get( "index" );
         }
         provider = provider != null ? provider : "org.neo4j.index.lucene.LuceneIndexProvider";
+        
+        IndexProvider indexProvider = indexProviders.get( provider );
+        if ( indexProvider != null )
+        {
+            return indexProvider;
+        }
+        
         if ( provider.contains( "." ) )
         {
             try
             {
-                return Class.forName( provider ).asSubclass( IndexProvider.class ).getConstructor(
-                        GraphDatabaseService.class ).newInstance( this.graphDbService );
+                indexProvider = Class.forName( provider ).asSubclass(
+                        IndexProvider.class ).getConstructor(
+                                GraphDatabaseService.class ).newInstance( this.graphDbService );
             }
             catch ( Exception e )
             {
@@ -499,7 +511,12 @@ class EmbeddedGraphDbImpl
                 e.printStackTrace();
             }
         }
-        return Service.load( IndexProvider.class, provider );
+        else
+        {
+            indexProvider = Service.load( IndexProvider.class, provider );
+        }
+        indexProviders.putIfAbsent( provider, indexProvider );
+        return indexProviders.get( provider );
     }
     
     Index<Node> nodeIndex( String indexName, Map<String, String> config )
