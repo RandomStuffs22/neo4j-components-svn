@@ -163,7 +163,7 @@ public abstract class Service
             if ( impl.matches( key ) ) return impl;
         }
         throw new NoSuchElementException( String.format(
-                "Could not find any implementation of %s whith a key=\"%s\"",
+                "Could not find any implementation of %s with a key=\"%s\"",
                 type.getName(), key ) );
     }
 
