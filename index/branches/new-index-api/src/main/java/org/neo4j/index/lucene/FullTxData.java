@@ -10,14 +10,19 @@ import org.apache.lucene.AllDocs;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 
 class FullTxData extends TxData
 {
-    private DirectoryAndWorkers luceneData;
+    private Directory directory;
+    private IndexWriter writer;
+    private IndexSearcher searcher;
+    private BooleanQuery extraQueries;
     
     FullTxData( LuceneIndex index )
     {
@@ -29,28 +34,42 @@ class FullTxData extends TxData
         ensureLuceneDataInstantiated();
         Document document = new Document();
         index.type.fillDocument( document, entityId, key, value );
-        return add( document );
-    }
-    
-    private void ensureLuceneDataInstantiated()
-    {
-        if ( luceneData == null )
-        {
-            luceneData = newDirectory();
-        }
-    }
-
-    TxData add( Document document )
-    {
         try
         {
-            ensureLuceneDataInstantiated();
-            luceneData.writer.addDocument( document );
+            writer.addDocument( document );
             return this;
         }
         catch ( IOException e )
         {
             throw new RuntimeException( e );
+        }
+    }
+    
+    @Override
+    TxData add( Query query )
+    {
+        if ( this.extraQueries == null )
+        {
+            this.extraQueries = new BooleanQuery();
+        }
+        this.extraQueries.add( query, Occur.SHOULD );
+        return this;
+    }
+    
+    private void ensureLuceneDataInstantiated()
+    {
+        if ( this.directory == null )
+        {
+            try
+            {
+                this.directory = new RAMDirectory();
+                this.writer = new IndexWriter( directory, index.type.analyzer,
+                        MaxFieldLength.UNLIMITED );
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( e );
+            }
         }
     }
 
@@ -62,21 +81,21 @@ class FullTxData extends TxData
     TxData remove( Query query )
     {
         ensureLuceneDataInstantiated();
-        index.service.getDataSource().deleteDocuments( luceneData.writer, query );
-        luceneData.invalidateSearcher();
+        index.service.dataSource.deleteDocuments( writer, query );
+        invalidateSearcher();
         return this;
     }
     
     Map.Entry<Set<Long>, TxData> getEntityIds( Query query )
     {
-        if ( luceneData == null )
+        if ( this.directory == null )
         {
             return new MapEntry<Set<Long>, TxData>( Collections.<Long>emptySet(), this );
         }
         
         try
         {
-            AllDocs hits = new AllDocs( luceneData.getSearcher(), query, null );
+            AllDocs hits = new AllDocs( getSearcher(), query, null );
             HashSet<Long> result = new HashSet<Long>();
             for ( int i = 0; i < hits.length(); i++ )
             {
@@ -93,74 +112,33 @@ class FullTxData extends TxData
     
     void close()
     {
-        if ( luceneData != null )
-        {
-            luceneData.close();
-        }
+        safeClose( this.writer );
+        invalidateSearcher();
     }
 
-    private DirectoryAndWorkers newDirectory()
+    private void invalidateSearcher()
     {
-        Directory directory = new RAMDirectory();
+        safeClose( this.searcher );
+        this.searcher = null;
+    }
+    
+    private IndexSearcher getSearcher()
+    {
         try
         {
-            return new DirectoryAndWorkers( directory );
+            if ( this.searcher == null )
+            {
+                this.writer.commit();
+                this.searcher = new IndexSearcher( directory, true );
+            }
         }
         catch ( IOException e )
         {
             throw new RuntimeException( e );
         }
+        return this.searcher;
     }
     
-    private IndexWriter newIndexWriter( Directory directory )
-            throws IOException
-    {
-        return new IndexWriter( directory, index.type.analyzer, MaxFieldLength.UNLIMITED );
-    }
-    
-    private class DirectoryAndWorkers
-    {
-        private final Directory directory;
-        private final IndexWriter writer;
-        private IndexSearcher searcher;
-        
-        private DirectoryAndWorkers( Directory directory )
-            throws IOException
-        {
-            this.directory = directory;
-            this.writer = newIndexWriter( directory );
-        }
-        
-        private void invalidateSearcher()
-        {
-            safeClose( this.searcher );
-            this.searcher = null;
-        }
-        
-        private void close()
-        {
-            safeClose( this.writer );
-            invalidateSearcher();
-        }
-        
-        private IndexSearcher getSearcher()
-        {
-            try
-            {
-                if ( this.searcher == null )
-                {
-                    this.writer.commit();
-                    this.searcher = new IndexSearcher( directory, true );
-                }
-            }
-            catch ( IOException e )
-            {
-                throw new RuntimeException( e );
-            }
-            return this.searcher;
-        }
-    }
-
     private static void safeClose( Object object )
     {
         if ( object == null )
@@ -189,5 +167,11 @@ class FullTxData extends TxData
     Map.Entry<Set<Long>, TxData> getEntityIds( String key, Object value )
     {
         return getEntityIds( this.index.type.get( key, value ) );
+    }
+    
+    @Override
+    Query getExtraQuery()
+    {
+        return this.extraQueries;
     }
 }

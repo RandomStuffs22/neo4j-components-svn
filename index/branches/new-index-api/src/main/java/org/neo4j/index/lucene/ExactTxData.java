@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.lucene.document.Document;
 import org.apache.lucene.search.Query;
 
 public class ExactTxData extends TxData
@@ -24,6 +23,12 @@ public class ExactTxData extends TxData
     {
         idCollection( key, value, true ).add( entityId );
         return this;
+    }
+    
+    @Override
+    TxData add( Query query )
+    {
+        return toFullTxData().add( query );
     }
     
     private Set<Long> idCollection( String key, Object value, boolean create )
@@ -64,13 +69,6 @@ public class ExactTxData extends TxData
             data.put( key, inner );
         }
         return inner;
-    }
-
-    @Override
-    TxData add( Document document )
-    {
-        TxData data = toFullTxData();
-        return data.add( document );
     }
 
     private TxData toFullTxData()
@@ -135,5 +133,11 @@ public class ExactTxData extends TxData
             return new MapEntry<Set<Long>, TxData>( Collections.<Long>emptySet(), this );
         }
         return new MapEntry<Set<Long>, TxData>( ids, this );
+    }
+    
+    @Override
+    Query getExtraQuery()
+    {
+        return null;
     }
 }

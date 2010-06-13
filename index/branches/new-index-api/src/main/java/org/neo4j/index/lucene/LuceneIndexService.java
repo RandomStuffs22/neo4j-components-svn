@@ -1,8 +1,12 @@
 package org.neo4j.index.lucene;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import org.neo4j.commons.iterator.IteratorUtil;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.index.IndexService;
 
@@ -10,7 +14,9 @@ public class LuceneIndexService implements IndexService
 {
     public static final int DEFAULT_LAZY_THRESHOLD = LuceneIndexProvider.DEFAULT_LAZY_THRESHOLD;
     
-    private final GraphDatabaseService graphDb;
+    final GraphDatabaseService graphDb;
+    private final ConcurrentMap<String, LuceneIndex<Node>> indexes =
+            new ConcurrentHashMap<String, LuceneIndex<Node>>();
 
     public LuceneIndexService( GraphDatabaseService graphDb )
     {
@@ -24,7 +30,19 @@ public class LuceneIndexService implements IndexService
     
     protected LuceneIndex<Node> getIndex( String key )
     {
-        return (LuceneIndex<Node>) this.graphDb.nodeIndex( key );
+        LuceneIndex<Node> index = indexes.get( key );
+        if ( index != null )
+        {
+            return index;
+        }
+        index = (LuceneIndex<Node>) getNodeIndex( key );
+        indexes.putIfAbsent( key, index );
+        return indexes.get( key );
+    }
+
+    protected Index<Node> getNodeIndex( String key )
+    {
+        return this.graphDb.nodeIndex( key );
     }
 
     public IndexHits<Node> getNodes( String key, Object value )
@@ -71,22 +89,22 @@ public class LuceneIndexService implements IndexService
 
     public void removeIndex( Node node, String key )
     {
-        getIndex( key ).remove( node, "\"" + key + "\"" );
+        getIndex( key ).remove( node, key + ":*" );
     }
 
     public void removeIndex( String key )
     {
-        getIndex( key ).remove( "\"" + key + "\"" );
+        getIndex( key ).remove( key + ":*" );
     }
     
     public void enableCache( String key, int size )
     {
-        getIndex( key ).enableCache( size );
+        getIndex( key ).setCacheCapacity( key, size );
     }
     
-    public int getEnabledCacheSize( String key )
+    public Integer getEnabledCacheSize( String key )
     {
-        return getIndex( key ).getCacheSize();
+        return getIndex( key ).getCacheCapacity( key );
     }
 
     public void shutdown()

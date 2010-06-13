@@ -46,15 +46,25 @@ public class LuceneIndexProvider extends IndexProvider
     public static final int DEFAULT_LAZY_THRESHOLD = 100;
     private static final String DATA_SOURCE_NAME = "lucene";
     
-    private ConnectionBroker broker;
-    private LuceneDataSource dataSource;
+    final ConnectionBroker broker;
+    final LuceneDataSource dataSource;
     final int lazynessThreshold = DEFAULT_LAZY_THRESHOLD;
     final GraphDatabaseService graphDb;
     
     public LuceneIndexProvider( GraphDatabaseService graphDb )
     {
         super( "lucene" );
+        new Exception( "skdjskjdk" ).printStackTrace();
         this.graphDb = graphDb;
+
+        Config config = getGraphDbConfig();
+        TxModule txModule = config.getTxModule();
+        dataSource = (LuceneDataSource) txModule.registerDataSource( DATA_SOURCE_NAME,
+                LuceneDataSource.class.getName(), LuceneDataSource.DEFAULT_BRANCH_ID,
+                config.getParams(), true );
+        broker = EmbeddedGraphDatabase.isReadOnly( graphDb ) ?
+                new ReadOnlyConnectionBroker( txModule.getTxManager(), dataSource ) :
+                new ConnectionBroker( txModule.getTxManager(), dataSource );
     }
     
     private Config getGraphDbConfig()
@@ -64,41 +74,14 @@ public class LuceneIndexProvider extends IndexProvider
                 ((EmbeddedGraphDatabase) graphDb).getConfig();
     }
     
-    private void ensureDataSourceRegistered()
-    {
-        if ( this.dataSource == null )
-        {
-            Config config = getGraphDbConfig();
-            TxModule txModule = config.getTxModule();
-            dataSource = (LuceneDataSource) txModule.registerDataSource( DATA_SOURCE_NAME,
-                    LuceneDataSource.class.getName(), LuceneDataSource.DEFAULT_BRANCH_ID,
-                    config.getParams(), true );
-            broker = EmbeddedGraphDatabase.isReadOnly( graphDb ) ?
-                    new ReadOnlyConnectionBroker( txModule.getTxManager(), dataSource ) :
-                    new ConnectionBroker( txModule.getTxManager(), dataSource );
-        }
-    }
-
-    ConnectionBroker getBroker()
-    {
-        return this.broker;
-    }
-    
-    LuceneDataSource getDataSource()
-    {
-        return this.dataSource;
-    }
-    
     public Index<Node> nodeIndex( String indexName, Map<String, String> config )
     {
-        ensureDataSourceRegistered();
         return new LuceneIndex.NodeIndex( this, new IndexIdentifier(
                 Node.class, indexName, config ) );
     }
     
     public Index<Relationship> relationshipIndex( String indexName, Map<String, String> config )
     {
-        ensureDataSourceRegistered();
         return new LuceneIndex.RelationshipIndex( this, new IndexIdentifier(
                 Relationship.class, indexName, config ) );
     }

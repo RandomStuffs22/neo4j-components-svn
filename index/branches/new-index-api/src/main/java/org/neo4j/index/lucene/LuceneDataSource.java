@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -42,6 +43,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.kernel.impl.cache.LruCache;
 import org.neo4j.kernel.impl.transaction.xaframework.LogBackedXaDataSource;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommandFactory;
@@ -93,6 +95,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(); 
     final LuceneIndexStore store;
     private boolean closed;
+    private final Cache caching;
 
     /**
      * Constructs this data source.
@@ -124,6 +127,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
         xaContainer.getLogicalLog().setKeepLogs(
                 shouldKeepLog( (String) params.get( "keep_logical_logs" ), getName() ) );
         setLogicalLogAtCreationTime( xaContainer.getLogicalLog() );
+        caching = new Cache();
     }
     
     private void cleanWriteLocks( String directory )
@@ -460,48 +464,37 @@ public class LuceneDataSource extends LogBackedXaDataSource
         }
     }
 
-//    LruCache<String,Collection<Long>> getFromCache( String key )
-//    {
-//        return caching.get( key );
-//    }
-//
-//    void enableCache( String key, int maxNumberOfCachedEntries )
-//    {
-//        this.caching.put( key, new LruCache<String,Collection<Long>>( key,
-//            maxNumberOfCachedEntries, null ) );
-//    }
-//    
-//    /**
-//     * Returns the enabled cache size or {@code null} if not enabled
-//     * for {@code key}.
-//     * @param key the key to get the cache size for.
-//     * @return the cache size for {@code key} or {@code null}.
-//     */
-//    Integer getEnabledCacheSize( String key )
-//    {
-//        LruCache<String, Collection<Long>> cache = this.caching.get( key );
-//        return cache != null ? cache.maxSize() : null;
-//    }
-//
-//    void invalidateCache( String key, Object value )
-//    {
-//        LruCache<String,Collection<Long>> cache = caching.get( key );
-//        if ( cache != null )
-//        {
-//            cache.remove( value.toString() );
-//        }
-//    }
-//    
-//    void invalidateCache( String key )
-//    {
-//        caching.remove( key );
-//    }
-//    
-//    void invalidateCache()
-//    {
-//        caching.clear();
-//    }
+    LruCache<String,Collection<Long>> getFromCache( IndexIdentifier identifier,
+            String key )
+    {
+        return caching.get( identifier, key );
+    }
 
+    void setCacheCapacity( IndexIdentifier identifier, String key, int maxNumberOfCachedEntries )
+    {
+        this.caching.setCapacity( identifier, key, maxNumberOfCachedEntries );
+    }
+    
+    Integer getCacheCapacity( IndexIdentifier identifier, String key )
+    {
+        LruCache<String, Collection<Long>> cache = this.caching.get( identifier, key );
+        return cache != null ? cache.maxSize() : null;
+    }
+    
+    void invalidateCache( IndexIdentifier identifier, String key, Object value )
+    {
+        LruCache<String,Collection<Long>> cache = caching.get( identifier, key );
+        if ( cache != null )
+        {
+            cache.remove( value.toString() );
+        }
+    }
+    
+    void invalidateCache( IndexIdentifier identifier )
+    {
+        this.caching.disable( identifier );
+    }
+    
     @Override
     public long getCreationTime()
     {

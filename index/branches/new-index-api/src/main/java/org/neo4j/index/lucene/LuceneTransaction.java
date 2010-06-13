@@ -22,12 +22,10 @@ package org.neo4j.index.lucene;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.search.Query;
 import org.neo4j.graphdb.Node;
@@ -103,15 +101,7 @@ class LuceneTransaction extends XaTransaction
             added.remove( query );
         }
         TxDataHolder removed = data.removed( true );
-        IndexSearcherRef searcher = dataSource.getIndexSearcher( index.identifier );
-        if ( searcher != null )
-        {
-            Iterator<Document> docs = index.search( searcher, query ).documents;
-            while ( docs.hasNext() )
-            {
-                removed.add( docs.next() );
-            }
-        }
+        removed.add( query );
         queueCommand( new RemoveQueryCommand(
                 index.identifier, -1, "", query.toString() ) ).removeQueryCount++;
     }
@@ -150,6 +140,12 @@ class LuceneTransaction extends XaTransaction
         }
         Set<Long> ids = removed.getEntityIds( query );
         return ids != null ? ids : Collections.<Long>emptySet();
+    }
+    
+    <T extends PropertyContainer> Query getExtraRemoveQuery( LuceneIndex<T> index )
+    {
+        TxDataHolder removed = removedTxDataOrNull( index );
+        return removed != null ? removed.getExtraQuery() : null;
     }
     
     <T extends PropertyContainer> Set<Long> getRemovedIds( LuceneIndex<T> index,
@@ -244,15 +240,18 @@ class LuceneTransaction extends XaTransaction
                     if ( command instanceof AddCommand )
                     {
                         dataSource.addDocument( writer, identifier, entityId, key, value );
+                        dataSource.invalidateCache( identifier, key, value );
                     }
                     else if ( command instanceof RemoveCommand )
                     {
                         dataSource.deleteDocuments( writer, identifier,
                                 entityId, key, value );
+                        dataSource.invalidateCache( identifier, key, value );
                     }
                     else if ( command instanceof RemoveQueryCommand )
                     {
                         dataSource.deleteDocuments( writer, identifier, command.getValue() );
+                        dataSource.invalidateCache( identifier );
                     }
                     else
                     {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -24,6 +25,7 @@ import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.index.ReadOnlyIndexException;
 import org.neo4j.index.impl.IdToEntityIterator;
 import org.neo4j.index.impl.SimpleIndexHits;
+import org.neo4j.kernel.impl.cache.LruCache;
 
 abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
 {
@@ -37,23 +39,23 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     {
         this.service = service;
         this.identifier = identifier;
-        this.type = IndexType.getIndexType( service.getDataSource().store.indexConfig,
+        this.type = IndexType.getIndexType( service.dataSource.store.indexConfig,
                 identifier.customConfig, identifier.indexName );
     }
     
     LuceneXaConnection getConnection()
     {
-        if ( service.getBroker() == null )
+        if ( service.broker == null )
         {
             throw new ReadOnlyIndexException();
         }
-        return service.getBroker().acquireResourceConnection();
+        return service.broker.acquireResourceConnection();
     }
     
     LuceneXaConnection getReadOnlyConnection()
     {
-        return service.getBroker()== null ? null :
-                service.getBroker().acquireReadOnlyResourceConnection();
+        return service.broker == null ? null :
+                service.broker.acquireReadOnlyResourceConnection();
     }
     
     public void add( T entity, String key, Object value )
@@ -111,6 +113,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         }
         Set<Long> addedIds = Collections.emptySet();
         Set<Long> removedIds = Collections.emptySet();
+        Query excludeQuery = null;
         if ( luceneTx != null )
         {
             addedIds = keyForDirectLookup != null ?
@@ -120,33 +123,61 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
             removedIds = keyForDirectLookup != null ?
                     luceneTx.getRemovedIds( this, keyForDirectLookup, valueForDirectLookup ) :
                     luceneTx.getRemovedIds( this, query );
+            excludeQuery = luceneTx.getExtraRemoveQuery( this );
         }
-        service.getDataSource().getReadLock();
+        service.dataSource.getReadLock();
         Iterator<Long> idIterator = null;
         Integer idIteratorSize = null;
         IndexSearcherRef searcher = null;
         boolean isLazy = false;
         try
         {
-            searcher = service.getDataSource().getIndexSearcher( identifier );
+            searcher = service.dataSource.getIndexSearcher( identifier );
             if ( searcher != null )
             {
-                DocToIdIterator searchedNodeIds = new DocToIdIterator( search( searcher,
-                        query ), removedIds, searcher );
-                if ( searchedNodeIds.size() >= service.lazynessThreshold )
+                if ( excludeQuery != null )
                 {
-                    // Instantiate a lazy iterator
-                    isLazy = true;
-                    Collection<Iterator<Long>> iterators = new ArrayList<Iterator<Long>>();
-                    iterators.add( ids.iterator() );
-                    iterators.add( searchedNodeIds );
-                    idIterator = new CombiningIterator<Long>( iterators );
-                    idIteratorSize = ids.size() + searchedNodeIds.size();
+                    removedIds = removedIds.isEmpty() ? new HashSet<Long>() : removedIds;
+                    readNodesFromHits( new DocToIdIterator( search( searcher, excludeQuery ),
+                            null, searcher ), removedIds );
                 }
-                else
+                
+                boolean foundInCache = false;
+                LruCache<String, Collection<Long>> cachedIdsMap = null;
+                if ( keyForDirectLookup != null )
                 {
-                    // Loop through result here (and cache it if possible)
-                    readNodesFromHits( searchedNodeIds, ids );
+                    cachedIdsMap = service.dataSource.getFromCache(
+                            identifier, keyForDirectLookup );
+                    foundInCache = fillFromCache( cachedIdsMap, ids,
+                            keyForDirectLookup, valueForDirectLookup.toString(), removedIds );
+                }
+                
+                if ( !foundInCache )
+                {
+                    DocToIdIterator searchedNodeIds = new DocToIdIterator( search( searcher,
+                            query ), removedIds, searcher );
+                    if ( searchedNodeIds.size() >= service.lazynessThreshold )
+                    {
+                        // Instantiate a lazy iterator
+                        isLazy = true;
+                        
+                        // TODO Clear cache? why?
+                        
+                        Collection<Iterator<Long>> iterators = new ArrayList<Iterator<Long>>();
+                        iterators.add( ids.iterator() );
+                        iterators.add( searchedNodeIds );
+                        idIterator = new CombiningIterator<Long>( iterators );
+                        idIteratorSize = ids.size() + searchedNodeIds.size();
+                    }
+                    else
+                    {
+                        // Loop through result here (and cache it if possible)
+                        Collection<Long> readIds = readNodesFromHits( searchedNodeIds, ids );
+                        if ( cachedIdsMap != null )
+                        {
+                            cachedIdsMap.put( valueForDirectLookup.toString(), readIds );
+                        }
+                    }
                 }
             }
         }
@@ -154,7 +185,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         {
             // The DocToIdIterator closes the IndexSearchRef instance anyways,
             // or the LazyIterator if it's a lazy one. So no need here.
-            service.getDataSource().releaseReadLock();
+            service.dataSource.releaseReadLock();
         }
 
         if ( idIterator == null )
@@ -179,7 +210,32 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         return hits;
     }
 
-    SearchResult search( IndexSearcherRef searcher, Query query )
+    private boolean fillFromCache(
+            LruCache<String, Collection<Long>> cachedNodesMap,
+            List<Long> nodeIds, String key, String valueAsString,
+            Set<Long> deletedNodes )
+    {
+        boolean found = false;
+        if ( cachedNodesMap != null )
+        {
+            Collection<Long> cachedNodes = cachedNodesMap.get( valueAsString );
+            if ( cachedNodes != null )
+            {
+                found = true;
+                for ( Long cachedNodeId : cachedNodes )
+                {
+                    if ( deletedNodes == null ||
+                            !deletedNodes.contains( cachedNodeId ) )
+                    {
+                        nodeIds.add( cachedNodeId );
+                    }
+                }
+            }
+        }
+        return found;
+    }
+    
+    private SearchResult search( IndexSearcherRef searcher, Query query )
     {
         try
         {
@@ -194,26 +250,27 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
         }
     }
     
-    public void enableCache( int size )
+    public void setCacheCapacity( String key, int capacity )
     {
-        throw new UnsupportedOperationException();
+        service.dataSource.setCacheCapacity( identifier, key, capacity );
     }
     
-    public int getCacheSize()
+    public Integer getCacheCapacity( String key )
     {
-        throw new UnsupportedOperationException();
+        return service.dataSource.getCacheCapacity( identifier, key );
     }
     
-    private void readNodesFromHits( DocToIdIterator searchedIds,
+    private Collection<Long> readNodesFromHits( DocToIdIterator searchedIds,
             Collection<Long> ids )
     {
-        ArrayList<Long> readNodeIds = new ArrayList<Long>();
+        ArrayList<Long> readIds = new ArrayList<Long>();
         while ( searchedIds.hasNext() )
         {
-            Long readNodeId = searchedIds.next();
-            ids.add( readNodeId );
-            readNodeIds.add( readNodeId );
+            Long readId = searchedIds.next();
+            ids.add( readId );
+            readIds.add( readId );
         }
+        return readIds;
     }
     
     protected abstract T getById( long id );

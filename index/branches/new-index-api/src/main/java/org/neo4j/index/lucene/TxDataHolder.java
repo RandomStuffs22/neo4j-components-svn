@@ -3,7 +3,6 @@ package org.neo4j.index.lucene;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.lucene.document.Document;
 import org.apache.lucene.search.Query;
 
 class TxDataHolder
@@ -21,10 +20,13 @@ class TxDataHolder
     {
         this.data = this.data.add( entityId, key, value );
     }
-
-    void add( Document document )
+    
+    /**
+     * Only for the tx data representing removal.
+     */
+    void add( Query query )
     {
-        this.data = this.data.add( document );
+        this.data = this.data.add( query );
     }
 
     void remove( Long entityId, String key, Object value )
@@ -54,5 +56,10 @@ class TxDataHolder
     void close()
     {
         this.data.close();
+    }
+
+    Query getExtraQuery()
+    {
+        return this.data.getExtraQuery();
     }
 }

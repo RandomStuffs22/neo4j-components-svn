@@ -15,7 +15,9 @@ import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexHits;
+import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 public class LuceneFulltextIndexService extends LuceneIndexService
 {
@@ -34,13 +36,14 @@ public class LuceneFulltextIndexService extends LuceneIndexService
     }
     
     @Override
-    protected LuceneIndex<Node> getIndex( String key )
+    protected Index<Node> getNodeIndex( String key )
     {
         // TODO Make sure the Index which key refers to is a fulltext index,
         // maybe also with a prefix or something so that fulltext and
         // non-fulltext (with same key) can live side by side, as they
         // could in the old implementation.
-        return super.getIndex( key );
+        return ((EmbeddedGraphDatabase) this.graphDb).nodeIndex( key,
+                LuceneIndexProvider.FULLTEXT_CONFIG );
     }
 
     @Override
