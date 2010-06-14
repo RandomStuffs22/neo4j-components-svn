@@ -108,7 +108,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
         throws InstantiationException
     {
         super( params );
-        this.baseStorePath = getStoreDir( params );
+        this.baseStorePath = getStoreDir( (String) params.get( "store_dir" ) );
         cleanWriteLocks( baseStorePath );
         this.store = new LuceneIndexStore( baseStorePath + "/lucene-store.db" );
         XaCommandFactory cf = new LuceneCommandFactory();
@@ -151,10 +151,9 @@ public class LuceneDataSource extends LogBackedXaDataSource
         }
     }
     
-    private String getStoreDir( Map<Object, Object> params )
+    static String getStoreDir( String dbStoreDir )
     {
-        String kernelStoreDir = (String) params.get( "store_dir" );
-        File dir = new File( new File( kernelStoreDir ), "index" );
+        File dir = new File( new File( dbStoreDir ), "index" );
         if ( !dir.exists() )
         {
             if ( !dir.mkdirs() )

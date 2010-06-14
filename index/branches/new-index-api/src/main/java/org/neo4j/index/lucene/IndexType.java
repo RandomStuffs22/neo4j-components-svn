@@ -196,6 +196,7 @@ abstract class IndexType
         
         QueryParser parser = new QueryParser( Version.LUCENE_30, keyOrNull, analyzer );
         parser.setAllowLeadingWildcard( true );
+        parser.setLowercaseExpandedTerms( false );
         try
         {
             return parser.parse( value.toString() );

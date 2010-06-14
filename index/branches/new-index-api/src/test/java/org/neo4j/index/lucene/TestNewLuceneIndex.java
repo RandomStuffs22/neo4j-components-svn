@@ -182,7 +182,7 @@ public class TestNewLuceneIndex
     
     @Ignore
     @Test
-    public void testMan()
+    public void testInsertionSpeed()
     {
         Index<Node> index = graphDb.nodeIndex( "yeah" );
         Node node = graphDb.createNode();
@@ -207,21 +207,5 @@ public class TestNewLuceneIndex
             }
         }
         System.out.println( "get:" + (System.currentTimeMillis() - t) );
-    }
-    
-    @Test
-    public void testShit()
-    {
-        Index<Node> index = graphDb.nodeIndex( "shit" );
-        Node node1 = graphDb.createNode();
-        Node node2 = graphDb.createNode();
-        String key = "key";
-        String value1 = "value1";
-        String value2 = "value2";
-        index.add( node1, key, value1 );
-        index.add( node1, key, value2 );
-        index.remove( node1, null );
-        index.add( node1, key, value1 );
-        assertCollection( index.get( key, value1 ), node1 );
     }
 }

@@ -1,6 +1,8 @@
 package org.neo4j.index.lucene;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.lucene.AllDocs;
 import org.apache.lucene.document.Document;
@@ -12,11 +14,14 @@ import org.apache.lucene.search.Query;
 import org.neo4j.graphdb.index.BatchInserterIndex;
 import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
+import org.neo4j.kernel.impl.batchinsert.BatchInserterImpl;
 
 public class LuceneBatchInserterIndex implements BatchInserterIndex
 {
     private final BatchInserter inserter;
+    private final String storeDir;
     private final IndexIdentifier identifier;
+    private final IndexType type;
     
     private IndexWriter writer;
     private boolean writerModified;
@@ -25,26 +30,17 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
     LuceneBatchInserterIndex( BatchInserter inserter, IndexIdentifier identifier )
     {
         this.inserter = inserter;
+        this.storeDir = LuceneDataSource.getStoreDir( ((BatchInserterImpl) inserter).getStore() );
         this.identifier = identifier;
+        this.type = identifier.getType( new HashMap<String, Map<String,String>>() );
     }
     
     public void add( long entityId, String key, Object value )
     {
         Document doc = new Document();
-        indexType().fillDocument( doc, entityId, key, value );
-        try
-        {
-            writer().addDocument( doc );
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
-    }
-
-    private IndexType indexType()
-    {
-        return identifier.getType( null );
+        type.fillDocument( doc, entityId, key, value );
+        LuceneUtil.strictAddDocument( writer(), doc );
+        writerModified = true;
     }
 
     private IndexWriter writer()
@@ -56,8 +52,8 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
         closeSearcher();
         try
         {
-            this.writer = new IndexWriter( LuceneDataSource.getDirectory( null, identifier ),
-                    indexType().analyzer, MaxFieldLength.UNLIMITED );
+            this.writer = new IndexWriter( LuceneDataSource.getDirectory( storeDir, identifier ),
+                    type.analyzer, MaxFieldLength.UNLIMITED );
             return this.writer;
         }
         catch ( IOException e )
@@ -143,29 +139,23 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
 
     public IndexHits<Long> get( String key, Object value )
     {
-        return query( indexType().get( key, value ) );
+        return query( type.get( key, value ) );
     }
 
     public IndexHits<Long> query( String key, Object queryOrQueryObject )
     {
-        return query( indexType().query( key, queryOrQueryObject ) );
+        return query( type.query( key, queryOrQueryObject ) );
     }
 
     public IndexHits<Long> query( Object queryOrQueryObject )
     {
-        return query( indexType().query( null, queryOrQueryObject ) );
+        return query( type.query( null, queryOrQueryObject ) );
     }
 
     public void remove( long entityId, String key, Object value )
     {
-        try
-        {
-            writer().deleteDocuments( indexType().deletionQuery( entityId, key, value ) );
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
+        LuceneUtil.strictRemoveDocument( writer(), type.deletionQuery( entityId, key, value ) );
+        writerModified = true;
     }
 
     public void shutdown()

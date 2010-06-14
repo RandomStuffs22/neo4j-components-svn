@@ -32,17 +32,15 @@ public class LuceneBatchInserterIndexProvider implements BatchInserterIndexProvi
 
     private BatchInserterIndex index( IndexIdentifier identifier )
     {
-        // TODO really synchronization?
-        synchronized ( indexes )
+        // We don't care about threads here... c'mon... it's a
+        // single-threaded batch inserter
+        LuceneBatchInserterIndex index = indexes.get( identifier );
+        if ( index == null )
         {
-            LuceneBatchInserterIndex index = indexes.get( identifier );
-            if ( index == null )
-            {
-                index = new LuceneBatchInserterIndex( inserter, identifier );
-                indexes.put( identifier, index );
-            }
-            return index;
+            index = new LuceneBatchInserterIndex( inserter, identifier );
+            indexes.put( identifier, index );
         }
+        return index;
     }
     
     public void shutdown()
