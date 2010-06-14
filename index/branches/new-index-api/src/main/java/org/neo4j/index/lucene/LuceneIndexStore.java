@@ -238,9 +238,33 @@ class LuceneIndexStore
         char[] chars = value.toCharArray();
         int length = chars.length*2;
         writeInt( length );
-        ByteBuffer buffer = buffer( length );
-        buffer.asCharBuffer().put( chars );
-        fileChannel.write( buffer );
+        writeChars( chars );
+    }
+    
+    private void writeChars( char[] chars ) throws IOException
+    {
+        ByteBuffer buffer = buffer( 200 );
+        int position = 0;
+        do
+        {
+            buffer.clear();
+            int leftToWrite = chars.length - position;
+            if ( leftToWrite * 2 < buffer.capacity() )
+            {
+                buffer.asCharBuffer().put( chars, position, leftToWrite );
+                buffer.limit( leftToWrite * 2);
+                fileChannel.write( buffer );
+                position += leftToWrite;
+            }
+            else
+            {
+                int length = buffer.capacity() / 2;
+                buffer.asCharBuffer().put( chars, position, length );
+                buffer.limit( length * 2 );
+                fileChannel.write( buffer );
+                position += length;
+            }
+        } while ( position < chars.length );
     }
     
     private void writeInt( int value ) throws IOException
