@@ -302,7 +302,7 @@ class LuceneTransaction extends XaTransaction
     @Override
     public boolean isReadOnly()
     {
-        return false;
+        return commandMap.isEmpty();
     }
     
     // Bad name

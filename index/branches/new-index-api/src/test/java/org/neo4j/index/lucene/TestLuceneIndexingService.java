@@ -298,30 +298,31 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         node1.delete();
     }
 
-//    @Test
-//    public void testDifferentTypesWithSameValueIssue()
-//    {
-//        String key = "prop";
-//        Integer valueAsInt = 10;
-//        String valueAsString = "10";
-//        
-//        Node node1 = graphDb().createNode();
-//        index().index( node1, key, valueAsInt );
-//        Node node2 = graphDb().createNode();
-//        index().index( node2, key, valueAsString );
-//        
-//        assertCollection( index().getNodes( key, valueAsInt ), node1 );
-//        assertCollection( index().getNodes( key, valueAsString ), node2 );
-//        
-//        tx.success(); tx.finish(); tx = graphDb().beginTx();
-//        
-//        assertCollection( index().getNodes( key, valueAsInt ), node1 );
-//        assertCollection( index().getNodes( key, valueAsString ), node2 );
-//        
-//        index().removeIndex( node1, key, valueAsInt );
-//        index().removeIndex( node2, key, valueAsString );
-//        
-//        node2.delete();
-//        node1.delete();
-//    }
+    @Ignore
+    @Test
+    public void testDifferentTypesWithSameValueIssue()
+    {
+        String key = "prop";
+        Integer valueAsInt = 10;
+        String valueAsString = "10";
+        
+        Node node1 = graphDb().createNode();
+        index().index( node1, key, valueAsInt );
+        Node node2 = graphDb().createNode();
+        index().index( node2, key, valueAsString );
+        
+        assertCollection( index().getNodes( key, valueAsInt ), node1 );
+        assertCollection( index().getNodes( key, valueAsString ), node2 );
+        
+        restartTx();
+        
+        assertCollection( index().getNodes( key, valueAsInt ), node1 );
+        assertCollection( index().getNodes( key, valueAsString ), node2 );
+        
+        index().removeIndex( node1, key, valueAsInt );
+        index().removeIndex( node2, key, valueAsString );
+        
+        node2.delete();
+        node1.delete();
+    }
 }

@@ -37,6 +37,7 @@ class FullTxData extends TxData
         try
         {
             writer.addDocument( document );
+            invalidateSearcher();
             return this;
         }
         catch ( IOException e )
