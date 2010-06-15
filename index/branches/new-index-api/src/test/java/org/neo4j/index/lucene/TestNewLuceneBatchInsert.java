@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -77,29 +78,70 @@ public class TestNewLuceneBatchInsert
     {
         BatchInserter inserter = new BatchInserterImpl( PATH );
         BatchInserterIndexProvider provider = new LuceneBatchInserterIndexProvider( inserter );
-        String name = "users2";
+        String name = "users";
         BatchInserterIndex index = provider.nodeIndex( name,
                 LuceneIndexProvider.FULLTEXT_CONFIG );
 
         long id1 = inserter.createNode( null );
         index.add( id1, "name", "Mattias Persson" );
         index.add( id1, "email", "something@somewhere" );
+        index.add( id1, "something", "bad" );
         long id2 = inserter.createNode( null );
         index.add( id2, "name", "Lars PerssoN" );
         assertCollection( index.get( "name", "Mattias Persson" ), id1 );
         assertCollection( index.query( "name", "mattias" ), id1 );
         assertCollection( index.query( "name", "bla" ) );
         assertCollection( index.query( "name", "persson" ), id1, id2 );
+        assertCollection( index.query( "email", "*@*" ), id1 );
+        assertCollection( index.get( "something", "bad" ), id1 );
+        index.remove( id1, "something:*" );
+        assertCollection( index.get( "something", "bad" ) );
+        long id3 = inserter.createNode( null );
+        index.add( id3, "name", "What Ever" );
+        index.add( id3, "name", "Anything" );
+        assertCollection( index.get( "name", "What Ever" ), id3 );
+        assertCollection( index.get( "name", "Anything" ), id3 );
+        index.remove( id3, "name", "Anything" );
+        assertCollection( index.get( "name", "What Ever" ), id3 );
+        assertCollection( index.get( "name", "Anything" ) );
         
         provider.shutdown();
         inserter.shutdown();
         
         GraphDatabaseService db = new EmbeddedGraphDatabase( PATH );
-        Index<Node> dbIndex = ((EmbeddedGraphDatabase) db).nodeIndex( name,
-                LuceneIndexProvider.FULLTEXT_CONFIG );
+        Index<Node> dbIndex = ((EmbeddedGraphDatabase) db).nodeIndex( name, null );
         Node node1 = db.getNodeById( id1 );
         Node node2 = db.getNodeById( id2 );
         assertCollection( dbIndex.query( "name", "persson" ), node1, node2 );
         db.shutdown();
+    }
+
+    @Ignore
+    @Test
+    public void testInsertionSpeed()
+    {
+        BatchInserter inserter = new BatchInserterImpl( PATH );
+        BatchInserterIndexProvider provider = new LuceneBatchInserterIndexProvider( inserter );
+        BatchInserterIndex index = provider.nodeIndex( "yeah", null );
+        long id = inserter.createNode( null );
+        long t = System.currentTimeMillis();
+        for ( int i = 0; i < 5000000; i++ )
+        {
+            index.add( id, "key", "value" + i );
+            if ( i % 100000 == 0 )
+            {
+                System.out.print( "." );
+            }
+        }
+        System.out.println( "insert:" + (System.currentTimeMillis() - t) );
+        
+        t = System.currentTimeMillis();
+        for ( int i = 0; i < 10000; i++ )
+        {
+            for ( long n : index.get( "key", "value" + i ) )
+            {
+            }
+        }
+        System.out.println( "get:" + (System.currentTimeMillis() - t) );
     }
 }

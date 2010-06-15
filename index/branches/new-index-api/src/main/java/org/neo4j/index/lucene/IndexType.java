@@ -20,8 +20,8 @@ import org.apache.lucene.util.Version;
 
 abstract class IndexType
 {
-    private static final Map<String, IndexType> TYPES =
-            Collections.synchronizedMap( new HashMap<String, IndexType>() );
+//    private static final Map<String, IndexType> TYPES =
+//            Collections.synchronizedMap( new HashMap<String, IndexType>() );
     
     private static final IndexType EXACT = new IndexType( LuceneDataSource.KEYWORD_ANALYZER )
     {
@@ -29,8 +29,7 @@ abstract class IndexType
         public Query deletionQuery( long entityId, String key, Object value )
         {
             BooleanQuery q = new BooleanQuery();
-            q.add( new TermQuery( new Term( LuceneIndex.KEY_DOC_ID, "" + entityId ) ),
-                    Occur.MUST );
+            q.add( idTermQuery( entityId ), Occur.MUST );
             q.add( new TermQuery( new Term( key, value.toString() ) ), Occur.MUST );
             return q;
         }
@@ -66,8 +65,6 @@ abstract class IndexType
         public Query deletionQuery( long entityId, String key, Object value )
         {
             BooleanQuery q = new BooleanQuery();
-            q.add( new TermQuery( new Term( LuceneIndex.KEY_DOC_ID, "" + entityId ) ),
-                    Occur.MUST );
             q.add( new TermQuery( new Term( exactKey( key ), value.toString() ) ), Occur.MUST );
             return q;
         }
@@ -113,23 +110,17 @@ abstract class IndexType
         return property;
     }
     
-    static IndexType getIndexType( Map<String, Map<String, String>> storedConfig,
-            Map<String, String> customConfig, String indexName )
+    static IndexType getIndexType( LuceneIndexStore store, IndexIdentifier identifier )
     {
-        IndexType existingType = TYPES.get( indexName );
-        if ( existingType != null )
-        {
-            return existingType;
-        }
-        
-        Map<String, String> prioConfig = storedConfig.containsKey( indexName ) ?
-                storedConfig.get( indexName ) : customConfig;
+        Map<String, String> storedConfig = store.getIndexConfig( identifier.indexName );
+        Map<String, String> prioConfig = storedConfig != null ?
+                storedConfig : identifier.customConfig;
         prioConfig = prioConfig != null ? prioConfig : Collections.<String, String>emptyMap();
         
         // TODO If it exists in the storedConfig then verify against customConfig
         // and tell user to f-ck off if they differ?
         
-        String type = prioConfig.get( configKey( indexName, "type" ) );
+        String type = prioConfig.get( configKey( identifier.indexName, "type" ) );
         IndexType result = null;
         if ( type == null || type.equals( "exact" ) )
         {
@@ -137,20 +128,20 @@ abstract class IndexType
         }
         else if ( type.equals( "fulltext" ) )
         {
-            result = new FulltextType( getAnalyzer( prioConfig, indexName ) );
+            result = new FulltextType( getAnalyzer( prioConfig, identifier.indexName ) );
         }
         else
         {
             throw new RuntimeException( "Unknown type '" + type + "' for index '" +
-                    indexName + "'" );
+                    identifier.indexName + "'" );
         }
         // Two or more threads might instantiate and put an IndexType
         // representing the same type more than once (if done simultaneously),
         // and it's OK.
-        TYPES.put( indexName, result );
-        if ( prioConfig == customConfig )
+        if ( prioConfig == identifier.customConfig )
         {
-            storedConfig.put( indexName, new HashMap<String, String>( customConfig ) );
+            store.setIndexConfig( identifier.indexName,
+                    new HashMap<String, String>( prioConfig ) );
         }
         return result;
     }
@@ -213,5 +204,22 @@ abstract class IndexType
     void addIdToDocument( Document document, long id )
     {
         document.add( new Field( LuceneIndex.KEY_DOC_ID, "" + id, Store.YES, Index.NOT_ANALYZED ) );
+    }
+    
+    Query idTermQuery( long entityId )
+    {
+        return new TermQuery( new Term( LuceneIndex.KEY_DOC_ID, "" + entityId ) );
+    }
+    
+    Query combine( long entityId, Object queryOrQueryObjectOrNull )
+    {
+        BooleanQuery queries = new BooleanQuery();
+        queries.add( idTermQuery( entityId ), Occur.MUST );
+        if ( queryOrQueryObjectOrNull != null )
+        {
+            queries.add( query( null, queryOrQueryObjectOrNull ),
+                    Occur.MUST );
+        }
+        return queries;
     }
 }

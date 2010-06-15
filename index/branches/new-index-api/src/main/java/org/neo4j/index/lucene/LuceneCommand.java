@@ -220,65 +220,25 @@ abstract class LuceneCommand extends XaCommand
         int keyCharLength = buffer.getInt();
         int valueCharLength = buffer.getInt();
 
-        String indexName = readString( channel, buffer, indexNameLength );
+        String indexName = NioUtils.readString( channel, buffer, indexNameLength );
         if ( indexName == null )
         {
             return null;
         }
         
-        String key = readString( channel, buffer, keyCharLength );
+        String key = NioUtils.readString( channel, buffer, keyCharLength );
         if ( key == null )
         {
             return null;
         }
 
-        String value = readString( channel, buffer, valueCharLength );
+        String value = NioUtils.readString( channel, buffer, valueCharLength );
         if ( value == null )
         {
             return null;
         }
         return new CommandData( new IndexIdentifier( itemsClass, indexName, null ),
                 entityId, key, value );
-    }
-    
-    private static String readString( ReadableByteChannel channel, ByteBuffer buffer, int length )
-            throws IOException
-    {
-        char[] chars = new char[length];
-        chars = readCharArray( channel, buffer, chars );
-        return chars == null ? null : new String( chars );
-    }
-    
-    private static char[] readCharArray( ReadableByteChannel channel, 
-        ByteBuffer buffer, char[] charArray ) throws IOException
-    {
-        buffer.clear();
-        int charsLeft = charArray.length;
-        int maxSize = buffer.capacity() / 2;
-        int offset = 0; // offset in chars
-        while ( charsLeft > 0 )
-        {
-            if ( charsLeft > maxSize )
-            {
-                buffer.limit( maxSize * 2 );
-                charsLeft -= maxSize;
-            }
-            else
-            {
-                buffer.limit( charsLeft * 2 );
-                charsLeft = 0;
-            }
-            if ( channel.read( buffer ) != buffer.limit() )
-            {
-                return null;
-            }
-            buffer.flip();
-            int length = buffer.limit() / 2;
-            buffer.asCharBuffer().get( charArray, offset, length ); 
-            offset += length;
-            buffer.clear();
-        }
-        return charArray;
     }
     
     static XaCommand readCommand( ReadableByteChannel channel, 

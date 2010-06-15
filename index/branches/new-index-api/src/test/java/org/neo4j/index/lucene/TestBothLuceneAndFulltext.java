@@ -64,20 +64,19 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
         String key = "some_key";
         String value1 = "347384738-2";
         String value2 = "Tjena hej hoj";
-        index().index( node, key, value1 );
-        this.fulltextIndexService.index( node, key, value2 );
+        index().index( node, key + "1", value1 );
+        this.fulltextIndexService.index( node, key + "2", value2 );
         
         restartTx();
         
-        assertEquals( node, index().getSingleNode( key, value1 ) );
+        assertEquals( node, index().getSingleNode( key + "1", value1 ) );
         assertEquals( node,
-            this.fulltextIndexService.getSingleNode( key, "Tjena" ) );
+            this.fulltextIndexService.getSingleNode( key + "2", "Tjena" ) );
         
         index().removeIndex( node, "cpv", value1 );
         this.fulltextIndexService.removeIndex( node, "cpv-ft", value2 );
         node.delete();
     }
-
 
     @Test
     public void testKeepLogsConfig()
@@ -92,8 +91,8 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
             db.getConfig().getTxModule().getXaDataSourceManager();
         assertTrue( xaDsMgr.getXaDataSource( "nioneodb" ).isLogicalLogKept() );
         assertTrue( xaDsMgr.getXaDataSource( "lucene" ).isLogicalLogKept() );
-        assertTrue( xaDsMgr.getXaDataSource( 
-                "lucene-fulltext" ).isLogicalLogKept() );
+//        assertTrue( xaDsMgr.getXaDataSource( 
+//                "lucene-fulltext" ).isLogicalLogKept() );
         db.shutdown();
         index.shutdown();
         fulltext.shutdown();
@@ -104,8 +103,8 @@ public class TestBothLuceneAndFulltext extends Neo4jWithIndexTestCase
         xaDsMgr = db.getConfig().getTxModule().getXaDataSourceManager();
         assertTrue( !xaDsMgr.getXaDataSource( "nioneodb" ).isLogicalLogKept() );
         assertTrue( !xaDsMgr.getXaDataSource( "lucene" ).isLogicalLogKept() );
-        assertTrue( !xaDsMgr.getXaDataSource( 
-                "lucene-fulltext" ).isLogicalLogKept() );
+//        assertTrue( !xaDsMgr.getXaDataSource( 
+//                "lucene-fulltext" ).isLogicalLogKept() );
         db.shutdown();
         index.shutdown();
         fulltext.shutdown();

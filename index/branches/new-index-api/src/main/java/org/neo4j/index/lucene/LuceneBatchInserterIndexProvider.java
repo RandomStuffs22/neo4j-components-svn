@@ -8,16 +8,22 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.index.BatchInserterIndex;
 import org.neo4j.graphdb.index.BatchInserterIndexProvider;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
+import org.neo4j.kernel.impl.batchinsert.BatchInserterImpl;
 
 public class LuceneBatchInserterIndexProvider implements BatchInserterIndexProvider
 {
     private final BatchInserter inserter;
     private final Map<IndexIdentifier, LuceneBatchInserterIndex> indexes =
             new HashMap<IndexIdentifier, LuceneBatchInserterIndex>();
+    final LuceneIndexStore store;
+    final IndexTypeCache typeCache;
 
     public LuceneBatchInserterIndexProvider( BatchInserter inserter )
     {
+        String dbStoreDir = ((BatchInserterImpl) inserter).getStore();
         this.inserter = inserter;
+        this.store = LuceneDataSource.newIndexStore( dbStoreDir );
+        this.typeCache = new IndexTypeCache( store );
     }
     
     public BatchInserterIndex nodeIndex( String indexName, Map<String, String> config )
@@ -37,7 +43,7 @@ public class LuceneBatchInserterIndexProvider implements BatchInserterIndexProvi
         LuceneBatchInserterIndex index = indexes.get( identifier );
         if ( index == null )
         {
-            index = new LuceneBatchInserterIndex( inserter, identifier );
+            index = new LuceneBatchInserterIndex( this, inserter, identifier );
             indexes.put( identifier, index );
         }
         return index;

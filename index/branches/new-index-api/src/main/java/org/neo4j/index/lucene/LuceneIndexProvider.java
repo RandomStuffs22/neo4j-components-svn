@@ -20,6 +20,7 @@
 package org.neo4j.index.lucene;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.neo4j.commons.collection.MapUtil;
@@ -58,10 +59,13 @@ public class LuceneIndexProvider extends IndexProvider
 
         Config config = getGraphDbConfig();
         TxModule txModule = config.getTxModule();
+        boolean isReadOnly = EmbeddedGraphDatabase.isReadOnly( graphDb );
+        Map<Object, Object> params = new HashMap<Object, Object>( config.getParams() );
+        params.put( "read_only", isReadOnly );
         dataSource = (LuceneDataSource) txModule.registerDataSource( DATA_SOURCE_NAME,
                 LuceneDataSource.class.getName(), LuceneDataSource.DEFAULT_BRANCH_ID,
-                config.getParams(), true );
-        broker = EmbeddedGraphDatabase.isReadOnly( graphDb ) ?
+                params, true );
+        broker = isReadOnly ?
                 new ReadOnlyConnectionBroker( txModule.getTxManager(), dataSource ) :
                 new ConnectionBroker( txModule.getTxManager(), dataSource );
     }

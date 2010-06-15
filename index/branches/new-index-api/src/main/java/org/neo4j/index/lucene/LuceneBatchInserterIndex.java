@@ -1,8 +1,6 @@
 package org.neo4j.index.lucene;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.lucene.AllDocs;
 import org.apache.lucene.document.Document;
@@ -27,12 +25,14 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
     private boolean writerModified;
     private IndexSearcher searcher;
 
-    LuceneBatchInserterIndex( BatchInserter inserter, IndexIdentifier identifier )
+    LuceneBatchInserterIndex( LuceneBatchInserterIndexProvider provider,
+            BatchInserter inserter, IndexIdentifier identifier )
     {
+        String dbStoreDir = ((BatchInserterImpl) inserter).getStore();
+        this.storeDir = LuceneDataSource.getStoreDir( dbStoreDir );
         this.inserter = inserter;
-        this.storeDir = LuceneDataSource.getStoreDir( ((BatchInserterImpl) inserter).getStore() );
         this.identifier = identifier;
-        this.type = identifier.getType( new HashMap<String, Map<String,String>>() );
+        this.type = provider.typeCache.getIndexType( identifier );
     }
     
     public void add( long entityId, String key, Object value )
@@ -40,6 +40,11 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
         Document doc = new Document();
         type.fillDocument( doc, entityId, key, value );
         LuceneUtil.strictAddDocument( writer(), doc );
+        setModified();
+    }
+    
+    private void setModified()
+    {
         writerModified = true;
     }
 
@@ -49,7 +54,6 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
         {
             return this.writer;
         }
-        closeSearcher();
         try
         {
             this.writer = new IndexWriter( LuceneDataSource.getDirectory( storeDir, identifier ),
@@ -86,6 +90,7 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
                     result.getIndexReader().close();
                     result.close();
                 }
+                writer().commit();
                 IndexReader newReader = writer().getReader();
                 result = new IndexSearcher( newReader );
                 writerModified = false;
@@ -155,12 +160,47 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
     public void remove( long entityId, String key, Object value )
     {
         LuceneUtil.strictRemoveDocument( writer(), type.deletionQuery( entityId, key, value ) );
-        writerModified = true;
+        setModified();
+    }
+    
+    public void remove( long entityId, Object queryOrQueryObjectOrNull )
+    {
+        remove( type.combine( entityId, queryOrQueryObjectOrNull ) );
+    }
+    
+    public void remove( Object queryOrQueryObject )
+    {
+        remove( type.query( null, queryOrQueryObject ) );
+    }
+    
+    private void remove( Query query )
+    {
+        try
+        {
+            writer().deleteDocuments( query );
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
+        setModified();
     }
 
     public void shutdown()
     {
         closeWriter();
         closeSearcher();
+    }
+    
+    public void flush()
+    {
+        try
+        {
+            writer().commit();
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
     }
 }

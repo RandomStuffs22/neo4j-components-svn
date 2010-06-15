@@ -7,7 +7,6 @@ class IndexIdentifier
     final Class<?> itemsClass;
     final String indexName;
     final Map<String, String> customConfig;
-    private IndexType type;
     
     public IndexIdentifier( Class<?> itemsClass, String indexName,
             Map<String, String> customConfig )
@@ -17,17 +16,6 @@ class IndexIdentifier
         this.customConfig = customConfig;
     }
     
-    IndexType getType( Map<String, Map<String, String>> storedConfig )
-    {
-        if ( type == null )
-        {
-            // Two or more threads might do this at the same time, but it
-            // is OK
-            type = IndexType.getIndexType( storedConfig, customConfig, indexName );
-        }
-        return type;
-    }
-
     @Override
     public boolean equals( Object o )
     {

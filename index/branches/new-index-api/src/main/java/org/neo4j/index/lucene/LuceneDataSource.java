@@ -61,6 +61,7 @@ import org.neo4j.kernel.impl.util.ArrayMap;
  */
 public class LuceneDataSource extends LogBackedXaDataSource
 {
+    public static final String DEFAULT_NAME = "lucene";
     public static final byte[] DEFAULT_BRANCH_ID = "162373".getBytes();
     
     /**
@@ -94,6 +95,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
     private final String baseStorePath;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(); 
     final LuceneIndexStore store;
+    final IndexTypeCache typeCache;
     private boolean closed;
     private final Cache caching;
 
@@ -108,26 +110,38 @@ public class LuceneDataSource extends LogBackedXaDataSource
         throws InstantiationException
     {
         super( params );
-        this.baseStorePath = getStoreDir( (String) params.get( "store_dir" ) );
-        cleanWriteLocks( baseStorePath );
-        this.store = new LuceneIndexStore( baseStorePath + "/lucene-store.db" );
-        XaCommandFactory cf = new LuceneCommandFactory();
-        XaTransactionFactory tf = new LuceneTransactionFactory( store );
-        xaContainer = XaContainer.create( this.baseStorePath + "/lucene.log", cf, tf, params );
-        try
-        {
-            xaContainer.openLogicalLog();
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( "Unable to open lucene log in " +
-                    this.baseStorePath, e );
-        }
-        
-        xaContainer.getLogicalLog().setKeepLogs(
-                shouldKeepLog( (String) params.get( "keep_logical_logs" ), getName() ) );
-        setLogicalLogAtCreationTime( xaContainer.getLogicalLog() );
         caching = new Cache();
+        String storeDir = (String) params.get( "store_dir" );
+        this.baseStorePath = getStoreDir( storeDir );
+        cleanWriteLocks( baseStorePath );
+        this.store = newIndexStore( storeDir );
+        this.typeCache = new IndexTypeCache( store );
+        boolean isReadOnly = params.containsKey( "read_only" ) ?
+                (Boolean) params.get( "read_only" ) : false;
+                
+        if ( !isReadOnly )
+        {
+            XaCommandFactory cf = new LuceneCommandFactory();
+            XaTransactionFactory tf = new LuceneTransactionFactory( store );
+            xaContainer = XaContainer.create( this.baseStorePath + "/lucene.log", cf, tf, params );
+            try
+            {
+                xaContainer.openLogicalLog();
+            }
+            catch ( IOException e )
+            {
+                throw new RuntimeException( "Unable to open lucene log in " +
+                        this.baseStorePath, e );
+            }
+            
+            xaContainer.getLogicalLog().setKeepLogs(
+                    shouldKeepLog( (String) params.get( "keep_logical_logs" ), DEFAULT_NAME ) );
+            setLogicalLogAtCreationTime( xaContainer.getLogicalLog() );
+        }
+        else
+        {
+            xaContainer = null;
+        }
     }
     
     private void cleanWriteLocks( String directory )
@@ -164,6 +178,11 @@ public class LuceneDataSource extends LogBackedXaDataSource
         }
         return dir.getAbsolutePath();
     }
+    
+    static LuceneIndexStore newIndexStore( String dbStoreDir )
+    {
+        return new LuceneIndexStore( getStoreDir( dbStoreDir ) + "/lucene-store.db" );
+    }
 
     @Override
     public void close()
@@ -185,7 +204,10 @@ public class LuceneDataSource extends LogBackedXaDataSource
             }
         }
         indexSearchers.clear();
-        xaContainer.close();
+        if ( xaContainer != null )
+        {
+            xaContainer.close();
+        }
         store.close();
         closed = true;
     }
@@ -378,8 +400,8 @@ public class LuceneDataSource extends LogBackedXaDataSource
         {
             Directory dir = getDirectory( baseStorePath, identifier );
             directoryExists( dir );
-            IndexWriter writer = new IndexWriter( dir, identifier.getType(
-                    store.indexConfig ).analyzer, MaxFieldLength.UNLIMITED );
+            IndexType type = typeCache.getIndexType( identifier );
+            IndexWriter writer = new IndexWriter( dir, type.analyzer, MaxFieldLength.UNLIMITED );
             
             // TODO We should tamper with this value and see how it affects the
             // general performance. Lucene docs says rather <10 for mixed
@@ -411,8 +433,8 @@ public class LuceneDataSource extends LogBackedXaDataSource
             long entityId, String key, Object value )
     {
         Document document = new Document();
-        identifier.getType( store.indexConfig ).fillDocument(
-                document, entityId, key, value );
+        IndexType type = typeCache.getIndexType( identifier );
+        type.fillDocument( document, entityId, key, value );
         try
         {
             writer.addDocument( document );
@@ -426,15 +448,15 @@ public class LuceneDataSource extends LogBackedXaDataSource
     protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
             String queryAsString )
     {
-        deleteDocuments( writer, identifier.getType( store.indexConfig ).query(
-                null, queryAsString ) );
+        IndexType type = typeCache.getIndexType( identifier );
+        deleteDocuments( writer, type.query( null, queryAsString ) );
     }
 
     protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
             long entityId, String key, Object value )
     {
-        deleteDocuments( writer, identifier.getType( store.indexConfig ).deletionQuery(
-                entityId, key, value ) );
+        IndexType type = typeCache.getIndexType( identifier );
+        deleteDocuments( writer, type.deletionQuery( entityId, key, value ) );
     }
     
     protected void deleteDocuments( IndexWriter writer, Query query )

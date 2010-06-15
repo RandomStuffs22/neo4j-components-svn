@@ -10,11 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.lucene.AllDocs;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.neo4j.commons.iterator.CombiningIterator;
 import org.neo4j.commons.iterator.IteratorUtil;
 import org.neo4j.graphdb.Node;
@@ -39,8 +35,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     {
         this.service = service;
         this.identifier = identifier;
-        this.type = IndexType.getIndexType( service.dataSource.store.indexConfig,
-                identifier.customConfig, identifier.indexName );
+        this.type = service.dataSource.typeCache.getIndexType( identifier );
     }
     
     LuceneXaConnection getConnection()
@@ -75,15 +70,8 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     
     public void remove( T entity, Object queryOrQueryObjectOrNull )
     {
-        BooleanQuery queries = new BooleanQuery();
-        queries.add( new TermQuery( new Term( KEY_DOC_ID, "" + getEntityId( entity ) ) ),
-                Occur.MUST );
-        if ( queryOrQueryObjectOrNull != null )
-        {
-            queries.add( type.query( null, queryOrQueryObjectOrNull ),
-                    Occur.MUST );
-        }
-        getConnection().remove( this, queries );
+        getConnection().remove( this, 
+                type.combine( getEntityId( entity ), queryOrQueryObjectOrNull ) );
     }
     
     public IndexHits<T> get( String key, Object value )

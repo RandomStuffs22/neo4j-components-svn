@@ -38,7 +38,7 @@ class LuceneIndexStore
     
     private final FileChannel fileChannel;
     private ByteBuffer dontUseBuffer = ByteBuffer.allocate( SIZEOF_ID_DATA );
-    final Map<String, Map<String, String>> indexConfig;
+    private final Map<String, Map<String, String>> indexConfig;
     
     private ByteBuffer buffer( int size )
     {
@@ -112,33 +112,12 @@ class LuceneIndexStore
     
     private Integer readNextInt() throws IOException
     {
-        ByteBuffer buffer = buffer( 4 );
-        buffer.clear();
-        buffer.limit( 4 );
-        int read = fileChannel.read( buffer );
-        if ( read < 4 )
-        {
-            return null;
-        }
-        return buffer.getInt();
+        return NioUtils.readInt( fileChannel, buffer( 4 ) );
     }
 
     private String readNextString() throws IOException
     {
-        Integer length = readNextInt();
-        if ( length == null )
-        {
-            return null;
-        }
-        ByteBuffer buffer = buffer( length );
-        buffer = buffer( length );
-        buffer.clear();
-        buffer.limit( length );
-        if ( fileChannel.read( buffer ) != length )
-        {
-            return null;
-        }
-        return buffer.asCharBuffer().toString();
+        return NioUtils.readLengthAndString( fileChannel, buffer( 100 ) );
     }
 
     void create( String store )
@@ -202,6 +181,29 @@ class LuceneIndexStore
         writeOut();
     }
     
+    public synchronized Map<String, String> getIndexConfig( String indexName )
+    {
+        return this.indexConfig.get( indexName );
+    }
+    
+    public synchronized void removeIndexConfig( String name )
+    {
+        if ( this.indexConfig.remove( name ) == null )
+        {
+            throw new RuntimeException( "Index config for '" + name + "' not found" );
+        }
+    }
+    
+    public synchronized void setIndexConfig( String name, Map<String, String> config )
+    {
+        if ( this.indexConfig.containsKey( config ) )
+        {
+            throw new RuntimeException( "Config already set for '" + name + "'" );
+        }
+        this.indexConfig.put( name, config );
+        writeOut();
+    }
+    
     private void writeOut()
     {
         ByteBuffer buffer = buffer( SIZEOF_ID_DATA );
@@ -218,6 +220,16 @@ class LuceneIndexStore
             throw new RuntimeException( e );
         }
     }
+    
+    private void writeInt( int value ) throws IOException
+    {
+        NioUtils.writeInt( fileChannel, buffer( 4 ), value );
+    }
+    
+    private void writeString( String value ) throws IOException
+    {
+        NioUtils.writeLengthAndString( fileChannel, buffer( 200 ), value );
+    }
 
     private void writeIndexConfig() throws IOException
     {
@@ -231,49 +243,6 @@ class LuceneIndexStore
                 writeString( propertyEntry.getValue() );
             }
         }
-    }
-
-    private void writeString( String value ) throws IOException
-    {
-        char[] chars = value.toCharArray();
-        int length = chars.length*2;
-        writeInt( length );
-        writeChars( chars );
-    }
-    
-    private void writeChars( char[] chars ) throws IOException
-    {
-        ByteBuffer buffer = buffer( 200 );
-        int position = 0;
-        do
-        {
-            buffer.clear();
-            int leftToWrite = chars.length - position;
-            if ( leftToWrite * 2 < buffer.capacity() )
-            {
-                buffer.asCharBuffer().put( chars, position, leftToWrite );
-                buffer.limit( leftToWrite * 2);
-                fileChannel.write( buffer );
-                position += leftToWrite;
-            }
-            else
-            {
-                int length = buffer.capacity() / 2;
-                buffer.asCharBuffer().put( chars, position, length );
-                buffer.limit( length * 2 );
-                fileChannel.write( buffer );
-                position += length;
-            }
-        } while ( position < chars.length );
-    }
-    
-    private void writeInt( int value ) throws IOException
-    {
-        ByteBuffer buffer = buffer( 4 );
-        buffer.clear();
-        buffer.putInt( value );
-        buffer.flip();
-        fileChannel.write( buffer );
     }
 
     public void close()
