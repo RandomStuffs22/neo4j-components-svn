@@ -6,6 +6,10 @@ public interface BatchInserterIndex
     
     void remove( long entityId, String key, Object value );
     
+    void remove( long entityId, Object queryOrQueryObjectOrNull );
+    
+    void remove( Object queryOrQueryObject );
+    
     /**
      * Provides hits for exact matches of key and value.
      */
@@ -20,4 +24,9 @@ public interface BatchInserterIndex
     IndexHits<Long> query( String key, Object queryOrQueryObject );
     
     IndexHits<Long> query( Object queryOrQueryObject );
+    
+    /**
+     * Flushes all modifications to disk, making consecutive reads faster.
+     */
+    void flush();
 }
