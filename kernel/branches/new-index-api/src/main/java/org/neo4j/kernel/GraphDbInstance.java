@@ -57,7 +57,7 @@ class GraphDbInstance
     {
         return config;
     }
-
+    
     private Map<Object, Object> getDefaultParams()
     {
         Map<Object, Object> params = new HashMap<Object, Object>();
@@ -127,6 +127,7 @@ class GraphDbInstance
         byte resourceId[] = "414141".getBytes();
         params.put( LockManager.class, config.getLockManager() );
         params.put( LockReleaser.class, config.getLockReleaser() );
+        params.put( "index_store", config.getIndexStore() );
         config.getTxModule().registerDataSource( Config.DEFAULT_DATA_SOURCE_NAME,
                 Config.NIO_NEO_DB_CLASS, resourceId, params );
         

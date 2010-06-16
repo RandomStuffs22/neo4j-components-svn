@@ -34,6 +34,7 @@ import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.kernel.AutoConfigurator;
 import org.neo4j.kernel.Config;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
+import org.neo4j.kernel.impl.index.IndexStore;
 import org.neo4j.kernel.impl.nioneo.store.DynamicRecord;
 import org.neo4j.kernel.impl.nioneo.store.InvalidRecordException;
 import org.neo4j.kernel.impl.nioneo.store.NeoStore;
@@ -56,10 +57,12 @@ import org.neo4j.kernel.impl.util.FileUtils;
 public class BatchInserterImpl implements BatchInserter
 {
     private final NeoStore neoStore;
+    private final IndexStore indexStore;
     private final String storeDir;
     
     private final PropertyIndexHolder indexHolder;
     private final RelationshipTypeHolder typeHolder; 
+    private final Map<String, String> params;
     
     private final BatchGraphDatabaseImpl graphDbService;
     
@@ -106,10 +109,22 @@ public class BatchInserterImpl implements BatchInserter
         PropertyIndexData[] indexes = 
             getPropertyIndexStore().getPropertyIndexes( 10000 );
         indexHolder = new PropertyIndexHolder( indexes );
+        indexStore = new IndexStore( storeDir );
         RelationshipTypeData[] types = 
             getRelationshipTypeStore().getRelationshipTypes();
         typeHolder = new RelationshipTypeHolder( types );
         graphDbService = new BatchGraphDatabaseImpl( this );
+        this.params = Collections.unmodifiableMap( stringParams );
+    }
+    
+    public Map<?, ?> getParams()
+    {
+        return this.params;
+    }
+    
+    public IndexStore getIndexStore()
+    {
+        return this.indexStore;
     }
     
     public long createNode( Map<String,Object> properties )

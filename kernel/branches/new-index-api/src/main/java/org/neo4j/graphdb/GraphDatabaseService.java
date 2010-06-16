@@ -25,6 +25,7 @@ import java.util.Map;
 import org.neo4j.graphdb.event.KernelEventHandler;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.neo4j.graphdb.index.Index;
+import org.neo4j.graphdb.index.IndexProvider;
 import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 /**
@@ -233,7 +234,58 @@ public interface GraphDatabaseService
      */
     public void unregisterKernelEventHandler( KernelEventHandler handler );
     
-    public Index<Node> nodeIndex( String indexName );
+    /**
+     * Returns an {@link Index} for {@link Node}s by the name {@code name}.
+     * If that index exists (has been requested before) it's returned,
+     * otherwise it's created first. An index comes from an
+     * {@link IndexProvider} and which index provider to use is decided via:
+     * 
+     * <ul>
+     * <li>Look at stored configuration for the given index</li>
+     * <li>Look at configuration parameter
+     * <b>index.node.[name]</b>, f.ex. <b>index.node.users</b></li>
+     * <li>Look at configuration parameter <b>index.node</b></li>
+     * <li>Look at configuration parameter <b>index</b></li>
+     * <li>Default to lucene index provider</li>
+     * </ul>
+     * 
+     * The index provider value can be a class name pointing to an
+     * {@link IndexProvider} implementation, or a service name specified
+     * by that provider, f.ex. "lucene". Once an index has be created that same
+     * index will be returned for the same {@code name}, even if configuration
+     * changes between runs.
+     * 
+     * @param name the name of the index to return.
+     * @return an {@link Index} for {@link Node}s corresponding to the
+     * {@code name}.
+     */
+    public Index<Node> nodeIndex( String name );
     
-    public Index<Relationship> relationshipIndex( String indexName );
+    /**
+     * Returns an {@link Index} for {@link Relationship}s by the name
+     * {@code name}. If that index exists (has been requested before)
+     * it's returned, otherwise it's created first. An index comes from an
+     * {@link IndexProvider} and which index provider to use is decided via:
+     * 
+     * <ul>
+     * <li>Look at stored configuration for the given index</li>
+     * <li>Look at configuration parameter
+     * <b>index.relationship.[name]</b>, f.ex.
+     * <b>index.relationship.users</b></li>
+     * <li>Look at configuration parameter <b>index.relationship</b></li>
+     * <li>Look at configuration parameter <b>index</b></li>
+     * <li>Default to lucene index provider</li>
+     * </ul>
+     * 
+     * The index provider value can be a class name pointing to an
+     * {@link IndexProvider} implementation, or a service name specified
+     * by that provider, f.ex. "lucene". Once an index has be created that same
+     * index will be returned for the same {@code name}, even if configuration
+     * changes between runs.
+     * 
+     * @param name the name of the index to return.
+     * @return an {@link Index} for {@link Relationship}s corresponding to the
+     * {@code name}.
+     */
+    public Index<Relationship> relationshipIndex( String name );
 }

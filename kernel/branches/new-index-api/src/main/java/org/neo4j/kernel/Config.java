@@ -26,6 +26,7 @@ import org.neo4j.kernel.impl.cache.AdaptiveCacheManager;
 import org.neo4j.kernel.impl.core.GraphDbModule;
 import org.neo4j.kernel.impl.core.KernelPanicEventGenerator;
 import org.neo4j.kernel.impl.core.LockReleaser;
+import org.neo4j.kernel.impl.index.IndexStore;
 import org.neo4j.kernel.impl.persistence.IdGeneratorModule;
 import org.neo4j.kernel.impl.persistence.PersistenceModule;
 import org.neo4j.kernel.impl.transaction.LockManager;
@@ -61,6 +62,7 @@ public class Config
     private IdGeneratorModule idGeneratorModule;
     private GraphDbModule graphDbModule;
     private String storeDir;
+    private IndexStore indexStore;
     private final Map<Object, Object> params;
 
     private final boolean readOnly;
@@ -104,6 +106,7 @@ public class Config
         lockReleaser = new LockReleaser( lockManager, txModule.getTxManager() );
         persistenceModule = new PersistenceModule();
         idGeneratorModule = new IdGeneratorModule();
+        indexStore = new IndexStore( storeDir );
         graphDbModule = new GraphDbModule( graphDb, cacheManager, lockManager,
                 txModule.getTxManager(), idGeneratorModule.getIdGenerator(),
                 readOnly );
@@ -168,5 +171,10 @@ public class Config
     boolean isBackupSlave()
     {
         return backupSlave;
+    }
+    
+    public IndexStore getIndexStore()
+    {
+        return indexStore;
     }
 }

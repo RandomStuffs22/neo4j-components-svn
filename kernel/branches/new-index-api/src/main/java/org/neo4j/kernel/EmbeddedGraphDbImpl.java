@@ -43,7 +43,6 @@ import java.util.logging.Logger;
 import javax.transaction.RollbackException;
 import javax.transaction.TransactionManager;
 
-import org.neo4j.commons.Service;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
@@ -60,6 +59,7 @@ import org.neo4j.kernel.impl.core.KernelPanicEventGenerator;
 import org.neo4j.kernel.impl.core.NodeManager;
 import org.neo4j.kernel.impl.core.TransactionEventsSyncHook;
 import org.neo4j.kernel.impl.core.TxEventSyncHookFactory;
+import org.neo4j.kernel.impl.index.IndexStore;
 import org.neo4j.kernel.impl.nioneo.xa.NeoStoreXaDataSource;
 import org.neo4j.kernel.manage.Neo4jJmx;
 
@@ -478,27 +478,24 @@ class EmbeddedGraphDbImpl
         return handler;
     }
     
-    private IndexProvider getIndexProvider( String indexName, Map<String, String> config )
+    private Map<String, String> getIndexConfig(
+            String indexName, Map<String, String> customConfig )
     {
-        String provider = config != null ? config.get( "provider" ) : null;
-        if ( provider == null )
-        {
-            provider = (String) getConfig().getParams().get( "index." + indexName );
-        }
-        if ( provider == null )
-        {
-            provider = (String) getConfig().getParams().get( "index" );
-        }
-        provider = provider != null ? provider : "org.neo4j.index.lucene.LuceneIndexProvider";
-        
+        return IndexStore.getIndexConfig( indexName, getConfig().getIndexStore(),
+                customConfig, getConfig().getParams() );
+    }
+    
+    private IndexProvider getIndexProvider( String indexName, Map<String, String> indexConfig )
+    {
+        String provider = indexConfig.get( "provider" );
         IndexProvider indexProvider = indexProviders.get( provider );
         if ( indexProvider != null )
         {
             return indexProvider;
         }
         
-        if ( provider.contains( "." ) )
-        {
+//        if ( provider.contains( "." ) )
+//        {
             try
             {
                 indexProvider = Class.forName( provider ).asSubclass(
@@ -507,26 +504,30 @@ class EmbeddedGraphDbImpl
             }
             catch ( Exception e )
             {
-                // OK
-                e.printStackTrace();
+                throw new RuntimeException( "Index provider '" + provider + "' not found" );
             }
-        }
-        else
-        {
-            indexProvider = Service.load( IndexProvider.class, provider );
-        }
-        indexProviders.putIfAbsent( provider, indexProvider );
-        return indexProviders.get( provider );
+//        }
+//        else
+//        {
+//            indexProvider = Service.load( IndexProvider.class, provider );
+//        }
+        String providerKey = provider.getClass().getName();
+        indexProviders.putIfAbsent( providerKey, indexProvider );
+        getConfig().getIndexStore().setIfNecessary( indexName, indexConfig );
+        return indexProviders.get( providerKey );
     }
     
     Index<Node> nodeIndex( String indexName, Map<String, String> config )
     {
-        return getIndexProvider( indexName, config ).nodeIndex( indexName, config );
+        Map<String, String> indexConfig = getIndexConfig( indexName, config );
+        return getIndexProvider( indexName, indexConfig ).nodeIndex( indexName, indexConfig );
     }
 
     Index<Relationship> relationshipIndex( String indexName, Map<String, String> config )
     {
-        return getIndexProvider( indexName, config ).relationshipIndex( indexName, config );
+        Map<String, String> indexConfig = getIndexConfig( indexName, config );
+        return getIndexProvider( indexName, indexConfig ).relationshipIndex(
+                indexName, indexConfig );
     }
 
     private class SyncHookFactory implements TxEventSyncHookFactory
