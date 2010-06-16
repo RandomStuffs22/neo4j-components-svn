@@ -25,6 +25,7 @@ import java.nio.channels.ReadableByteChannel;
 
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.kernel.impl.index.NioUtils;
 import org.neo4j.kernel.impl.transaction.xaframework.LogBuffer;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 
@@ -191,7 +192,7 @@ abstract class LuceneCommand extends XaCommand
     }
     
     static CommandData readCommandData( ReadableByteChannel channel, 
-        ByteBuffer buffer ) throws IOException
+        ByteBuffer buffer, LuceneDataSource dataSource ) throws IOException
     {
         buffer.clear(); buffer.limit( 21 );
         if ( channel.read( buffer ) != buffer.limit() )
@@ -237,12 +238,13 @@ abstract class LuceneCommand extends XaCommand
         {
             return null;
         }
-        return new CommandData( new IndexIdentifier( itemsClass, indexName, null ),
-                entityId, key, value );
+        IndexIdentifier identifier = new IndexIdentifier( itemsClass, indexName,
+                dataSource.indexStore.get( indexName ) );
+        return new CommandData( identifier, entityId, key, value );
     }
     
     static XaCommand readCommand( ReadableByteChannel channel, 
-        ByteBuffer buffer ) throws IOException
+        ByteBuffer buffer, LuceneDataSource dataSource ) throws IOException
     {
         buffer.clear(); buffer.limit( 1 );
         if ( channel.read( buffer ) != buffer.limit() )
@@ -251,7 +253,7 @@ abstract class LuceneCommand extends XaCommand
         }
         buffer.flip();
         byte commandType = buffer.get();
-        CommandData data = readCommandData( channel, buffer );
+        CommandData data = readCommandData( channel, buffer, dataSource );
         if ( data == null )
         {
             return null;

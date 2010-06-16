@@ -44,6 +44,7 @@ import org.apache.lucene.store.FSDirectory;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.kernel.impl.cache.LruCache;
+import org.neo4j.kernel.impl.index.IndexStore;
 import org.neo4j.kernel.impl.transaction.xaframework.LogBackedXaDataSource;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommandFactory;
@@ -94,6 +95,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
     private final XaContainer xaContainer;
     private final String baseStorePath;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(); 
+    final IndexStore indexStore;
     final LuceneIndexStore store;
     final IndexTypeCache typeCache;
     private boolean closed;
@@ -114,8 +116,9 @@ public class LuceneDataSource extends LogBackedXaDataSource
         String storeDir = (String) params.get( "store_dir" );
         this.baseStorePath = getStoreDir( storeDir );
         cleanWriteLocks( baseStorePath );
+        this.indexStore = (IndexStore) params.get( "index_store" );
         this.store = newIndexStore( storeDir );
-        this.typeCache = new IndexTypeCache( store );
+        this.typeCache = new IndexTypeCache();
         boolean isReadOnly = params.containsKey( "read_only" ) ?
                 (Boolean) params.get( "read_only" ) : false;
                 
@@ -230,7 +233,7 @@ public class LuceneDataSource extends LogBackedXaDataSource
         public XaCommand readCommand( ReadableByteChannel channel, 
             ByteBuffer buffer ) throws IOException
         {
-            return LuceneCommand.readCommand( channel, buffer );
+            return LuceneCommand.readCommand( channel, buffer, LuceneDataSource.this );
         }
     }
     

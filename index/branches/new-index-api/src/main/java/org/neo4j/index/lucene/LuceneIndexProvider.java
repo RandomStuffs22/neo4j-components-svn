@@ -62,6 +62,7 @@ public class LuceneIndexProvider extends IndexProvider
         boolean isReadOnly = EmbeddedGraphDatabase.isReadOnly( graphDb );
         Map<Object, Object> params = new HashMap<Object, Object>( config.getParams() );
         params.put( "read_only", isReadOnly );
+        params.put( "index_store", config.getIndexStore() );
         dataSource = (LuceneDataSource) txModule.registerDataSource( DATA_SOURCE_NAME,
                 LuceneDataSource.class.getName(), LuceneDataSource.DEFAULT_BRANCH_ID,
                 params, true );

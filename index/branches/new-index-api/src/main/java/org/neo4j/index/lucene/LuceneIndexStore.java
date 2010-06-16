@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 class LuceneIndexStore
@@ -38,7 +36,6 @@ class LuceneIndexStore
     
     private final FileChannel fileChannel;
     private ByteBuffer dontUseBuffer = ByteBuffer.allocate( SIZEOF_ID_DATA );
-    private final Map<String, Map<String, String>> indexConfig;
     
     private ByteBuffer buffer( int size )
     {
@@ -67,57 +64,11 @@ class LuceneIndexStore
             creationTime = buffer.getLong();
             randomIdentifier = buffer.getLong();
             version = buffer.getLong();
-            indexConfig = readIndexConfig();
         }
         catch ( IOException e )
         {
             throw new RuntimeException( e );
         }
-    }
-    
-    private Map<String, Map<String, String>> readIndexConfig() throws IOException
-    {
-        Map<String, Map<String, String>> map = new HashMap<String, Map<String,String>>();
-        while ( true )
-        {
-            String indexName = readNextString();
-            if ( indexName == null )
-            {
-                break;
-            }
-            Integer propertyCount = readNextInt();
-            if ( propertyCount == null )
-            {
-                break;
-            }
-            Map<String, String> properties = new HashMap<String, String>();
-            for ( int i = 0; i < propertyCount; i++ )
-            {
-                String key = readNextString();
-                if ( key == null )
-                {
-                    break;
-                }
-                String value = readNextString();
-                if ( value == null )
-                {
-                    break;
-                }
-                properties.put( key, value );
-            }
-            map.put( indexName, properties );
-        }
-        return map;
-    }
-    
-    private Integer readNextInt() throws IOException
-    {
-        return NioUtils.readInt( fileChannel, buffer( 4 ) );
-    }
-
-    private String readNextString() throws IOException
-    {
-        return NioUtils.readLengthAndString( fileChannel, buffer( 100 ) );
     }
 
     void create( String store )
@@ -181,29 +132,6 @@ class LuceneIndexStore
         writeOut();
     }
     
-    public synchronized Map<String, String> getIndexConfig( String indexName )
-    {
-        return this.indexConfig.get( indexName );
-    }
-    
-    public synchronized void removeIndexConfig( String name )
-    {
-        if ( this.indexConfig.remove( name ) == null )
-        {
-            throw new RuntimeException( "Index config for '" + name + "' not found" );
-        }
-    }
-    
-    public synchronized void setIndexConfig( String name, Map<String, String> config )
-    {
-        if ( this.indexConfig.containsKey( config ) )
-        {
-            throw new RuntimeException( "Config already set for '" + name + "'" );
-        }
-        this.indexConfig.put( name, config );
-        writeOut();
-    }
-    
     private void writeOut()
     {
         ByteBuffer buffer = buffer( SIZEOF_ID_DATA );
@@ -213,35 +141,10 @@ class LuceneIndexStore
         try
         {
             writeIdData( fileChannel, buffer );
-            writeIndexConfig();
         }
         catch ( IOException e )
         {
             throw new RuntimeException( e );
-        }
-    }
-    
-    private void writeInt( int value ) throws IOException
-    {
-        NioUtils.writeInt( fileChannel, buffer( 4 ), value );
-    }
-    
-    private void writeString( String value ) throws IOException
-    {
-        NioUtils.writeLengthAndString( fileChannel, buffer( 200 ), value );
-    }
-
-    private void writeIndexConfig() throws IOException
-    {
-        for ( Map.Entry<String, Map<String, String>> entry : indexConfig.entrySet() )
-        {
-            writeString( entry.getKey() );
-            writeInt( entry.getValue().size() );
-            for ( Map.Entry<String, String> propertyEntry : entry.getValue().entrySet() )
-            {
-                writeString( propertyEntry.getKey() );
-                writeString( propertyEntry.getValue() );
-            }
         }
     }
 

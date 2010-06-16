@@ -6,14 +6,14 @@ class IndexIdentifier
 {
     final Class<?> itemsClass;
     final String indexName;
-    final Map<String, String> customConfig;
+    final Map<String, String> config;
     
     public IndexIdentifier( Class<?> itemsClass, String indexName,
             Map<String, String> customConfig )
     {
         this.itemsClass = itemsClass;
         this.indexName = indexName;
-        this.customConfig = customConfig;
+        this.config = customConfig;
     }
     
     @Override

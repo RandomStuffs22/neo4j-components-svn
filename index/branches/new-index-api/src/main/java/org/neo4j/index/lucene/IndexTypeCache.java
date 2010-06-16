@@ -6,12 +6,6 @@ import java.util.Map;
 class IndexTypeCache
 {
     private final Map<String, IndexType> cache = new HashMap<String, IndexType>();
-    final LuceneIndexStore store;
-    
-    IndexTypeCache( LuceneIndexStore store )
-    {
-        this.store = store;
-    }
     
     IndexType getIndexType( IndexIdentifier identifier )
     {
@@ -20,7 +14,7 @@ class IndexTypeCache
         {
             return type;
         }
-        type = IndexType.getIndexType( store, identifier );
+        type = IndexType.getIndexType( identifier );
         cache.put( identifier.indexName, type );
         return type;
     }

@@ -1,7 +1,5 @@
 package org.neo4j.index.lucene;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -20,9 +18,6 @@ import org.apache.lucene.util.Version;
 
 abstract class IndexType
 {
-//    private static final Map<String, IndexType> TYPES =
-//            Collections.synchronizedMap( new HashMap<String, IndexType>() );
-    
     private static final IndexType EXACT = new IndexType( LuceneDataSource.KEYWORD_ANALYZER )
     {
         @Override
@@ -65,6 +60,7 @@ abstract class IndexType
         public Query deletionQuery( long entityId, String key, Object value )
         {
             BooleanQuery q = new BooleanQuery();
+            q.add( idTermQuery( entityId ), Occur.MUST );
             q.add( new TermQuery( new Term( exactKey( key ), value.toString() ) ), Occur.MUST );
             return q;
         }
@@ -110,17 +106,10 @@ abstract class IndexType
         return property;
     }
     
-    static IndexType getIndexType( LuceneIndexStore store, IndexIdentifier identifier )
+    static IndexType getIndexType( IndexIdentifier identifier )
     {
-        Map<String, String> storedConfig = store.getIndexConfig( identifier.indexName );
-        Map<String, String> prioConfig = storedConfig != null ?
-                storedConfig : identifier.customConfig;
-        prioConfig = prioConfig != null ? prioConfig : Collections.<String, String>emptyMap();
-        
-        // TODO If it exists in the storedConfig then verify against customConfig
-        // and tell user to f-ck off if they differ?
-        
-        String type = prioConfig.get( configKey( identifier.indexName, "type" ) );
+        Map<String, String> config = identifier.config;
+        String type = config.get( configKey( identifier.indexName, "type" ) );
         IndexType result = null;
         if ( type == null || type.equals( "exact" ) )
         {
@@ -128,20 +117,12 @@ abstract class IndexType
         }
         else if ( type.equals( "fulltext" ) )
         {
-            result = new FulltextType( getAnalyzer( prioConfig, identifier.indexName ) );
+            result = new FulltextType( getAnalyzer( config, identifier.indexName ) );
         }
         else
         {
             throw new RuntimeException( "Unknown type '" + type + "' for index '" +
                     identifier.indexName + "'" );
-        }
-        // Two or more threads might instantiate and put an IndexType
-        // representing the same type more than once (if done simultaneously),
-        // and it's OK.
-        if ( prioConfig == identifier.customConfig )
-        {
-            store.setIndexConfig( identifier.indexName,
-                    new HashMap<String, String>( prioConfig ) );
         }
         return result;
     }
