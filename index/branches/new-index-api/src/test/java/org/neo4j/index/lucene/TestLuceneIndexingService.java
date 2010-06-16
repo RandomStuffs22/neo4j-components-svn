@@ -325,4 +325,32 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         node2.delete();
         node1.delete();
     }
+
+    @Ignore
+    @Test
+    public void testInsertionSpeed()
+    {
+        Node node = graphDb().createNode();
+        long t = System.currentTimeMillis();
+        for ( int i = 0; i < 5000000; i++ )
+        {
+            index().index( node, "yeah", "value" + i );
+            if ( i % 100000 == 0 )
+            {
+                restartTx();
+                System.out.print( "." );
+            }
+        }
+        finishTx( true );
+        System.out.println( "insert:" + (System.currentTimeMillis() - t) );
+        
+        t = System.currentTimeMillis();
+        for ( int i = 0; i < 100; i++ )
+        {
+            for ( Node n : index().getNodes( "yeah", "value" + i ) )
+            {
+            }
+        }
+        System.out.println( "get:" + (System.currentTimeMillis() - t) );
+    }
 }
