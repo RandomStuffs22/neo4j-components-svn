@@ -14,9 +14,14 @@ public class LuceneIndexService implements IndexService
 {
     public static final int DEFAULT_LAZY_THRESHOLD = LuceneIndexProvider.DEFAULT_LAZY_THRESHOLD;
     
-    final GraphDatabaseService graphDb;
+    static final ConcurrentMap<GraphDatabaseService, LuceneIndexProvider> uglyMapOfProviders =
+            new ConcurrentHashMap<GraphDatabaseService, LuceneIndexProvider>();
+    
     private final ConcurrentMap<String, LuceneIndex<Node>> indexes =
             new ConcurrentHashMap<String, LuceneIndex<Node>>();
+
+    final GraphDatabaseService graphDb;
+    final LuceneIndexProvider provider;
 
     public LuceneIndexService( GraphDatabaseService graphDb )
     {
@@ -26,8 +31,20 @@ public class LuceneIndexService implements IndexService
         // Or maybe don't convert at all, but instead supply a hook which makes
         // the new index behave as the old?
         this.graphDb = graphDb;
+        this.provider = getProvider();
     }
     
+    private LuceneIndexProvider getProvider()
+    {
+        LuceneIndexProvider provider = uglyMapOfProviders.get( graphDb );
+        if ( this.provider == null )
+        {
+            provider = new LuceneIndexProvider( graphDb );
+            uglyMapOfProviders.put( graphDb, provider );
+        }
+        return provider;
+    }
+
     protected LuceneIndex<Node> getIndex( String key )
     {
         LuceneIndex<Node> index = indexes.get( key );
@@ -42,7 +59,7 @@ public class LuceneIndexService implements IndexService
 
     protected Index<Node> getNodeIndex( String key )
     {
-        return this.graphDb.nodeIndex( key );
+        return this.provider.nodeIndex( key, LuceneIndexProvider.EXACT_CONFIG );
     }
 
     public IndexHits<Node> getNodes( String key, Object value )

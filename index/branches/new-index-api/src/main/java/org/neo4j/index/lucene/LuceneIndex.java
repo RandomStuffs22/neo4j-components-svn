@@ -230,6 +230,9 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
             searcher.incRef();
             AllDocs hits = new AllDocs( searcher.getSearcher(), query, null );
             return new SearchResult( new HitsIterator( hits ), hits.length() );
+//            TopDocs hits = searcher.getSearcher().search( query, 50 );
+//            TopDocsIterator itr = new TopDocsIterator( hits, searcher );
+//            return new SearchResult( itr, hits.totalHits );
         }
         catch ( IOException e )
         {

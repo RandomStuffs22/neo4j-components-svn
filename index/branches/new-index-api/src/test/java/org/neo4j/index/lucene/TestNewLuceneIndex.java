@@ -23,6 +23,7 @@ import org.neo4j.kernel.EmbeddedGraphDatabase;
 public class TestNewLuceneIndex
 {
     private static GraphDatabaseService graphDb;
+    private static LuceneIndexProvider provider;
     private Transaction tx;
     
     @BeforeClass
@@ -31,6 +32,7 @@ public class TestNewLuceneIndex
         String storeDir = "target/var/freshindex";
         Neo4jTestCase.deleteFileOrDirectory( new File( storeDir ) );
         graphDb = new EmbeddedGraphDatabase( storeDir );
+        provider = new LuceneIndexProvider( graphDb );
     }
     
     @AfterClass
@@ -73,7 +75,7 @@ public class TestNewLuceneIndex
         String title = "title";
         String hacker = "Hacker";
         
-        Index<Node> nodeIndex = graphDb.nodeIndex( "default" );
+        Index<Node> nodeIndex = provider.nodeIndex( "default", LuceneIndexProvider.EXACT_CONFIG );
         assertCollection( nodeIndex.get( name, mattias ) );
         
         Node node1 = graphDb.createNode();
@@ -120,7 +122,7 @@ public class TestNewLuceneIndex
     @Test
     public void testFulltextNodeIndex()
     {
-        Index<Node> index = ((EmbeddedGraphDatabase) graphDb).nodeIndex( "fulltext",
+        Index<Node> index = provider.nodeIndex( "fulltext",
                 LuceneIndexProvider.FULLTEXT_CONFIG );
         Node node1 = graphDb.createNode();
         Node node2 = graphDb.createNode();
@@ -152,7 +154,7 @@ public class TestNewLuceneIndex
     @Test
     public void testFulltextRelationshipIndex()
     {
-        Index<Relationship> index = ((EmbeddedGraphDatabase) graphDb).relationshipIndex( "fulltext",
+        Index<Relationship> index = provider.relationshipIndex( "fulltext",
                 LuceneIndexProvider.FULLTEXT_CONFIG );
         Node node1 = graphDb.createNode();
         Node node2 = graphDb.createNode();
@@ -184,7 +186,7 @@ public class TestNewLuceneIndex
     @Test
     public void testInsertionSpeed()
     {
-        Index<Node> index = graphDb.nodeIndex( "yeah" );
+        Index<Node> index = provider.nodeIndex( "yeah", LuceneIndexProvider.EXACT_CONFIG );
         Node node = graphDb.createNode();
         long t = System.currentTimeMillis();
         for ( int i = 0; i < 5000000; i++ )

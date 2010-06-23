@@ -59,10 +59,12 @@ public class LuceneIndexProvider extends IndexProvider
 
         Config config = getGraphDbConfig();
         TxModule txModule = config.getTxModule();
-        boolean isReadOnly = EmbeddedGraphDatabase.isReadOnly( graphDb );
+        boolean isReadOnly = isReadOnly( graphDb );
         Map<Object, Object> params = new HashMap<Object, Object>( config.getParams() );
         params.put( "read_only", isReadOnly );
-        params.put( "index_store", config.getIndexStore() );
+        params.put( "index_config",
+//                config.getIndexStore() );
+                new HashMap<String, Map<String, String>>() );
         dataSource = (LuceneDataSource) txModule.registerDataSource( DATA_SOURCE_NAME,
                 LuceneDataSource.class.getName(), LuceneDataSource.DEFAULT_BRANCH_ID,
                 params, true );
@@ -71,9 +73,14 @@ public class LuceneIndexProvider extends IndexProvider
                 new ConnectionBroker( txModule.getTxManager(), dataSource );
     }
     
+    private static boolean isReadOnly( GraphDatabaseService graphDb )
+    {
+        return graphDb instanceof EmbeddedReadOnlyGraphDatabase;
+    }
+    
     private Config getGraphDbConfig()
     {
-        return EmbeddedGraphDatabase.isReadOnly( graphDb ) ?
+        return isReadOnly( graphDb ) ?
                 ((EmbeddedReadOnlyGraphDatabase) graphDb).getConfig() :
                 ((EmbeddedGraphDatabase) graphDb).getConfig();
     }

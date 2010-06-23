@@ -8,21 +8,21 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.index.BatchInserterIndex;
 import org.neo4j.graphdb.index.BatchInserterIndexProvider;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
-import org.neo4j.kernel.impl.batchinsert.BatchInserterImpl;
-import org.neo4j.kernel.impl.index.IndexStore;
 
 public class LuceneBatchInserterIndexProvider implements BatchInserterIndexProvider
 {
     private final BatchInserter inserter;
     private final Map<IndexIdentifier, LuceneBatchInserterIndex> indexes =
             new HashMap<IndexIdentifier, LuceneBatchInserterIndex>();
-    final IndexStore indexStore;
+    final Map<String, Map<String, String>> indexConfig;
     final IndexTypeCache typeCache;
 
     public LuceneBatchInserterIndexProvider( BatchInserter inserter )
     {
         this.inserter = inserter;
-        this.indexStore = ((BatchInserterImpl) inserter).getIndexStore();
+        this.indexConfig =
+//            ((BatchInserterImpl) inserter).getIndexStore();
+            new HashMap<String, Map<String,String>>();
         this.typeCache = new IndexTypeCache();
     }
     
@@ -33,8 +33,9 @@ public class LuceneBatchInserterIndexProvider implements BatchInserterIndexProvi
 
     private Map<String, String> config( String indexName, Map<String, String> config )
     {
-        return IndexStore.getIndexConfig( indexName, indexStore, config,
-                ((BatchInserterImpl) inserter).getParams() );
+//        return IndexStore.getIndexConfig( indexName, indexStore, config,
+//                ((BatchInserterImpl) inserter).getParams() );
+        return config;
     }
 
     public BatchInserterIndex relationshipIndex( String indexName, Map<String, String> config )

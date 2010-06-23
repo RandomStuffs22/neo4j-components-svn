@@ -57,6 +57,7 @@ public class TestRecovery
     public void testRecovery() throws Exception
     {
         final GraphDatabaseService graphDb = newGraphDbService();
+        final LuceneIndexProvider provider = new LuceneIndexProvider( graphDb );
         
         graphDb.beginTx();
         Node node = graphDb.createNode();
@@ -72,7 +73,8 @@ public class TestRecovery
         try
         {
             stopper.start();
-            Index<Node> index = graphDb.nodeIndex( "recoverable" );
+            Index<Node> index = provider.nodeIndex( "recoverable",
+                    LuceneIndexProvider.EXACT_CONFIG );
             for ( int i = 0; i < 500; i++ )
             {
                 index.add( node, "" + random.nextInt(), random.nextInt() );
@@ -87,7 +89,8 @@ public class TestRecovery
         sleepNice( 1000 );
         final GraphDatabaseService newGraphDb =
             new EmbeddedGraphDatabase( getDbPath() );
-        newGraphDb.nodeIndex( "recoverable" );
+        new LuceneIndexProvider( newGraphDb ).nodeIndex( "recoverable",
+                LuceneIndexProvider.EXACT_CONFIG );
         sleepNice( 1000 );
         newGraphDb.shutdown();
     }

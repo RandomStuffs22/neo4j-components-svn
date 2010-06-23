@@ -36,7 +36,7 @@ public class TestNewLuceneBatchInsert
     {
         BatchInserter inserter = new BatchInserterImpl( PATH );
         BatchInserterIndexProvider provider = new LuceneBatchInserterIndexProvider( inserter );
-        BatchInserterIndex index = provider.nodeIndex( "users", null );
+        BatchInserterIndex index = provider.nodeIndex( "users", LuceneIndexProvider.EXACT_CONFIG );
         Map<Integer, Long> ids = new HashMap<Integer, Long>();
         for ( int i = 0; i < 100; i++ )
         {
@@ -56,7 +56,8 @@ public class TestNewLuceneBatchInsert
         inserter.shutdown();
         
         GraphDatabaseService db = new EmbeddedGraphDatabase( PATH );
-        Index<Node> dbIndex = db.nodeIndex( "users" );
+        LuceneIndexProvider indexProvider = new LuceneIndexProvider( db );
+        Index<Node> dbIndex = indexProvider.nodeIndex( "users", LuceneIndexProvider.EXACT_CONFIG );
         for ( int i = 0; i < 100; i++ )
         {
             assertCollection( dbIndex.get( "name", "Joe" + i ), db.getNodeById(
@@ -109,7 +110,8 @@ public class TestNewLuceneBatchInsert
         inserter.shutdown();
         
         GraphDatabaseService db = new EmbeddedGraphDatabase( PATH );
-        Index<Node> dbIndex = ((EmbeddedGraphDatabase) db).nodeIndex( name, null );
+        LuceneIndexProvider indexProvider = new LuceneIndexProvider( db );
+        Index<Node> dbIndex = indexProvider.nodeIndex( name, LuceneIndexProvider.FULLTEXT_CONFIG );
         Node node1 = db.getNodeById( id1 );
         Node node2 = db.getNodeById( id2 );
         assertCollection( dbIndex.query( "name", "persson" ), node1, node2 );

@@ -10,14 +10,13 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexHits;
-import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 public class LuceneFulltextIndexService extends LuceneIndexService
 {
@@ -42,8 +41,7 @@ public class LuceneFulltextIndexService extends LuceneIndexService
         // maybe also with a prefix or something so that fulltext and
         // non-fulltext (with same key) can live side by side, as they
         // could in the old implementation.
-        return ((EmbeddedGraphDatabase) this.graphDb).nodeIndex( key,
-                LuceneIndexProvider.FULLTEXT_CONFIG );
+        return provider.nodeIndex( key, LuceneIndexProvider.FULLTEXT_CONFIG );
     }
 
     @Override

@@ -25,7 +25,6 @@ import java.nio.channels.ReadableByteChannel;
 
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
-import org.neo4j.kernel.impl.index.NioUtils;
 import org.neo4j.kernel.impl.transaction.xaframework.LogBuffer;
 import org.neo4j.kernel.impl.transaction.xaframework.XaCommand;
 
@@ -239,7 +238,7 @@ abstract class LuceneCommand extends XaCommand
             return null;
         }
         IndexIdentifier identifier = new IndexIdentifier( itemsClass, indexName,
-                dataSource.indexStore.get( indexName ) );
+                dataSource.indexConfig.get( indexName ) );
         return new CommandData( identifier, entityId, key, value );
     }
     

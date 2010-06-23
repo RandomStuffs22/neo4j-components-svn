@@ -50,7 +50,7 @@ public class LuceneIndexBatchInserterImpl
     
     protected BatchInserterIndex getIndex( String indexName )
     {
-        return this.provider.nodeIndex( indexName, null );
+        return this.provider.nodeIndex( indexName, LuceneIndexProvider.EXACT_CONFIG );
     }
     
     public void index( long node, String key, Object value )
