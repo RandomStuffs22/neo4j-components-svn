@@ -1,9 +1,9 @@
 package org.neo4j.kernel;
 
-import java.lang.reflect.Array;
 import java.util.Iterator;
 
 import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.Expander;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
@@ -58,7 +58,7 @@ public class TraversalFactory
             return new PostorderBreadthFirstSelector( startSource );
         }
     };
-        
+
     /**
      * Creates a new {@link TraversalDescription} with default value for
      * everything so that it's OK to call
@@ -81,10 +81,15 @@ public class TraversalFactory
      * @param dir the {@link Direction} to expand.
      * @return a new {@link RelationshipExpander}.
      */
-    public static RelationshipExpander expanderForTypes( RelationshipType type,
+    public static Expander expanderForTypes( RelationshipType type,
             Direction dir )
     {
-        return new DefaultExpander().add( type, dir );
+        return StandardExpander.create( type, dir );
+    }
+
+    public static Expander emptyExpander()
+    {
+        return StandardExpander.DEFAULT; // TODO: should this be a PROPER empty?
     }
 
     /**
@@ -97,10 +102,10 @@ public class TraversalFactory
      * @param dir2 another {@link Direction} to expand.
      * @return a new {@link RelationshipExpander}.
      */
-    public static RelationshipExpander expanderForTypes( RelationshipType type1,
+    public static Expander expanderForTypes( RelationshipType type1,
             Direction dir1, RelationshipType type2, Direction dir2 )
     {
-        return new DefaultExpander().add( type1, dir1 ).add( type2, dir2 );
+        return StandardExpander.create( type1, dir1, type2, dir2 );
     }
 
     /**
@@ -114,19 +119,11 @@ public class TraversalFactory
      * @param more additional pairs or type/direction to expand.
      * @return a new {@link RelationshipExpander}.
      */
-    public static RelationshipExpander expanderForTypes( RelationshipType type1,
+    public static Expander expanderForTypes( RelationshipType type1,
             Direction dir1, RelationshipType type2, Direction dir2,
             Object... more )
     {
-        RelationshipType[] types = extract(
-                RelationshipType[].class, type1, type2, more, false );
-        Direction[] directions = extract( Direction[].class, dir1, dir2, more, true );
-        DefaultExpander expander = new DefaultExpander();
-        for ( int i = 0; i < types.length; i++ )
-        {
-            expander = expander.add( types[i], directions[i] );
-        }
-        return expander;
+        return StandardExpander.create( type1, dir1, type2, dir2, more );
     }
 
     /**
@@ -134,34 +131,23 @@ public class TraversalFactory
      * of all types and directions.
      * @return a relationship expander which expands all relationships.
      */
-    public static RelationshipExpander expanderForAllTypes()
+    public static Expander expanderForAllTypes()
     {
-        return DefaultExpander.ALL;
+        return expanderForAllTypes( Direction.BOTH );
     }
 
-    private static <T> T[] extract( Class<T[]> type, T obj1, T obj2,
-            Object[] more, boolean odd )
+    public static Expander expanderForAllTypes( Direction direction )
     {
-        if ( more.length % 2 != 0 )
+        return StandardExpander.create( direction );
+    }
+
+    public static Expander expander( RelationshipExpander expander )
+    {
+        if ( expander instanceof Expander )
         {
-            throw new IllegalArgumentException();
+            return (Expander) expander;
         }
-        Object[] target = (Object[]) Array.newInstance( type,
-                ( more.length / 2 ) + 2 );
-        try
-        {
-            target[0] = obj1;
-            target[1] = obj2;
-            for ( int i = 2; i < target.length; i++ )
-            {
-                target[i] = more[( i - 2 ) * 2 + ( odd ? 1 : 0 )];
-            }
-        }
-        catch ( ArrayStoreException cast )
-        {
-            throw new IllegalArgumentException( cast );
-        }
-        return type.cast( target );
+        return StandardExpander.wrap( expander );
     }
 
     /**
@@ -223,7 +209,7 @@ public class TraversalFactory
             }
         };
     }
-    
+
     /**
      * Returns a "preorder depth first" selector factory . A depth first selector
      * always tries to select positions (from the current position) which are
@@ -235,7 +221,7 @@ public class TraversalFactory
     {
         return PREORDER_DEPTH_FIRST_SELECTOR;
     }
-    
+
     /**
      * Returns a "postorder depth first" selector factory. A depth first
      * selector always tries to select positions (from the current position)
@@ -248,7 +234,7 @@ public class TraversalFactory
     {
         return POSTORDER_DEPTH_FIRST_SELECTOR;
     }
-    
+
     /**
      * Returns a "preorder breadth first" selector factory. A breadth first
      * selector always selects all positions on the current depth before
@@ -260,7 +246,7 @@ public class TraversalFactory
     {
         return PREORDER_BREADTH_FIRST_SELECTOR;
     }
-    
+
     /**
      * Returns a "postorder breadth first" selector factory. A breadth first
      * selector always selects all positions on the current depth before
@@ -273,7 +259,7 @@ public class TraversalFactory
     {
         return POSTORDER_BREADTH_FIRST_SELECTOR;
     }
-    
+
     /**
      * Provides hooks to help build a string representation of a {@link Path}.
      * @param <T> the type of {@link Path}.
@@ -288,7 +274,7 @@ public class TraversalFactory
          * @return a string representation of a {@link Node}.
          */
         String nodeRepresentation( T path, Node node );
-        
+
         /**
          * Returns a string representation of a {@link Relationship}.
          * @param path the {@link Path} we're building a string representation
@@ -301,7 +287,7 @@ public class TraversalFactory
         String relationshipRepresentation( T path, Node from,
                 Relationship relationship );
     }
-    
+
     /**
      * The default {@link PathDescriptor} used in common toString()
      * representations in classes implementing {@link Path}.
@@ -330,7 +316,7 @@ public class TraversalFactory
                     relationship.getId() + "]" + suffix;
         }
     }
-    
+
     /**
      * Method for building a string representation of a {@link Path}, using
      * the given {@code builder}.
@@ -353,7 +339,7 @@ public class TraversalFactory
         result.append( builder.nodeRepresentation( path, current ) );
         return result.toString();
     }
-    
+
     /**
      * Returns the default string representation of a {@link Path}. It uses
      * the {@link DefaultPathDescriptor} to get representations.
@@ -364,7 +350,7 @@ public class TraversalFactory
     {
         return pathToString( path, new DefaultPathDescriptor<Path>() );
     }
-    
+
     /**
      * Returns a quite simple string representation of a {@link Path}. It
      * doesn't print relationship types or ids, just directions.
@@ -375,6 +361,7 @@ public class TraversalFactory
     {
         return pathToString( path, new DefaultPathDescriptor<Path>()
         {
+            @Override
             public String relationshipRepresentation( Path path, Node from,
                     Relationship relationship )
             {
@@ -396,11 +383,13 @@ public class TraversalFactory
     {
         return pathToString( path, new DefaultPathDescriptor<Path>()
         {
+            @Override
             public String nodeRepresentation( Path path, Node node )
             {
                 return "(" + node.getProperty( nodePropertyKey, node.getId() ) + ")";
             }
 
+            @Override
             public String relationshipRepresentation( Path path, Node from,
                     Relationship relationship )
             {
