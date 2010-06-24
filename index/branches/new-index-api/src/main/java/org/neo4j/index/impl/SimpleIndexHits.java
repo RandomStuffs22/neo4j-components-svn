@@ -20,6 +20,7 @@
 package org.neo4j.index.impl;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import org.neo4j.graphdb.index.IndexHits;
 
@@ -85,5 +86,15 @@ public class SimpleIndexHits<T> implements IndexHits<T>
     public void remove()
     {
         this.hits.remove();
+    }
+    
+    public T getSingle()
+    {
+        T result = this.hits.hasNext() ? this.hits.next() : null;
+        if ( this.hits.hasNext() )
+        {
+            throw new NoSuchElementException();
+        }
+        return result;
     }
 }

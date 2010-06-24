@@ -1,5 +1,7 @@
 package org.neo4j.index.lucene;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.neo4j.index.Neo4jTestCase.assertCollection;
 
 import java.io.File;
@@ -81,14 +83,17 @@ public class TestNewLuceneIndex
         Node node1 = graphDb.createNode();
         Node node2 = graphDb.createNode();
         
+        assertNull( nodeIndex.get( name, mattias ).getSingle() );
         nodeIndex.add( node1, name, mattias );
         assertCollection( nodeIndex.get( name, mattias ), node1 );
         assertCollection( nodeIndex.query( name, "\"" + mattias + "\"" ), node1 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\"" ), node1 );
+        assertEquals( node1, nodeIndex.get( name, mattias ).getSingle() );
         commitTx();
         assertCollection( nodeIndex.get( name, mattias ), node1 );
         assertCollection( nodeIndex.query( name, "\"" + mattias + "\"" ), node1 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\"" ), node1 );
+        assertEquals( node1, nodeIndex.get( name, mattias ).getSingle() );
         
         beginTx();
         nodeIndex.add( node2, title, hacker );

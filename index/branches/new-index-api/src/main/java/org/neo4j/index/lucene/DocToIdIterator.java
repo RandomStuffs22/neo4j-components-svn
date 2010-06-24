@@ -3,6 +3,7 @@ package org.neo4j.index.lucene;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.apache.lucene.document.Document;
@@ -69,5 +70,15 @@ class DocToIdIterator extends PrefetchingIterator<Long> implements IndexHits<Lon
     public Iterator<Long> iterator()
     {
         return this;
+    }
+    
+    public Long getSingle()
+    {
+        Long result = fetchNextOrNull();
+        if ( fetchNextOrNull() != null )
+        {
+            throw new NoSuchElementException();
+        }
+        return result;
     }
 }

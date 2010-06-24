@@ -48,4 +48,9 @@ class LazyIndexHits<T> implements IndexHits<T>
     {
         this.hits.remove();
     }
+    
+    public T getSingle()
+    {
+        return hits.getSingle();
+    }
 }
