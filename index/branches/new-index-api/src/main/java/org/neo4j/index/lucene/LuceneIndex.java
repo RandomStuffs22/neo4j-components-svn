@@ -12,6 +12,7 @@ import java.util.Set;
 import org.apache.lucene.AllDocs;
 import org.apache.lucene.search.Query;
 import org.neo4j.commons.iterator.CombiningIterator;
+import org.neo4j.commons.iterator.FilteringIterator;
 import org.neo4j.commons.iterator.IteratorUtil;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.PropertyContainer;
@@ -65,11 +66,13 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
     
     public void remove( Object queryOrQueryObject )
     {
+//        throw new UnsupportedOperationException();
         getConnection().remove( this, type.query( null, queryOrQueryObject ) );
     }
     
     public void remove( T entity, Object queryOrQueryObjectOrNull )
     {
+//        throw new UnsupportedOperationException();
         getConnection().remove( this, 
                 type.combine( getEntityId( entity ), queryOrQueryObjectOrNull ) );
     }
@@ -181,7 +184,7 @@ abstract class LuceneIndex<T extends PropertyContainer> implements Index<T>
             idIterator = ids.iterator();
             idIteratorSize = ids.size();
         }
-
+        idIterator = FilteringIterator.noDuplicates( idIterator );
         IndexHits<T> hits = new SimpleIndexHits<T>(
                 IteratorUtil.asIterable( new IdToEntityIterator<T>( idIterator )
                 {

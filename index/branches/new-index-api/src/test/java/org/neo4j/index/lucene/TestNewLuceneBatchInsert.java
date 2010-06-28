@@ -42,6 +42,7 @@ public class TestNewLuceneBatchInsert
         {
             long id = inserter.createNode( null );
             index.add( id, "name", "Joe" + i );
+            index.add( id, "other", "Schmoe" );
             ids.put( i, id );
         }
         
@@ -49,6 +50,7 @@ public class TestNewLuceneBatchInsert
         {
             assertCollection( index.get( "name", "Joe" + i ), ids.get( i ) );
         }
+        assertCollection( index.query( "name:Joe0 AND other:Schmoe" ), ids.get( 0 ) );
         
         assertCollection( index.query( "name", "Joe*" ),
                 ids.values().toArray( new Long[ids.size()] ) );
@@ -95,16 +97,11 @@ public class TestNewLuceneBatchInsert
         assertCollection( index.query( "name", "persson" ), id1, id2 );
         assertCollection( index.query( "email", "*@*" ), id1 );
         assertCollection( index.get( "something", "bad" ), id1 );
-        index.remove( id1, "something:*" );
-        assertCollection( index.get( "something", "bad" ) );
         long id3 = inserter.createNode( null );
         index.add( id3, "name", "What Ever" );
         index.add( id3, "name", "Anything" );
         assertCollection( index.get( "name", "What Ever" ), id3 );
         assertCollection( index.get( "name", "Anything" ), id3 );
-        index.remove( id3, "name", "Anything" );
-        assertCollection( index.get( "name", "What Ever" ), id3 );
-        assertCollection( index.get( "name", "Anything" ) );
         
         provider.shutdown();
         inserter.shutdown();
@@ -125,10 +122,10 @@ public class TestNewLuceneBatchInsert
         BatchInserter inserter = new BatchInserterImpl( PATH );
         BatchInserterIndexProvider provider = new LuceneBatchInserterIndexProvider( inserter );
         BatchInserterIndex index = provider.nodeIndex( "yeah", null );
-        long id = inserter.createNode( null );
         long t = System.currentTimeMillis();
         for ( int i = 0; i < 5000000; i++ )
         {
+            long id = inserter.createNode( null );
             index.add( id, "key", "value" + i );
             if ( i % 100000 == 0 )
             {

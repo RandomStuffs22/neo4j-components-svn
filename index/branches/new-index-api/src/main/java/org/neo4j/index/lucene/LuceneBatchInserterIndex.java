@@ -9,8 +9,10 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.neo4j.commons.iterator.FilteringIterator;
 import org.neo4j.graphdb.index.BatchInserterIndex;
 import org.neo4j.graphdb.index.IndexHits;
+import org.neo4j.index.impl.SimpleIndexHits;
 import org.neo4j.kernel.impl.batchinsert.BatchInserter;
 import org.neo4j.kernel.impl.batchinsert.BatchInserterImpl;
 
@@ -24,6 +26,9 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
     private IndexWriter writer;
     private boolean writerModified;
     private IndexSearcher searcher;
+    
+    private Long lastEntityId;
+    private Document lastDocument;
 
     LuceneBatchInserterIndex( LuceneBatchInserterIndexProvider provider,
             BatchInserter inserter, IndexIdentifier identifier )
@@ -37,12 +42,38 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
     
     public void add( long entityId, String key, Object value )
     {
-        Document doc = new Document();
-        type.fillDocument( doc, entityId, key, value );
-        LuceneUtil.strictAddDocument( writer(), doc );
-        setModified();
+        type.addToDocument( getDocument( entityId ), key, value );
     }
     
+    private Document getDocument( long entityId )
+    {
+        if ( lastEntityId == null || lastEntityId != entityId )
+        {
+            ensureLastDocumentWritten();
+            lastDocument = type.newDocument( entityId );
+            lastEntityId = entityId;
+        }
+        return lastDocument;
+    }
+
+    private void ensureLastDocumentWritten()
+    {
+        try
+        {
+            if ( lastDocument != null )
+            {
+                writer().addDocument( lastDocument );
+                lastDocument = null;
+                lastEntityId = null;
+                setModified();
+            }
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
+    }
+
     private void setModified()
     {
         writerModified = true;
@@ -80,6 +111,7 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
 
     private IndexSearcher searcher()
     {
+        ensureLastDocumentWritten();
         IndexSearcher result = this.searcher;
         try
         {
@@ -90,7 +122,6 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
                     result.getIndexReader().close();
                     result.close();
                 }
-                writer().commit();
                 IndexReader newReader = writer().getReader();
                 result = new IndexSearcher( newReader );
                 writerModified = false;
@@ -132,9 +163,9 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
         try
         {
             AllDocs hits = new AllDocs( searcher(), query, null );
-            SearchResult result = new SearchResult( new HitsIterator( hits ),
-                    hits.length() );
-            return new DocToIdIterator( result, null, null );
+            SearchResult result = new SearchResult( new HitsIterator( hits ), hits.length() );
+            DocToIdIterator itr = new DocToIdIterator( result, null, null );
+            return new SimpleIndexHits<Long>( FilteringIterator.noDuplicates( itr ), result.size );
         }
         catch ( IOException e )
         {
@@ -157,37 +188,9 @@ public class LuceneBatchInserterIndex implements BatchInserterIndex
         return query( type.query( null, queryOrQueryObject ) );
     }
 
-    public void remove( long entityId, String key, Object value )
-    {
-        LuceneUtil.strictRemoveDocument( writer(), type.deletionQuery( entityId, key, value ) );
-        setModified();
-    }
-    
-    public void remove( long entityId, Object queryOrQueryObjectOrNull )
-    {
-        remove( type.combine( entityId, queryOrQueryObjectOrNull ) );
-    }
-    
-    public void remove( Object queryOrQueryObject )
-    {
-        remove( type.query( null, queryOrQueryObject ) );
-    }
-    
-    private void remove( Query query )
-    {
-        try
-        {
-            writer().deleteDocuments( query );
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
-        setModified();
-    }
-
     public void shutdown()
     {
+        ensureLastDocumentWritten();
         closeWriter();
         closeSearcher();
     }

@@ -25,6 +25,8 @@ import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -34,11 +36,13 @@ import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.WhitespaceTokenizer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Fieldable;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.neo4j.graphdb.Node;
@@ -75,6 +79,12 @@ public class LuceneDataSource extends LogBackedXaDataSource
         {
             return new LowerCaseFilter( new WhitespaceTokenizer( reader ) );
         }
+        
+        @Override
+        public String toString()
+        {
+            return "LOWER_CASE_WHITESPACE_ANALYZER";
+        }
     };
 
     public static final Analyzer WHITESPACE_ANALYZER = new Analyzer()
@@ -83,6 +93,12 @@ public class LuceneDataSource extends LogBackedXaDataSource
         public TokenStream tokenStream( String fieldName, Reader reader )
         {
             return new WhitespaceTokenizer( reader );
+        }
+
+        @Override
+        public String toString()
+        {
+            return "WHITESPACE_ANALYZER";
         }
     };
     
@@ -107,7 +123,6 @@ public class LuceneDataSource extends LogBackedXaDataSource
      * @throws InstantiationException if the data source couldn't be
      * instantiated
      */
-    @SuppressWarnings("unchecked")
     public LuceneDataSource( Map<Object,Object> params ) 
         throws InstantiationException
     {
@@ -116,7 +131,8 @@ public class LuceneDataSource extends LogBackedXaDataSource
         String storeDir = (String) params.get( "store_dir" );
         this.baseStorePath = getStoreDir( storeDir );
         cleanWriteLocks( baseStorePath );
-        this.indexConfig = (Map<String, Map<String,String>>) params.get( "index_config" );
+//        this.indexConfig = (Map<String, Map<String,String>>) params.get( "index_config" );
+        this.indexConfig = new HashMap<String, Map<String,String>>();
         this.store = newIndexStore( storeDir );
         this.typeCache = new IndexTypeCache();
         boolean isReadOnly = params.containsKey( "read_only" ) ?
@@ -432,15 +448,17 @@ public class LuceneDataSource extends LogBackedXaDataSource
         }
     }
     
-    protected void addDocument( IndexWriter writer, IndexIdentifier identifier,
-            long entityId, String key, Object value )
+    protected static Document findDocument( IndexType type,
+            IndexSearcher searcher, long entityId )
     {
-        Document document = new Document();
-        IndexType type = typeCache.getIndexType( identifier );
-        type.fillDocument( document, entityId, key, value );
         try
         {
-            writer.addDocument( document );
+            TopDocs docs = searcher.search( type.idTermQuery( entityId ), 1 );
+            if ( docs.scoreDocs.length > 0 )
+            {
+                return searcher.doc( docs.scoreDocs[0].doc );
+            }
+            return null;
         }
         catch ( IOException e )
         {
@@ -448,21 +466,84 @@ public class LuceneDataSource extends LogBackedXaDataSource
         }
     }
     
-    protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
+    protected static void add( IndexWriter writer, IndexType type,
+            IndexSearcher searcher, long entityId, String key, Object value )
+    {
+        try
+        {
+            Document document = findDocument( type, searcher, entityId );
+            if ( document != null )
+            {
+                type.addToDocument( document, key, value );
+                writer.updateDocument( type.idTerm( entityId ), document );
+            }
+            else
+            {
+                document = type.newDocument( entityId );
+                type.addToDocument( document, key, value );
+                writer.addDocument( document );
+            }
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
+    }
+    
+    protected void remove( IndexWriter writer, IndexIdentifier identifier,
             String queryAsString )
     {
         IndexType type = typeCache.getIndexType( identifier );
-        deleteDocuments( writer, type.query( null, queryAsString ) );
+        remove( writer, type.query( null, queryAsString ) );
+    }
+    
+    protected static void remove( IndexWriter writer, IndexType type,
+            IndexSearcher searcher, long entityId, String key, Object value )
+    {
+        try
+        {
+            Document document = findDocument( type, searcher, entityId );
+            if ( document != null )
+            {
+                type.removeFromDocument( document, key, value );
+                if ( documentIsEmpty( document ) )
+                {
+                    writer.deleteDocuments( type.idTerm( entityId ) );
+                }
+                else
+                {
+                    writer.updateDocument( type.idTerm( entityId ), document );
+                }
+            }
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
+        }
     }
 
-    protected void deleteDocuments( IndexWriter writer, IndexIdentifier identifier,
+    protected void remove( IndexWriter writer, IndexIdentifier identifier,
             long entityId, String key, Object value )
     {
         IndexType type = typeCache.getIndexType( identifier );
-        deleteDocuments( writer, type.deletionQuery( entityId, key, value ) );
+        IndexSearcher searcher = getIndexSearcher( identifier ).getSearcher();
+        remove( writer, type, searcher, entityId, key, value );
     }
     
-    protected void deleteDocuments( IndexWriter writer, Query query )
+    static boolean documentIsEmpty( Document document )
+    {
+        List<Fieldable> fields = document.getFields();
+        for ( Fieldable field : fields )
+        {
+            if ( !LuceneIndex.KEY_DOC_ID.equals( field.name() ) )
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected void remove( IndexWriter writer, Query query )
     {
         try
         {

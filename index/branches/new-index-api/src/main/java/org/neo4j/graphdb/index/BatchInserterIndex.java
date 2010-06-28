@@ -4,12 +4,6 @@ public interface BatchInserterIndex
 {
     void add( long entityId, String key, Object value );
     
-    void remove( long entityId, String key, Object value );
-    
-    void remove( long entityId, Object queryOrQueryObjectOrNull );
-    
-    void remove( Object queryOrQueryObject );
-    
     /**
      * Provides hits for exact matches of key and value.
      */

@@ -1,6 +1,9 @@
 package org.neo4j.index.lucene;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
@@ -36,11 +39,26 @@ abstract class IndexType
         }
 
         @Override
-        public void fillDocument( Document document, long entityId, String key,
-                Object value )
+        public void addToDocument( Document document, String key, Object value )
         {
-            addIdToDocument( document, entityId );
-            document.add( new Field( key, value.toString(), Store.NO, Index.NOT_ANALYZED ) );
+            document.add( new Field( key, value.toString(), Store.YES, Index.NOT_ANALYZED ) );
+        }
+        
+        @Override
+        public void removeFromDocument( Document document, String key, Object value )
+        {
+            String stringValue = value.toString();
+            Set<String> values = new HashSet<String>( Arrays.asList(
+                    document.getValues( key ) ) );
+            if ( !values.remove( stringValue ) )
+            {
+                return;
+            }
+            document.removeFields( key );
+            for ( String existingValue : values )
+            {
+                addToDocument( document, key, existingValue );
+            }
         }
         
         public TxData newTxData(LuceneIndex index)
@@ -77,14 +95,31 @@ abstract class IndexType
         }
 
         @Override
-        public void fillDocument( Document document, long entityId, String key,
-                Object value )
+        public void addToDocument( Document document, String key, Object value )
         {
-            String valueAsString = value.toString();
-            addIdToDocument( document, entityId );
-            document.add( new Field( exactKey( key ), valueAsString, Store.NO,
+            String stringValue = value.toString();
+            document.add( new Field( exactKey( key ), stringValue, Store.YES,
                     Index.NOT_ANALYZED ) );
-            document.add( new Field( key, valueAsString, Store.NO, Index.ANALYZED ) );
+            document.add( new Field( key, stringValue, Store.YES, Index.ANALYZED ) );
+        }
+        
+        @Override
+        public void removeFromDocument( Document document, String key, Object value )
+        {
+            String stringValue = value.toString();
+            String exactKey = exactKey( key );
+            Set<String> values = new HashSet<String>(
+                    Arrays.asList( document.getValues( exactKey ) ) );
+            if ( !values.remove( stringValue ) )
+            {
+                return;
+            }
+            document.removeFields( exactKey );
+            document.removeFields( key );
+            for ( String existingValue : values )
+            {
+                addToDocument( document, key, existingValue );
+            }
         }
         
         @Override
@@ -109,7 +144,8 @@ abstract class IndexType
     static IndexType getIndexType( IndexIdentifier identifier )
     {
         Map<String, String> config = identifier.config;
-        String type = config.get( configKey( identifier.indexName, "type" ) );
+        String type = config != null ?
+                config.get( configKey( identifier.indexName, "type" ) ) : null;
         IndexType result = null;
         if ( type == null || type.equals( "exact" ) )
         {
@@ -178,18 +214,27 @@ abstract class IndexType
             throw new RuntimeException( e );
         }
     }
-
-    abstract void fillDocument( Document document, long entityId, String key,
-            Object value );
     
-    void addIdToDocument( Document document, long id )
+    abstract void addToDocument( Document document, String key, Object value );
+    
+    abstract void removeFromDocument( Document document, String key, Object value );
+    
+    Document newDocument( long entityId )
     {
-        document.add( new Field( LuceneIndex.KEY_DOC_ID, "" + id, Store.YES, Index.NOT_ANALYZED ) );
+        Document doc = new Document();
+        doc.add( new Field( LuceneIndex.KEY_DOC_ID, "" + entityId, Store.YES,
+                Index.NOT_ANALYZED ) );
+        return doc;
+    }
+
+    Term idTerm( long entityId )
+    {
+        return new Term( LuceneIndex.KEY_DOC_ID, "" + entityId );
     }
     
     Query idTermQuery( long entityId )
     {
-        return new TermQuery( new Term( LuceneIndex.KEY_DOC_ID, "" + entityId ) );
+        return new TermQuery( idTerm( entityId ) );
     }
     
     Query combine( long entityId, Object queryOrQueryObjectOrNull )

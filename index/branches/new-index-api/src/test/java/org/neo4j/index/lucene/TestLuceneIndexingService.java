@@ -172,7 +172,6 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
     }
     
     @Test
-    @Ignore
     public void testChangeValueBug() throws Exception
     {
         Node andy = graphDb().createNode();
@@ -189,16 +188,15 @@ public class TestLuceneIndexingService extends Neo4jWithIndexTestCase
         index().index( larry, "title", larry.getProperty( "title" ) );
     
         // Correct Larry's name
-        index().removeIndex( larry, "name",
-            larry.getProperty( "name" ) );
+        index().removeIndex( larry, "name", larry.getProperty( "name" ) );
         larry.setProperty( "name", "Larry Wachowski" );
-        index().index( larry, "name",
-            larry.getProperty( "name" ) );
-    
+        index().index( larry, "name", larry.getProperty( "name" ) );
         assertCollection( asCollection( index().getNodes(
-            "name", "Andy Wachowski" ) ), andy );
+                "name", "Andy Wachowski" ) ), andy );
         assertCollection( asCollection( index().getNodes(
-            "name", "Larry Wachowski" ) ), larry );
+                "name", "Larry Wachowski" ) ), larry );
+        index().removeIndex( "name" );
+        index().removeIndex( "title" );
     }
     
     @Test

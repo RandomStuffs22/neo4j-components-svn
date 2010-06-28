@@ -25,9 +25,9 @@ abstract class TxData
 
     abstract TxData remove( Query query );
 
-    abstract Map.Entry<Set<Long>, TxData> getEntityIds( Query query );
+    abstract Map.Entry<Set<Long>, TxData> query( Query query );
 
-    abstract Map.Entry<Set<Long>, TxData> getEntityIds( String key, Object value );
+    abstract Map.Entry<Set<Long>, TxData> get( String key, Object value );
     
     abstract void close();
 

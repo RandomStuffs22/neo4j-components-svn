@@ -165,6 +165,8 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
     
         assertCollection( asCollection( index().getNodes(
             "name", "wachowski" ) ), andy, larry );
+        index().removeIndex( "name" );
+        index().removeIndex( "title" );
     }    
     
     @Test
@@ -223,8 +225,7 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         index().index( node1, key, "value2" );
         index().index( node2, key, "value1" );
         index().index( node2, key, "value2" );
-        assertCollection( asCollection(
-            index().getNodes( key, "value1" ) ), node1, node2 );
+        assertCollection( index().getNodes( key, "value1" ), node1, node2 );
         index().removeIndex( node1, key );
         assertCollection( asCollection(
             index().getNodes( key, "value1" ) ), node2 );
@@ -261,7 +262,6 @@ public class TestLuceneFulltextIndexService extends TestLuceneIndexingService
         assertNull( fulltextIndex().getSingleNodeExactMatch( key, "great" ) );
         assertEquals( node1, fulltextIndex().getSingleNodeExactMatch( key, "neo4j is great" ) );
         assertEquals( node2, fulltextIndex().getSingleNodeExactMatch( key, "lucene is great" ) );
-        index().removeIndex( key );
         node2.delete();
         node1.delete();
     }

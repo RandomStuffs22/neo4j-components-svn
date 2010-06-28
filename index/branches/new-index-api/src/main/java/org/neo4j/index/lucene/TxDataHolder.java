@@ -39,16 +39,16 @@ class TxDataHolder
         this.data = this.data.remove( query );
     }
 
-    Set<Long> getEntityIds( Query query )
+    Set<Long> query( Query query )
     {
-        Map.Entry<Set<Long>, TxData> entry = this.data.getEntityIds( query );
+        Map.Entry<Set<Long>, TxData> entry = this.data.query( query );
         this.data = entry.getValue();
         return entry.getKey();
     }
 
-    Set<Long> getEntityIds( String key, Object value )
+    Set<Long> get( String key, Object value )
     {
-        Map.Entry<Set<Long>, TxData> entry = this.data.getEntityIds( key, value );
+        Map.Entry<Set<Long>, TxData> entry = this.data.get( key, value );
         this.data = entry.getValue();
         return entry.getKey();
     }

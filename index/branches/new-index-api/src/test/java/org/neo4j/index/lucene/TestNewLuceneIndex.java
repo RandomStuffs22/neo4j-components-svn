@@ -5,6 +5,7 @@ import static org.junit.Assert.assertNull;
 import static org.neo4j.index.Neo4jTestCase.assertCollection;
 
 import java.io.File;
+import java.util.Random;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -24,6 +25,7 @@ import org.neo4j.kernel.EmbeddedGraphDatabase;
 
 public class TestNewLuceneIndex
 {
+    private static Random random;
     private static GraphDatabaseService graphDb;
     private static LuceneIndexProvider provider;
     private Transaction tx;
@@ -89,39 +91,77 @@ public class TestNewLuceneIndex
         assertCollection( nodeIndex.query( name, "\"" + mattias + "\"" ), node1 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\"" ), node1 );
         assertEquals( node1, nodeIndex.get( name, mattias ).getSingle() );
+        assertCollection( nodeIndex.query( "name", "Mattias*" ), node1 );
         commitTx();
         assertCollection( nodeIndex.get( name, mattias ), node1 );
         assertCollection( nodeIndex.query( name, "\"" + mattias + "\"" ), node1 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\"" ), node1 );
         assertEquals( node1, nodeIndex.get( name, mattias ).getSingle() );
+        assertCollection( nodeIndex.query( "name", "Mattias*" ), node1 );
         
         beginTx();
         nodeIndex.add( node2, title, hacker );
+        nodeIndex.add( node1, title, hacker );
         assertCollection( nodeIndex.get( name, mattias ), node1 );
-        assertCollection( nodeIndex.get( title, hacker ), node2 );
+        assertCollection( nodeIndex.get( title, hacker ), node1, node2 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\" OR title:\"" +
                 hacker + "\"" ), node1, node2 );
+        // TODO This won't work. There's a conceptual problem of adding
+        // stuff and then querying with AND
+//        assertCollection( nodeIndex.query( "name:\"" + mattias + "\" AND title:\"" +
+//                hacker + "\"" ), node1 );
         commitTx();
         assertCollection( nodeIndex.get( name, mattias ), node1 );
-        assertCollection( nodeIndex.get( title, hacker ), node2 );
+        assertCollection( nodeIndex.get( title, hacker ), node1, node2 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\" OR title:\"" +
                 hacker + "\"" ), node1, node2 );
+        assertCollection( nodeIndex.query( "name:\"" + mattias + "\" AND title:\"" +
+                hacker + "\"" ), node1 );
         
         beginTx();
         nodeIndex.remove( node2, title, hacker );
         assertCollection( nodeIndex.get( name, mattias ), node1 );
-        assertCollection( nodeIndex.get( title, hacker ) );
+        assertCollection( nodeIndex.get( title, hacker ), node1 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\" OR title:\"" +
                 hacker + "\"" ), node1 );
         commitTx();
         assertCollection( nodeIndex.get( name, mattias ), node1 );
-        assertCollection( nodeIndex.get( title, hacker ) );
+        assertCollection( nodeIndex.get( title, hacker ), node1 );
         assertCollection( nodeIndex.query( "name:\"" + mattias + "\" OR title:\"" +
                 hacker + "\"" ), node1 );
         
         beginTx();
+        nodeIndex.remove( node1, title, hacker );
         nodeIndex.remove( node1, name, mattias );
         commitTx();
+    }
+    
+    @Test
+    public void testMoreThanOneValue()
+    {
+        Index<Node> index = provider.nodeIndex( "yosa", LuceneIndexProvider.EXACT_CONFIG );
+        Node node = graphDb.createNode();
+        index.add( node, "name", "Mattias" );
+        index.add( node, "name", "Persson" );
+        restartTx();
+        index.add( node, "title", "Hacker" );
+        index.add( node, "key", "value0" );
+        index.add( node, "key", "value1" );
+        index.add( node, "key", "value2" );
+        index.add( node, "key", "value3" );
+        index.add( node, "key", "value4" );
+        index.add( node, "key", "value5" );
+        assertEquals( node, index.get( "name", "Mattias" ).getSingle() );
+        assertEquals( node, index.get( "name", "Persson" ).getSingle() );
+        restartTx();
+        assertEquals( node, index.get( "name", "Mattias" ).getSingle() );
+        assertEquals( node, index.get( "name", "Persson" ).getSingle() );
+        
+        assertEquals( node, index.get( "key", "value0" ).getSingle() );
+        assertEquals( node, index.get( "key", "value1" ).getSingle() );
+        assertEquals( node, index.get( "key", "value2" ).getSingle() );
+        assertEquals( node, index.get( "key", "value3" ).getSingle() );
+        assertEquals( node, index.get( "key", "value4" ).getSingle() );
     }
     
     @Test
@@ -154,6 +194,23 @@ public class TestNewLuceneIndex
         index.remove( node2, null );
         node1.delete();
         node2.delete();
+    }
+    
+    @Test
+    public void testFulltextBug()
+    {
+        Index<Node> index = provider.nodeIndex( "fulltextbug",
+                LuceneIndexProvider.FULLTEXT_CONFIG );
+        Node node1 = graphDb.createNode();
+        Node node2 = graphDb.createNode();
+        String key = "key";
+        index.add( node1, key, "value1" );
+        index.add( node1, key, "value2" );
+        index.add( node2, key, "value1" );
+        index.add( node2, key, "value2" );
+        assertCollection( index.get( key, "value1" ), node1, node2 );
+        restartTx();
+        assertCollection( index.get( key, "value1" ), node1, node2 );
     }
     
     @Test
@@ -192,27 +249,31 @@ public class TestNewLuceneIndex
     public void testInsertionSpeed()
     {
         Index<Node> index = provider.nodeIndex( "yeah", LuceneIndexProvider.EXACT_CONFIG );
-        Node node = graphDb.createNode();
         long t = System.currentTimeMillis();
-        for ( int i = 0; i < 5000000; i++ )
+        for ( int i = 0; i < 100000; i++ )
         {
-            index.add( node, "key", "value" + i );
-            if ( i % 100000 == 0 )
+            Node node = graphDb.createNode();
+            index.add( node, "name", "The name " + i );
+            index.add( node, "title", random.nextInt() );
+            index.add( node, "something", random.nextInt() );
+            index.add( node, "else", random.nextInt() );
+            index.add( node, i + " whatever " + i, random.nextInt() );
+            if ( i%50000 == 0 )
             {
                 restartTx();
                 System.out.print( "." );
             }
         }
-        commitTx();
         System.out.println( "insert:" + (System.currentTimeMillis() - t) );
         
         t = System.currentTimeMillis();
-        for ( int i = 0; i < 100; i++ )
+        int count = 100;
+        for ( int i = 0; i < count; i++ )
         {
-            for ( Node n : index.get( "key", "value" + i ) )
+            for ( Node n : index.get( "name", "The name " + i ) )
             {
             }
         }
-        System.out.println( "get:" + (System.currentTimeMillis() - t) );
+        System.out.println( "get:" + (double)(System.currentTimeMillis() - t)/(double)count );
     }
 }

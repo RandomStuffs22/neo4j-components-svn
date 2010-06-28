@@ -1,21 +1,16 @@
 package org.neo4j.index.lucene;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
-import java.util.Set;
 
 import org.apache.lucene.document.Document;
 import org.neo4j.commons.iterator.PrefetchingIterator;
-import org.neo4j.graphdb.index.IndexHits;
 
-class DocToIdIterator extends PrefetchingIterator<Long> implements IndexHits<Long>
+class DocToIdIterator extends PrefetchingIterator<Long>
 {
     private final SearchResult searchResult;
     private final Collection<Long> exclude;
     private final IndexSearcherRef searcherOrNull;
-    private final Set<Long> alreadyReturnedIds = new HashSet<Long>();
     
     DocToIdIterator( SearchResult searchResult, Collection<Long> exclude,
         IndexSearcherRef searcherOrNull )
@@ -41,10 +36,7 @@ class DocToIdIterator extends PrefetchingIterator<Long> implements IndexHits<Lon
                 doc.getField( LuceneIndex.KEY_DOC_ID ).stringValue() );
             if ( exclude == null || !exclude.contains( id ) )
             {
-                if ( alreadyReturnedIds.add( id ) )
-                {
-                    result = id;
-                }
+                result = id;
             }
         }
         return result;
@@ -70,15 +62,5 @@ class DocToIdIterator extends PrefetchingIterator<Long> implements IndexHits<Lon
     public Iterator<Long> iterator()
     {
         return this;
-    }
-    
-    public Long getSingle()
-    {
-        Long result = fetchNextOrNull();
-        if ( fetchNextOrNull() != null )
-        {
-            throw new NoSuchElementException();
-        }
-        return result;
     }
 }

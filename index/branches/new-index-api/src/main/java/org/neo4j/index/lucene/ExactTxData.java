@@ -98,9 +98,9 @@ public class ExactTxData extends TxData
     }
 
     @Override
-    Map.Entry<Set<Long>, TxData> getEntityIds( Query query )
+    Map.Entry<Set<Long>, TxData> query( Query query )
     {
-        return toFullTxData().getEntityIds( query );
+        return toFullTxData().query( query );
     }
 
     @Override
@@ -125,7 +125,7 @@ public class ExactTxData extends TxData
     }
 
     @Override
-    Map.Entry<Set<Long>, TxData> getEntityIds( String key, Object value )
+    Map.Entry<Set<Long>, TxData> get( String key, Object value )
     {
         Set<Long> ids = idCollection( key, value, false );
         if ( ids == null )

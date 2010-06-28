@@ -127,12 +127,8 @@ public abstract class Neo4jTestCase
             {
                 deleteFileOrDirectory( child );
             }
-            file.delete();
         }
-        else
-        {
-            file.delete();
-        }
+        file.delete();
     }
 
     protected void restartTx()

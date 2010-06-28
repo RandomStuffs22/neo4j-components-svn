@@ -19,6 +19,7 @@
  */
 package org.neo4j.index.lucene;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,7 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.PropertyContainer;
@@ -138,7 +141,7 @@ class LuceneTransaction extends XaTransaction
         {
             return Collections.emptySet();
         }
-        Set<Long> ids = removed.getEntityIds( query );
+        Set<Long> ids = removed.query( query );
         return ids != null ? ids : Collections.<Long>emptySet();
     }
     
@@ -156,7 +159,7 @@ class LuceneTransaction extends XaTransaction
         {
             return Collections.emptySet();
         }
-        Set<Long> ids = removed.getEntityIds( key, value );
+        Set<Long> ids = removed.get( key, value );
         return ids != null ? ids : Collections.<Long>emptySet();
     }
     
@@ -168,7 +171,7 @@ class LuceneTransaction extends XaTransaction
         {
             return Collections.emptySet();
         }
-        Set<Long> ids = added.getEntityIds( query );
+        Set<Long> ids = added.query( query );
         return ids != null ? ids : Collections.<Long>emptySet();
     }
     
@@ -180,7 +183,7 @@ class LuceneTransaction extends XaTransaction
         {
             return Collections.emptySet();
         }
-        Set<Long> ids = added.getEntityIds( key, value );
+        Set<Long> ids = added.get( key, value );
         return ids != null ? ids : Collections.<Long>emptySet();
     }
     
@@ -225,32 +228,45 @@ class LuceneTransaction extends XaTransaction
                 this.commandMap.entrySet() )
             {
                 IndexIdentifier identifier = entry.getKey();
+                IndexType type = dataSource.typeCache.getIndexType( identifier );
                 IndexWriter writer = dataSource.getIndexWriter( identifier );
+                IndexSearcher searcher = dataSource.getIndexSearcher( identifier ).getSearcher();
                 CommandList commandList = entry.getValue();
                 writer.setMaxBufferedDocs( commandList.addCount + 100 );
                 // Why multiple with 5 here? One remove command could remove
                 // many terms.
                 writer.setMaxBufferedDeleteTerms( commandList.removeCount + 100 +
                         commandList.removeQueryCount * 5 );
+                Map<Long, DocumentContext> documents = new HashMap<Long, DocumentContext>();
                 for ( LuceneCommand command : commandList.commands )
                 {
                     long entityId = command.getEntityId();
+                    DocumentContext context = documents.get( entityId );
+                    if ( context == null )
+                    {
+                        Document document = LuceneDataSource.findDocument( type, searcher, entityId );
+                        context = document == null ?
+                                new DocumentContext( type.newDocument( entityId ), false, entityId ) :
+                                new DocumentContext( document, true, entityId );
+                        documents.put( entityId, context );
+                    }
                     String key = command.getKey();
                     String value = command.getValue();
                     if ( command instanceof AddCommand )
                     {
-                        dataSource.addDocument( writer, identifier, entityId, key, value );
+                        type.addToDocument( context.document, key, value );
                         dataSource.invalidateCache( identifier, key, value );
                     }
                     else if ( command instanceof RemoveCommand )
                     {
-                        dataSource.deleteDocuments( writer, identifier,
-                                entityId, key, value );
+                        type.removeFromDocument( context.document, key, value );
                         dataSource.invalidateCache( identifier, key, value );
                     }
                     else if ( command instanceof RemoveQueryCommand )
                     {
-                        dataSource.deleteDocuments( writer, identifier, command.getValue() );
+                        applyDocuments( writer, type, documents );
+                        documents.clear();
+                        dataSource.remove( writer, identifier, command.getValue() );
                         dataSource.invalidateCache( identifier );
                     }
                     else
@@ -259,6 +275,8 @@ class LuceneTransaction extends XaTransaction
                             command + ", " + command.getClass() );
                     }
                 }
+                
+                applyDocuments( writer, type, documents );
                 dataSource.removeWriter( writer );
                 dataSource.invalidateIndexSearcher( identifier );
             }
@@ -267,6 +285,37 @@ class LuceneTransaction extends XaTransaction
         finally
         {
             dataSource.releaseWriteLock();
+        }
+    }
+
+    private void applyDocuments( IndexWriter writer, IndexType type,
+            Map<Long, DocumentContext> documents )
+    {
+        try
+        {
+            for ( Map.Entry<Long, DocumentContext> entry : documents.entrySet() )
+            {
+                DocumentContext context = entry.getValue();
+                if ( context.exists )
+                {
+                    if ( LuceneDataSource.documentIsEmpty( context.document ) )
+                    {
+                        writer.deleteDocuments( type.idTerm( context.entityId ) );
+                    }
+                    else
+                    {
+                        writer.updateDocument( type.idTerm( context.entityId ), context.document );
+                    }
+                }
+                else
+                {
+                    writer.addDocument( context.document );
+                }
+            }
+        }
+        catch ( IOException e )
+        {
+            throw new RuntimeException( e );
         }
     }
 
@@ -376,6 +425,20 @@ class LuceneTransaction extends XaTransaction
             {
                 this.removeQueryCount++;
             }
+        }
+    }
+    
+    private static class DocumentContext
+    {
+        private final Document document;
+        private final boolean exists;
+        private final long entityId;
+
+        DocumentContext( Document document, boolean exists, long entityId )
+        {
+            this.document = document;
+            this.exists = exists;
+            this.entityId = entityId;
         }
     }
 }

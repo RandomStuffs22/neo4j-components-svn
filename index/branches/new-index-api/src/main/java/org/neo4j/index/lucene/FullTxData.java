@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.lucene.AllDocs;
-import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.BooleanQuery;
@@ -32,18 +31,9 @@ class FullTxData extends TxData
     TxData add( Long entityId, String key, Object value )
     {
         ensureLuceneDataInstantiated();
-        Document document = new Document();
-        index.type.fillDocument( document, entityId, key, value );
-        try
-        {
-            writer.addDocument( document );
-            invalidateSearcher();
-            return this;
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
+        LuceneDataSource.add( writer, index.type, getSearcher(), entityId, key, value );
+        invalidateSearcher();
+        return this;
     }
     
     @Override
@@ -76,18 +66,26 @@ class FullTxData extends TxData
 
     TxData remove( Long entityId, String key, Object value )
     {
-        return remove( index.type.deletionQuery( entityId, key, value ) );
+        ensureLuceneDataInstantiated();
+        LuceneDataSource.remove( writer, index.type, getSearcher(), entityId, key, value );
+        invalidateSearcher();
+        return this;
     }
     
     TxData remove( Query query )
     {
         ensureLuceneDataInstantiated();
-        index.service.dataSource.deleteDocuments( writer, query );
+        index.service.dataSource.remove( writer, query );
         invalidateSearcher();
         return this;
     }
     
-    Map.Entry<Set<Long>, TxData> getEntityIds( Query query )
+    Map.Entry<Set<Long>, TxData> query( Query query )
+    {
+        return internalQuery( query );
+    }
+    
+    private Map.Entry<Set<Long>, TxData> internalQuery( Query query )
     {
         if ( this.directory == null )
         {
@@ -165,9 +163,9 @@ class FullTxData extends TxData
     }
 
     @Override
-    Map.Entry<Set<Long>, TxData> getEntityIds( String key, Object value )
+    Map.Entry<Set<Long>, TxData> get( String key, Object value )
     {
-        return getEntityIds( this.index.type.get( key, value ) );
+        return internalQuery( this.index.type.get( key, value ) );
     }
     
     @Override
