@@ -50,6 +50,9 @@ class Transactional(object):
             try:
                 try:
                     result = method(*args, **kwargs)
+                except StopIteration:
+                    tx.success()
+                    raise
                 except:
                     tx.failure()
                     raise

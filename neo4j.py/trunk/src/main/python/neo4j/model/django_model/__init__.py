@@ -747,7 +747,7 @@ def __bootstrap__(pyneo):
                 self.__rel = rel
                 self.__obj = obj
                 self.__added = [] # contains domain objects
-                self.__removed = pyneo.python.set() # contains relationships
+                self.__removed = pyneo.python.Set() # contains relationships
             def __save__(self, node):
                 for relationship in self.__removed:
                     relationship.delete()

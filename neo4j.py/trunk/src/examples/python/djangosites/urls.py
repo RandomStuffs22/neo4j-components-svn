@@ -50,6 +50,7 @@ urlpatterns = patterns('',
     app('imdb/', "IMDB Example", 'djangosites.imdb.urls'),
     app('faces/', "Faces Example", 'djangosites.faces.urls',
         when=lambda:settings.MODEL_TYPE == 'neo4j'),
+    app('blog/', "Blog Example", 'djangosites.blog.urls'),
 
     # Admin interface
     (r'^admin/', include(admin.site.urls)),
