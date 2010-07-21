@@ -1,0 +1,13 @@
+Neo4j RDF SAIL
+
+    A neo4j RDF Sesame Storage and Inference Layer. Wraps an
+    <<org.neo4j.rdf.store.RdfStore>> so that it looks like a
+    <<org.openrdf.sail.Sail>>. To start up neo4j rdf store wrapped in a sail
+    you do something like this:
+     
+%{source-code|snippet=setUpSail|file=src/test/java/examples/SiteExamples.java}
+
+	Shutdown should be done in the order: Sail, IndexService, GraphDatabaseService
+
+    Now, to import data from e.g. files, you can use existing tools like 
+    {{{http://www.openrdf.org/doc/rio/api/org/openrdf/rio/rdfxml/RdfXmlParser.html}The RIO RDF parser}}.
