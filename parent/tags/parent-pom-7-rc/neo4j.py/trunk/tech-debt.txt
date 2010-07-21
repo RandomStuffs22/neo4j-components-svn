@@ -1,3 +1,0 @@
-[2010-02-09] Django: models and query-objects should be pretty-printable
-
-[2010-02-09] Installer: Download dependencies as a proper setups phase
