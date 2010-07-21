@@ -196,6 +196,7 @@
         <artifactId>maven-source-plugin</artifactId>
         <executions>
           <execution>
+            <id>attach-source</id>
             <goals>
               <goal>jar</goal>
             </goals>
@@ -238,12 +239,11 @@
             <Bundle-Version>${project.version}</Bundle-Version>
             <Export-Package>!${bundle.namespace}.impl.*,${bundle.namespace}.*;version="${project.version}"</Export-Package>
             <Private-Package>${bundle.namespace}.impl.*</Private-Package>
-            <!-- Allow each bundle to override these settings by creating a file named osgi.bnd
-                 in the same directory as the component's pom.xml. See components/kernel/trunk/osgi.bnd
-                 for an example.
-            -->
+            <!-- Allow each bundle to override these settings by creating 
+              a file named osgi.bnd in the same directory as the component's pom.xml. See 
+              components/kernel/trunk/osgi.bnd for an example. -->
             <_include>-osgi.bnd</_include>
-        </instructions>
+          </instructions>
         </configuration>
       </plugin>
       <plugin>
@@ -268,6 +268,7 @@
         </configuration>
         <reportSets>
           <reportSet>
+            <id>javadoc-report</id>
             <reports>
               <report>javadoc</report>
             </reports>
@@ -290,16 +291,16 @@
 
   <distributionManagement>
     <repository>
-        <id>releases@repo.neo4j.org</id>
-        <name>releases@repo.neo4j.org</name>
-        <uniqueVersion>false</uniqueVersion>
-        <url>https://repo.neo4j.org/content/repositories/releases</url>
+      <id>releases@repo.neo4j.org</id>
+      <name>releases@repo.neo4j.org</name>
+      <uniqueVersion>false</uniqueVersion>
+      <url>https://repo.neo4j.org/content/repositories/releases</url>
     </repository>
     <snapshotRepository>
-        <id>snapshots@repo.neo4j.org</id>
-        <name>snapshots@repo.neo4j.org</name>
-        <uniqueVersion>false</uniqueVersion>
-        <url>https://repo.neo4j.org/content/repositories/snapshots</url>
+      <id>snapshots@repo.neo4j.org</id>
+      <name>snapshots@repo.neo4j.org</name>
+      <uniqueVersion>true</uniqueVersion>
+      <url>https://repo.neo4j.org/content/repositories/snapshots</url>
     </snapshotRepository>
     <site>
       <id>neo4j-site</id>
