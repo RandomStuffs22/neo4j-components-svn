@@ -1,0 +1,156 @@
+Meta Model
+
+	The meta model is a low level API for building and querying a meta model
+	in a Neo4j graph. The basic structures are classes and properties,
+	similar to {{{http://www.w3.org/TR/rdf-schema/}RDF schema}}.
+
+	The API is in package <<org.neo4j.meta.model>> and contains
+	everything to build and query the meta model.
+
+MetaModel and its building blocks
+
+	In the <<org.neo4j.meta.model>> package you will find a
+	<<MetaModel>> interface which is the entry point into a meta model.
+	From there you can create/get classes and properties, set data range,
+	expected values and cardinality on them. The top level in a meta model
+	is the namespaces, which solves the problem of classes and properties having
+	the same name. In RDF the namespaces are built into the actual
+	class/property names so no namespaces will be required except the global
+	namespace. In a more object oriented usage of the meta model there could be
+	many colliding property names and so namespaces are useful in that area
+	of usage. The API in <<org.neo4j.meta.model>> uses namespaces to solve
+	those problems.
+
+---
+    MetaModel model = new MetaModelImpl( graphDb );
+    MetaModelNamespace namespace = model.getGlobalNamespace();
+    
+    // Create a class, use ", true" for "create it if it doesn't exist".
+    MetaModelClass personClass = namespace.getMetaClass(
+        "http://metaexample.org/meta#Person", true );
+        
+    // Create a property in a similar way.
+    MetaModelProperty nameProperty = namespace.getMetaProperty(
+        "http://metaexample.org/meta#name", true );
+        
+    // Tell the meta model that persons can have name properties.
+    personClass.getDirectProperties().add( nameProperty );
+---
+
+Hierarchy
+
+	Just like in object oriented programming languages heiritage on classes
+	is supported, but also like RDF Schema/OWL heiratage on properties is
+	supported as well.
+	
+---
+    MetaModelClass thing = namespace.getMetaClass( "thing", true );
+    MetaModelClass person = namespace.getMetaClass( "person", true );
+    thing.getDirectSubs().add( person );
+
+    MetaModelProperty name = namespace.getMetaProperty( "name", true );
+    MetaModelProperty nickName = namespace.getMetaProperty( "nickName", true );
+    name.getDirectSubs().add( nickName );
+---
+
+Restrictions
+
+	A meta model property can have information about cardinality, value type
+	and range which values of that property must apply to. F.ex. that it must
+	be a string or number, but also that there must be at least one value set.
+	In addition to that there are restrictions,
+	<<org.neo4j.meta.model.MetaModelRestriction>> which may contain
+	the same information (data type and cardinality), but for a property AND
+	for a specific class. The concept derives from {{{http://www.w3.org/TR/2004/REC-owl-guide-20040210/#PropertyRestrictions}OWL}}.
+	
+---
+    MetaModelClass artist = ...;
+    MetaModelProperty plays = ...;
+    MetaModelClass drummer = ...;
+    MetaModelClass instrument = ...;
+    MetaModelClass drums = ...;
+    
+    drummer.getDirectSupers().add( artist );
+    drums.getDirectSupers().add( instrument );
+    
+    plays.setRange( new ClassRange( instrument ) );
+    MetaModelRestriction playsRestriction =
+    	drummer.getRestriction( plays, true );
+    playsRestriction.setRange( new MetaModelClassRange( drums ) );
+    playsRestriction.setCardinality( 1 );
+---
+
+    So it can generally be said that an Artist plays an Instrument, but
+    Drummers in particular plays the Drums. That is an example of a restriction
+    in the meta model.
+
+Property Range
+
+    Properties and restrictions may have a range. It means that values of that
+    property must follow some kind of rules. The meta model comes with a set
+    of rules that you can use, or you can write your own and use them the same
+    way as the built-in ones. Some examples:
+    
+     * DatatypeClassRange: Regular java fundamentals, f.ex. String or Integer.
+     
+     * ClassRange: The value points to another meta model class which values
+       must be instances of.
+       
+     * RdfDatatypeRange: Handles data types which are regular RDF/XML types.
+     
+     * DataRange: The value must match at least one in a list of values. 
+
+
+---
+    MetaModelClass person = ...;
+    MetaModelProperty name = ...;
+    name.setRange( new DatatypeClassRange( String.class ) );
+    MetaModelProperty knows = ...;
+    knows.setRange( new ClassRange( person ) );
+---
+
+What is supported?
+
+    The meta model supports RDFS and some structures from OWL, here's a
+    list of supported constructs.
+    
+     * Class
+     
+       * rdfs:Class
+       
+       * owl:Class
+       
+       * rdfs:subClassOf
+       
+     * Property
+     
+       * rdf:Property
+       
+       * owl:DatatypeProperty
+       
+       * owl:ObjectProperty
+       
+       * owl:FunctionalProperty
+       
+       * owl:InverseFunctionalProperty
+       
+       * rdfs:subPropertyOf
+       
+       * rdfs:range
+       
+       * rdfs:domain
+       
+       * owl:inverseOf
+       
+     * Restriction
+     
+       * owl:Restriction
+       
+       * rdfs:range
+       
+       * owl:cardinality
+       
+       * owl:minCardinality
+       
+       * owl:maxCardinality
+       

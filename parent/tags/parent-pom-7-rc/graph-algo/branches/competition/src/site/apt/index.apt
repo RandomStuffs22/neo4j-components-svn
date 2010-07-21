@@ -1,0 +1,96 @@
+Neo4j graph-algo
+
+	Neo4j graph-algo is a component that contains implementations of
+	some common graph algorithms for Neo4j. This includes algorihms for
+	finding shortest paths, such as Breadth First Search and Dijkstra.
+	There are also algorithms for several graph measures such as
+	centrality measures. These include:
+
+	* Eccentricity
+
+	* Network diameter
+
+	* Network radius
+
+	* Stress centrality
+
+	* Closeness centrality
+
+	* Betweenness centrality
+
+	* Eigenvector centrality
+
+	[]
+
+	Here a few parts of this component will be presented. For more details,
+	see the {{{http://wiki.neo4j.org/content/Graph-algo}wiki pages}}.
+
+Shortestpath package
+
+	This package contains the various implementations of shortest path algorithms.
+	Interfaces are provided for two problems. The problem of finding paths between
+	two given nodes and the problem of finding shortest paths from one given node
+	to a number of others. An example:
+
+---
+	// Set up Dijkstra
+	SingleSourceSingleSinkShortestPath<Double> sp;
+	sp = new Dijkstra<Double>(
+	    0.0, 
+	    node1, 
+	    node2, 
+	    new DoubleEvaluator( "cost" ),
+	    new DoubleAdder(), 
+	    new DoubleComparator(), 
+	    Direction.BOTH,
+	    MyRelationshipType );
+	
+	// Get the cost for the found path    
+	sp.getCost();
+	
+	// Get the path itself
+	List<PropertyContainer> path = sp.getPath();
+---
+
+	An example of shortest path from one node:
+
+---
+	SingleSourceShortestPath<Integer> pathBFS;
+	pathBFS = new SingleSourceShortestPathBFS(
+	    startNode, 
+	    Direction.BOTH, 
+	    MyRelationshipType );
+	
+	// Get the paths to some nodes
+	List<PropertyContainer> path1 = pathBFS.getPath( targetNode1 );
+	List<PropertyContainer> path2 = pathBFS.getPath( targetNode2 );
+	List<PropertyContainer> path3 = pathBFS.getPath( targetNode3 );
+---
+
+Centrality package
+
+	The centrality package contains implementations of the centrality measures
+	mentioned earlier. Most centrality measures require an underlying shortest
+	path algorithm of the type SingleSourceShortestPath (i.e. from one node to
+	many others). The only other thing that is needed is a set of the nodes we
+	would like a centrality value computed for.
+	Example:
+
+---
+	// Set up shortest path algorithm.
+	// Observe that we don't need to specify a start node.
+	SingleSourceShortestPath<Integer> singleSourceShortestPath;
+	singleSourceShortestPath = new SingleSourceShortestPathBFS(
+	    null, 
+	    Direction.BOTH, 
+	    MyRelationshipType );
+	        
+	// Set up betweenness centrality algorithm.
+	BetweennessCentrality<Integer> betweennessCentrality;
+	betweennessCentrality = new BetweennessCentrality<Integer>(
+	    singleSourceShortestPath, 
+	    nodeSet );
+
+	// Get centrality value for a node.
+	Double value = betweennessCentrality.getCentrality( targetNode );
+---
