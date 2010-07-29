@@ -15,7 +15,7 @@
   <artifactId>neo4j-apoc</artifactId>
   <packaging>pom</packaging>
   <name>A Package Of Components</name>
-  <version>1.1</version>
+  <version>1.2-SNAPSHOT</version>
   <url>http://components.neo4j.org/${project.artifactId}/</url>
   <description>A meta package containing the most used Neo4j libraries. Intended use: as a Maven dependency.</description>
 
@@ -53,8 +53,8 @@
   </dependencies>
 
   <scm>
-    <connection>scm:svn:https://svn.neo4j.org/components/apoc/tags/1.1</connection>
-    <url>scm:svn:https://svn.neo4j.org/components/apoc/tags/1.1</url>
+    <connection>scm:svn:https://svn.neo4j.org/components/apoc/trunk/</connection>
+    <url>https://trac.neo4j.org/browser/components/apoc</url>
   </scm>
 
   <licenses>
