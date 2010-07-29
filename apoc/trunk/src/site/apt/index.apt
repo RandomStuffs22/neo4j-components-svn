@@ -16,12 +16,17 @@ Included components
 *----+------+------+
 | {{{../neo4j-shell/}neo4j-shell}} | text command shell | enables you to browse the node space from a local or remote JVM |
 *----+------+------+
-| {{{../neo4j-remote-graphdb/}neo4j-remote-graphdb}} | introspection tool | enables you to connect to a running neo instance from another JVM |
+| {{{../neo4j-graph-algo/}neo4j-graph-algo}} | graph algorithms | graph algorithms like shortest path etc. |
+*----+------+------+
+| {{{../neo4j-online-backup/}neo4j-online-backup}} | create backups | create backups from a running database |
+*----+------+------+
+| {{{../neo4j-remote-graphdb/}neo4j-remote-graphdb}} | introspection tool | enables you to connect to a running Neo4j instance from another JVM |
 *----+------+------+
 
 Usage
     
-    To use Apoc, add the following repository to your 'pom.xml' file:
+    To use Apoc, add the following repository to your 'pom.xml' file or
+    Maven {{{https://maven.apache.org/settings.html}settings file}}:
     
 ---
     <repositories>
@@ -44,7 +49,7 @@ Usage
         <dependency>
             <groupId>org.neo4j</groupId>
             <artifactId>neo4j-apoc</artifactId>
-            <version>someversion</version> <!-- for example 0.5 or 0.6-SNAPSHOT -->
+            <version>someversion</version> <!-- for example 1.0 or 1.1-SNAPSHOT -->
             <type>pom</type>
         </dependency>
     </dependencies>
