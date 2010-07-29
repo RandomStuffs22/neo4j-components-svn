@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.neo4j</groupId>
+    <artifactId>parent-pom</artifactId>
+    <version>7</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.neo4j</groupId>
+  <artifactId>neo4j-online-backup</artifactId>
+  <version>0.6</version>
+  <name>Onlinebackup</name>
+  <description>Backup of resources using the XA framework</description>
+  <url>http://components.neo4j.org/${project.artifactId}/</url>
+
+  <properties>
+    <short-name>online-backup</short-name>
+  </properties>
+
+  <scm>
+    <connection>
+            scm:svn:https://svn.neo4j.org/components/online-backup/tags/0.6
+        </connection>
+    <url>scm:svn:https://svn.neo4j.org/components/online-backup/tags/0.6
+        </url>
+  </scm>
+  <licenses>
+    <license>
+      <name>GNU Affero General Public License, Version 3</name>
+      <url>https://svn.neo4j.org/components/${short-name}/trunk/LICENSE.txt
+            </url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>johans</id>
+      <name>Johan Svensson</name>
+      <email>johan [at] neotechnology.com</email>
+      <timezone>+1</timezone>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
+    <developer>
+      <id>andersn</id>
+      <name>Anders Nawroth</name>
+      <email>anders [at] neotechnology.com</email>
+      <timezone>+1</timezone>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
+  </developers>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-kernel</artifactId>
+      <version>1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.neo4j</groupId>
+      <artifactId>neo4j-index</artifactId>
+      <version>1.1</version>
+    </dependency>
+  </dependencies>
+</project>
