@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <artifactId>parent-pom</artifactId>
     <groupId>org.neo4j</groupId>
@@ -16,7 +15,7 @@
   <artifactId>neo4j-apoc</artifactId>
   <packaging>pom</packaging>
   <name>A Package Of Components</name>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1</version>
   <url>http://components.neo4j.org/${project.artifactId}/</url>
   <description>A meta package containing the most used Neo4j libraries. Intended use: as a Maven dependency.</description>
 
@@ -54,8 +53,8 @@
   </dependencies>
 
   <scm>
-    <connection>scm:svn:https://svn.neo4j.org/components/${short-name}/trunk/</connection>
-    <url>https://trac.neo4j.org/browser/components/${short-name}</url>
+    <connection>scm:svn:https://svn.neo4j.org/components/apoc/tags/1.1</connection>
+    <url>scm:svn:https://svn.neo4j.org/components/apoc/tags/1.1</url>
   </scm>
 
   <licenses>
