@@ -301,6 +301,9 @@ def load_neo(resource_uri, parameters):
             self.__neo = neo
             self.__backend = backend
             self.__admin = admin
+        def __iter__(self):
+            for node in self.__backend.getAllNodes():
+                yield Node(self.__neo, node)
         def __len__(self):
             return self.__admin.number_of_nodes
         def __getitem__(self, id):
