@@ -19,6 +19,8 @@
  */
 package org.neo4j.shell.impl;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -120,12 +122,49 @@ public abstract class AbstractAppServer extends AbstractServer
 			return "";
 		}
 		
-        line = replaceAlias( line, session );
-		AppCommandParser parser = new AppCommandParser( this, line );
-		return parser.app().execute( parser, session, out );
+        try
+        {
+            line = replaceAlias( line, session );
+            AppCommandParser parser = new AppCommandParser( this, line );
+            return parser.app().execute( parser, session, out );
+        }
+        catch ( ShellException e )
+        {
+            if ( isForeignException( e ) )
+            {
+                throw new ShellException( stackTraceAsString( e ) );
+            }
+            else
+            {
+                throw (ShellException) e;
+            }
+        }
 	}
 	
-	protected String replaceAlias( String line, Session session )
+	private String stackTraceAsString( Exception e )
+    {
+	    StringWriter stringWriter = new StringWriter();
+	    PrintWriter writer = new PrintWriter( stringWriter );
+	    e.printStackTrace( writer );
+	    writer.close();
+	    return stringWriter.getBuffer().toString();
+    }
+
+    protected boolean isForeignException( Exception e )
+    {
+	    if ( e instanceof ShellException )
+	    {
+	        ShellException se = (ShellException) e;
+	        if ( !( se.getCause() instanceof ShellException ) )
+	        {
+	            return true;
+	        }
+	        return false;
+	    }
+	    return !e.getClass().getPackage().getName().equals( "java.lang" );
+    }
+
+    protected String replaceAlias( String line, Session session )
 	        throws ShellException
     {
 	    boolean changed = true;
