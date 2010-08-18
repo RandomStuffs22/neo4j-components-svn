@@ -1,4 +1,4 @@
-package org.neo4j.shell.kernel.apps;
+package org.neo4j.index.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,10 +17,10 @@ import org.neo4j.shell.OptionValueType;
 import org.neo4j.shell.Output;
 import org.neo4j.shell.Session;
 import org.neo4j.shell.ShellException;
+import org.neo4j.shell.kernel.apps.GraphDatabaseApp;
 
-// TODO: this class should be moved to the neo4j-index component
 @Service.Implementation( App.class )
-public class Index extends GraphDatabaseApp
+public class IndexServiceShellApp extends GraphDatabaseApp
 {
     public static final String KEY_INDEX_CLASS_NAME = "INDEX_CLASS_NAME";
 
@@ -47,13 +47,19 @@ public class Index extends GraphDatabaseApp
     }
 
     @Override
+    public String getName()
+    {
+        return "index";
+    }
+
+    @Override
     public String getDescription()
     {
         return "Access the IndexService capabilities for your Neo4j graph database. " +
-        		"Use -g for getting nodes, -i and -r to manipulate. Examples:\n" +
-        		"index -i name  (will index property 'name' with its value for current node)\n" +
-        		"index -g name \"Thomas A. Anderson\"  (will get nodes matching that name)\n" +
-        		"index --cd name \"Agent Smith\"  (will 'cd' to the 'Agent Smith' node).";
+                "Use -g for getting nodes, -i and -r to manipulate. Examples:\n" +
+                "index -i name  (will index property 'name' with its value for current node)\n" +
+                "index -g name \"Thomas A. Anderson\"  (will get nodes matching that name)\n" +
+                "index --cd name \"Agent Smith\"  (will 'cd' to the 'Agent Smith' node).";
     }
 
     @Override
