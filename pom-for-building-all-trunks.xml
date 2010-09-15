@@ -26,6 +26,12 @@
       - dependency is gone: net.sourceforge.owlapi
 -->
     <module>neo4j.py/trunk</module>
+<!--
+    <module>neoclipse/trunk</module>
+      Excluded, because:
+      - declares an external maven repo
+      - error message "Unknown packaging: eclipse-plugin"
+-->
   </modules>
 
 </project>
