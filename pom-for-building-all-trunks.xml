@@ -19,6 +19,12 @@
     <module>graph-matching/trunk</module>
     <module>utils/trunk</module>
     <module>meta-model/trunk</module>
+<!--
+    <module>meta-model-import/trunk</module>
+      Excluded, because:
+      - declares an external maven repo
+      - dependency is gone: net.sourceforge.owlapi
+-->
     <module>neo4j.py/trunk</module>
   </modules>
 
