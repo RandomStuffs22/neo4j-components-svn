@@ -18,6 +18,7 @@
 
     <module>graph-matching/trunk</module>
     <module>utils/trunk</module>
+    <module>meta-model/trunk</module>
   </modules>
 
 </project>
