@@ -43,6 +43,11 @@
       - declares an external maven repo
       - depends on neo4j-rdf
 -->
+<!--
+    <module>rdf-sparql/trunk</module>
+      Excluded, because:
+      - depends on neo4j-rdf
+-->
   </modules>
 
 </project>
