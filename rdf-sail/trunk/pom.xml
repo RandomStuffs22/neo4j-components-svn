@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.neo4j</groupId>
     <artifactId>parent-pom</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8</version>
   </parent>
 
   <properties>
@@ -74,18 +74,20 @@
   </build>
 
   <repositories>
+  <!--
     <repository>
       <id>aduna-repo</id>
       <name>Aduna repository</name>
       <url>http://repo.aduna-software.org/maven2/releases</url>
     </repository>
+  -->
   </repositories>
 
   <dependencies>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-kernel</artifactId>
-      <version>1.1-SNAPSHOT</version>
+      <version>1.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
