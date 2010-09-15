@@ -37,6 +37,12 @@
       Excluded, because:
       - compilation errors in SimpleFulltextIndex
 -->
+<!--
+    <module>rdf-sail/trunk</module>
+      Excluded, because:
+      - declares an external maven repo
+      - depends on neo4j-rdf
+-->
   </modules>
 
 </project>
