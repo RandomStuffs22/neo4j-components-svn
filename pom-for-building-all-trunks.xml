@@ -17,6 +17,7 @@
     <module>apoc/trunk</module>
 
     <module>graph-matching/trunk</module>
+    <module>utils/trunk</module>
   </modules>
 
 </project>
