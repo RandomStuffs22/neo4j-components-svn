@@ -32,6 +32,11 @@
       - declares an external maven repo
       - error message "Unknown packaging: eclipse-plugin"
 -->
+<!--
+    <module>rdf/trunk</module>
+      Excluded, because:
+      - compilation errors in SimpleFulltextIndex
+-->
   </modules>
 
 </project>
