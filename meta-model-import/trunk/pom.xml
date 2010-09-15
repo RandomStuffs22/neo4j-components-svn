@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.neo4j</groupId>
     <artifactId>parent-pom</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8</version>
   </parent>
 
   <properties>
@@ -47,17 +47,17 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-kernel</artifactId>
-      <version>1.1-SNAPSHOT</version>
+      <version>1.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-shell</artifactId>
-      <version>1.1-SNAPSHOT</version>
+      <version>1.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-meta-model</artifactId>
-      <version>0.8-SNAPSHOT</version>
+      <version>0.9-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.semweb4j</groupId>
@@ -70,9 +70,9 @@
       <version>4.4.5</version>
     </dependency>
     <dependency>
-      <groupId>net.sourceforge.owlapi</groupId>
+      <groupId>org.semanticweb.owlapi</groupId>
       <artifactId>owlapi</artifactId>
-      <version>2.2.0</version>
+      <version>3.0.0.1413</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -86,9 +86,6 @@
     <repository>
       <id>semweb4j</id>
       <url>http://semweb4j.org/repo</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
     </repository>
   </repositories>
 </project>
