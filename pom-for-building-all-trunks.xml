@@ -19,6 +19,7 @@
     <module>graph-matching/trunk</module>
     <module>utils/trunk</module>
     <module>meta-model/trunk</module>
+    <module>neo4j.py/trunk</module>
   </modules>
 
 </project>
