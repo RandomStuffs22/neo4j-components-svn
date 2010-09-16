@@ -31,10 +31,13 @@ def initialize(backend):
     global IndexService
     from neo4j._primitives import Node
 
+
     class IndexService(object):
         def __init__(self, core, neo):
             self.__neo = core
             self.__index = backend.IndexService(neo)
+            self.__ftindex = backend.FulltextIndexService(neo)
+            self.__ftqindex = backend.FulltextQueryIndexService(neo)
             self.__indexes = {}
         def get(self, name, options, create=False):
             if options and not create:
@@ -47,7 +50,13 @@ def initialize(backend):
             else:
                 raise KeyError("No index named '%s'." % name)
         def create(self, name, options):
-            index = Index(self.__index, self.__neo, name, **options)
+            index = None
+            if options and 'full_text_with_query' in options and options['full_text_with_query']:
+                index = Index(self.__ftqindex, self.__neo, name, **options)
+            elif options and 'full_text' in options and options['full_text']:
+                index = Index(self.__ftindex, self.__neo, name, **options)
+            else:
+                index = Index(self.__index, self.__neo, name, **options)
             self.__indexes[name] = index
             try:
                 self.__neo.admin.keep_logical_logs = None
@@ -57,21 +66,39 @@ def initialize(backend):
         def shutdown(self):
             if self.__index is not None:
                 self.__index.shutdown()
+            if self.__ftindex is not None:
+                self.__ftindex.shutdown()
+            if self.__ftqindex is not None:
+                self.__ftqindex.shutdown()
             self.__indexes = {}
             self.__index = None
+            self.__ftindex = None
+            self.__ftqindex = None
 
     class Index(object):
+        #NOTE: there may be a better place for these - mhuffman
+        SORT_RELEVANCE = backend.SORT_RELEVANCE
+        SORT_INDEXORDER = backend.SORT_INDEXORDER
+
+        #NOTE: full text is not used here, give the change in the create() method - mhuffman
         def __init__(self, index, neo, key, full_text=False, **ignored):
-            if full_text:
-                raise NotImplementedError("support for full text index")
             self.__index = index
             self.__neo = neo
             self.__key = key
+
         # Multiple values
-        def match(self, query):
-            raise NotImplementedError('"Fulltext" query is not implemented.')
-        def nodes(self, key):
-            return IndexHits(self.__neo, self.__index.getNodes(self.__key, key))
+        #NOTE: match and nodes methods overloaded with options to handle sorting - mhuffman
+        def match(self, query, **options):
+            if options and 'sort_order' in options:
+                return IndexHits(self.__neo, self.__index.getNodes(self.__key, query, options['sort_order']))
+            else:
+                return IndexHits(self.__neo, self.__index.getNodes(self.__key, query))
+            #raise NotImplementedError('"Fulltext" query is not implemented.')
+        def nodes(self, key, **options):
+            if options and 'sort_order' in options:
+                return IndexHits(self.__neo, self.__index.getNodes(self.__key, key, options['sort_order']))
+            else:
+                return IndexHits(self.__neo, self.__index.getNodes(self.__key, key))
         def add(self, key, *nodes):
             for node in nodes:
                 node = get_node(node)

@@ -35,7 +35,7 @@ def initialize(classpath, parameters):
     global INCOMING, OUTGOING, BOTH,\
         BREADTH_FIRST, DEPTH_FIRST,\
         NotFoundException,NotInTransactionException,DeadlockDetectedException,\
-        RelationshipType, Evaluator, IndexService,\
+        RelationshipType, Evaluator, IndexService, FulltextIndexService, FulltextQueryIndexService, SORT_RELEVANCE, SORT_INDEXORDER, \
         ALL, ALL_BUT_START_NODE, END_OF_GRAPH, StopAtDepth,\
         array, to_java, to_python, tx_join, make_map,\
         Node, Relationship, NativeRelType
@@ -52,6 +52,9 @@ def initialize(classpath, parameters):
             heap_size = '%sM' % heap_size # default to megabyte
         args.append('-Xmx' + heap_size)
     jpype.startJVM(jvm, *args)
+    apache_sort = jpype.JPackage('org').apache.lucene.search.Sort
+    SORT_INDEXORDER = apache_sort.INDEXORDER 
+    SORT_RELEVANCE = apache_sort.RELEVANCE 
     core = jpype.JPackage('org').neo4j.graphdb
     kernel_impl = jpype.JPackage('org').neo4j.kernel.impl
     INCOMING = core.Direction.INCOMING
@@ -80,6 +83,14 @@ def initialize(classpath, parameters):
         RemoteGraphDb = jpype.JClass("org.neo4j.remote.RemoteGraphDatabase")
     except:
         RemoteGraphDb = None
+    try:
+        FulltextIndexService = jpype.JClass("org.neo4j.index.lucene.LuceneFulltextIndexService")
+    except:
+        FulltextIndexService = None
+    try:
+        FulltextQueryIndexService = jpype.JClass("org.neo4j.index.lucene.LuceneFulltextQueryIndexService")
+    except:
+        FulltextQueryIndexService = None
     try:
         IndexService = jpype.JClass("org.neo4j.index.lucene.LuceneIndexService")
     except:

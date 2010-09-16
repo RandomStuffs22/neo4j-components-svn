@@ -35,7 +35,7 @@ def import_api():
     global INCOMING, OUTGOING, BOTH,\
         BREADTH_FIRST, DEPTH_FIRST,\
         NotFoundException,NotInTransactionException,DeadlockDetectedException,\
-        ALL, ALL_BUT_START_NODE, END_OF_GRAPH,\
+        ALL, ALL_BUT_START_NODE, END_OF_GRAPH, SORT_RELEVANCE, SORT_INDEXORDER,\
         Node, Relationship, NativeRelType
     from org.neo4j.graphdb.Direction import INCOMING, OUTGOING, BOTH
     from org.neo4j.graphdb.Traverser.Order import BREADTH_FIRST, DEPTH_FIRST
@@ -45,6 +45,7 @@ def import_api():
     from org.neo4j.graphdb import NotFoundException, NotInTransactionException
     from org.neo4j.kernel.impl.transaction import DeadlockDetectedException
     from org.neo4j.graphdb import Node, Relationship
+    from org.apache.lucene.search.Sort import SORT_RELEVANCE, SORT_INDEXORDER
     from org.neo4j.graphdb import RelationshipType as NativeRelType
     return StopEvaluator, ReturnableEvaluator, NativeRelType
 
@@ -52,7 +53,7 @@ def make_map(m):
     return m
 
 def initialize(classpath, parameters):
-    global RelationshipType, Evaluator, StopAtDepth, IndexService,\
+    global RelationshipType, Evaluator, StopAtDepth, IndexService, FulltextIndexService, FulltextQueryIndexService,\
         array, to_java, to_python
     heap_size = parameters.pop('heap_size', None)
     if heap_size is not None:
@@ -88,6 +89,14 @@ def initialize(classpath, parameters):
         from org.neo4j.remote import RemoteGraphDatabase
     except:
         RemoteGraphDatabase = None
+    try:
+        from org.neo4j.index.lucene import LuceneFulltextIndexService as FulltextIndexService
+    except:
+        FulltextIndexService = None
+    try:
+        from org.neo4j.index.lucene import LuceneFulltextQueryIndexService as FulltextQueryIndexService
+    except:
+        FulltextQueryIndexService = None
     try:
         from org.neo4j.index.lucene import LuceneIndexService as IndexService
     except:
