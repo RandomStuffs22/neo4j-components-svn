@@ -45,7 +45,7 @@ def import_api():
     from org.neo4j.graphdb import NotFoundException, NotInTransactionException
     from org.neo4j.kernel.impl.transaction import DeadlockDetectedException
     from org.neo4j.graphdb import Node, Relationship
-    from org.apache.lucene.search.Sort import SORT_RELEVANCE, SORT_INDEXORDER
+    from org.apache.lucene.search.Sort import RELEVANCE as SORT_RELEVANCE, INDEXORDER as SORT_INDEXORDER
     from org.neo4j.graphdb import RelationshipType as NativeRelType
     return StopEvaluator, ReturnableEvaluator, NativeRelType
 
