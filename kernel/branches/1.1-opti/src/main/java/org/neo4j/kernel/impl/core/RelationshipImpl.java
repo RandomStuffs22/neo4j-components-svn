@@ -27,7 +27,7 @@ import org.neo4j.kernel.impl.transaction.LockException;
 import org.neo4j.kernel.impl.transaction.LockType;
 import org.neo4j.kernel.impl.util.ArrayMap;
 
-class RelationshipImpl extends Primitive
+public class RelationshipImpl extends Primitive
 {
     private final int startNodeId;
     private final int endNodeId;
@@ -112,7 +112,7 @@ class RelationshipImpl extends Primitive
         return new NodeProxy( startNodeId, nodeManager );
     }
 
-    int getStartNodeId()
+    public int getStartNodeId()
     {
         return startNodeId;
     }
@@ -122,7 +122,7 @@ class RelationshipImpl extends Primitive
         return new NodeProxy( endNodeId, nodeManager );
     }
 
-    int getEndNodeId()
+    public int getEndNodeId()
     {
         return endNodeId;
     }
@@ -226,6 +226,35 @@ class RelationshipImpl extends Primitive
         }
     }
 
+    public NodeImpl[] getNodesImpl( NodeManager nodeManager )
+    {
+        return new NodeImpl[] { getStartNodeImpl( nodeManager ), getEndNodeImpl( nodeManager ) };
+    }
+    
+    public NodeImpl getStartNodeImpl( NodeManager nodeManager )
+    {
+        return nodeManager.getNodeForProxy( startNodeId );
+    }
+    
+    public NodeImpl getEndNodeImpl( NodeManager nodeManager )
+    {
+        return nodeManager.getNodeForProxy( endNodeId );
+    }
+    
+    public NodeImpl getOtherNodeImpl( NodeManager nodeManager, NodeImpl node )
+    {
+        if ( startNodeId == (int) node.getId() )
+        {
+            return nodeManager.getNodeForProxy( endNodeId );
+        }
+        if ( endNodeId == (int) node.getId() )
+        {
+            return nodeManager.getNodeForProxy( startNodeId );
+        }
+        throw new NotFoundException( "Node[" + node.getId()
+            + "] not connected to this relationship[" + getId() + "]" );
+    }
+    
     @Override
     public String toString()
     {

@@ -431,7 +431,7 @@ public class NodeManager
         }
     }
 
-    NodeImpl getNodeForProxy( int nodeId )
+    public NodeImpl getNodeForProxy( int nodeId )
     {
         NodeImpl node = nodeCache.get( nodeId );
         if ( node != null )
@@ -521,7 +521,7 @@ public class NodeManager
         return relTypeHolder.getRelationshipType( id );
     }
 
-    RelationshipImpl getRelForProxy( int relId )
+    public RelationshipImpl getRelForProxy( int relId )
     {
         RelationshipImpl relationship = relCache.get( relId );
         if ( relationship != null )
