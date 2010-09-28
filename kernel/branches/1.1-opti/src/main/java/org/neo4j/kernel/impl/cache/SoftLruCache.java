@@ -21,12 +21,14 @@ package org.neo4j.kernel.impl.cache;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SoftLruCache<K,V> implements Cache<K,V>
 {
     private final ConcurrentHashMap<K,SoftValue<K,V>> cache =
-        new ConcurrentHashMap<K,SoftValue<K,V>>();
+        new ConcurrentHashMap<K,SoftValue<K,V>>( 250000, 0.75f, 16 );
     
     private final SoftReferenceQueue<K,V> refQueue = 
         new SoftReferenceQueue<K,V>();
@@ -43,6 +45,18 @@ public class SoftLruCache<K,V> implements Cache<K,V>
         SoftValue<K,V> ref = 
             new SoftValue<K,V>( key, value, (ReferenceQueue<V>) refQueue ); 
         cache.put( key, ref );
+    }
+    
+    public void putAll( Map<K,V> map )
+    {
+        Map<K,SoftValue<K,V>> softMap = new HashMap<K,SoftValue<K,V>>( map.size() * 2 );
+        for ( Map.Entry<K, V> entry : map.entrySet() )
+        {
+            SoftValue<K,V> ref = 
+                new SoftValue<K,V>( entry.getKey(), entry.getValue(), (ReferenceQueue<V>) refQueue );
+            softMap.put( entry.getKey(), ref );
+        }
+        cache.putAll( softMap );
     }
     
     public V get( K key )
