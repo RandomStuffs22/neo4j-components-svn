@@ -13,7 +13,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>neo4j-graph-algo</artifactId>
   <groupId>org.neo4j</groupId>
-  <version>0.6-opti-SNAPSHOT</version>
+  <version>0.6</version>
   <name>${short-name}</name>
   <description>Graph algorithms for neo4j</description>
   <url>http://components.neo4j.org/${project.artifactId}/</url>
@@ -95,7 +95,7 @@
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j-kernel</artifactId>
-      <version>1.1-opti-SNAPSHOT</version>
+      <version>1.1</version>
     </dependency>
   </dependencies>
 
