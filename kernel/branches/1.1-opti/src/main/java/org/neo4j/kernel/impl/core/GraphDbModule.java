@@ -90,8 +90,10 @@ public class GraphDbModule
             useNewCache = false;
         }
         boolean useNoCache = false;
-        if ( params.containsKey( "use_no_cache" ) && 
-            params.get( "use_no_cache" ).equals( "true" ) )
+        if ( (params.containsKey( "use_no_cache" ) && 
+            params.get( "use_no_cache" ).equals( "true" )) || 
+            (params.containsKey( "use_high_level_cache" ) && 
+            params.get( "use_high_level_cache" ).equals( "false" )) )
         {
             useNoCache = true;
         }
