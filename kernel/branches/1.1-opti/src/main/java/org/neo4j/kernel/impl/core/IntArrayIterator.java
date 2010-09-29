@@ -28,29 +28,25 @@ import java.util.Set;
 
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.NotFoundException;
+import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
 
-class IntArrayIterator<T> implements Iterable<T>, Iterator<T>
+class IntArrayIterator implements Iterable<Relationship>,
+    Iterator<Relationship>
 {
-//    private Logger log = Logger
-//        .getLogger( IntArrayIterator.class.getName() );
-
     private Iterator<RelTypeElementIterator> typeIterator;
     private RelTypeElementIterator currentTypeIterator = null;
     private final NodeImpl fromNode;
     private final Direction direction;
-    private T nextElement;
+    private Relationship nextElement = null;
     private final NodeManager nodeManager;
     private final RelationshipType types[];
 
-    private Set<String> visitedTypes = new HashSet<String>();
-    private final RelationshipGetter<T> relGetter;
-    
+    private final Set<String> visitedTypes = new HashSet<String>();
+
     IntArrayIterator( List<RelTypeElementIterator> rels, NodeImpl fromNode,
-        Direction direction, NodeManager nodeManager, RelationshipType[] types,
-        RelationshipGetter<T> relGetter )
+        Direction direction, NodeManager nodeManager, RelationshipType[] types )
     {
-        this.relGetter = relGetter;
         this.typeIterator = rels.iterator();
         if ( typeIterator.hasNext() )
         {
@@ -67,16 +63,7 @@ class IntArrayIterator<T> implements Iterable<T>, Iterator<T>
         this.types = types;
     }
 
-//    IntArrayIterator( Iterator<RelTypeElementIterator> rels, NodeImpl fromNode,
-//        Direction direction, NodeManager nodeManager )
-//    {
-//        this.typeIterator = rels;
-//        this.fromNode = fromNode;
-//        this.direction = direction;
-//        this.nodeManager = nodeManager;
-//    }
-    
-    public Iterator<T> iterator()
+    public Iterator<Relationship> iterator()
     {
         return this;
     }
@@ -94,15 +81,16 @@ class IntArrayIterator<T> implements Iterable<T>, Iterator<T>
                 int nextId = currentTypeIterator.next( nodeManager );
                 try
                 {
-                    T possibleElement = relGetter.getRelationship( nodeManager, nextId );
+                    Relationship possibleElement = nodeManager
+                        .getRelationshipById( nextId );
                     if ( direction == Direction.INCOMING
-                         && relGetter.getEndNodeId( possibleElement )== fromNode.id )
+                         && possibleElement.getEndNode().getId() == fromNode.id )
                     {
                         nextElement = possibleElement;
                         return true;
                     }
                     else if ( direction == Direction.OUTGOING
-                            && relGetter.getStartNodeId( possibleElement ) == fromNode.id )
+                              && possibleElement.getStartNode().getId() == fromNode.id )
                     {
                         nextElement = possibleElement;
                         return true;
@@ -114,9 +102,7 @@ class IntArrayIterator<T> implements Iterable<T>, Iterator<T>
                     }
                 }
                 catch ( NotFoundException e )
-                {
-//                    log.log( Level.FINE,
-//                        "Unable to get relationship " + nextId, e );
+                { // ok deleted 
                 }
             }
             while ( !currentTypeIterator.hasNext( nodeManager ) )
@@ -164,12 +150,12 @@ class IntArrayIterator<T> implements Iterable<T>, Iterator<T>
         return false;
     }
 
-    public T next()
+    public Relationship next()
     {
         hasNext();
         if ( nextElement != null )
         {
-            T elementToReturn = nextElement;
+            Relationship elementToReturn = nextElement;
             nextElement = null;
             return elementToReturn;
         }

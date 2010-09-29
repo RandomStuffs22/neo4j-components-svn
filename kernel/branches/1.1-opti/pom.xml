@@ -9,7 +9,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.neo4j</groupId>
   <artifactId>neo4j-kernel</artifactId>
-  <version>1.1-opti-SNAPSHOT</version>
+  <version>1.1</version>
   <name>Neo4j - Graph Database Kernel</name>
   <description>
  Neo4j kernel is a lightweight, embedded Java database designed to
@@ -144,6 +144,11 @@
       <artifactId>geronimo-jta_1.1_spec</artifactId>
       <version>1.1.1</version>
     </dependency>
+	<dependency>
+	  <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+	  <artifactId>concurrentlinkedhashmap-lru</artifactId>
+	  <version>1.0</version>
+	</dependency>
   </dependencies>
 
   <reporting>
@@ -169,7 +174,7 @@
           <groups>
             <group>
               <title>Graph database</title>
-              <packages>org.neo4j.kernel:org.neo4j.graphdb:org.neo4j.kernel.*:org.neo4j.graphdb.*
+              <packages>org.neo4j.kernel:org.neo4j.graphdb:org.neo4j.kernel.*:org.neo4j.graphdb.*:org.apache.*
                   </packages>
             </group>
             <group>

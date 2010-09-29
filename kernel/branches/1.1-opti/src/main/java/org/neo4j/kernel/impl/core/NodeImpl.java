@@ -42,7 +42,7 @@ import org.neo4j.kernel.impl.traversal.OldTraverserWrapper;
 import org.neo4j.kernel.impl.util.ArrayMap;
 import org.neo4j.kernel.impl.util.IntArray;
 
-public class NodeImpl extends Primitive
+class NodeImpl extends Primitive
 {
     private volatile ArrayMap<String,IntArray> relationshipMap = null;
     // private RelationshipGrabber relationshipGrabber = null;
@@ -162,36 +162,37 @@ public class NodeImpl extends Primitive
 
     public Iterable<Relationship> getRelationships( NodeManager nodeManager )
     {
-        return new IntArrayIterator<Relationship>( getAllRelationships( nodeManager ), this,
-            Direction.BOTH, nodeManager, new RelationshipType[0], RelationshipGetter.DEFAULT );
+        return new IntArrayIterator( getAllRelationships( nodeManager ), this,
+            Direction.BOTH, nodeManager, new RelationshipType[0] );
     }
 
     public Iterable<Relationship> getRelationships( NodeManager nodeManager, Direction dir )
     {
-        return new IntArrayIterator<Relationship>( getAllRelationships( nodeManager ), this, dir,
-            nodeManager, new RelationshipType[0], RelationshipGetter.DEFAULT );
+        return new IntArrayIterator( getAllRelationships( nodeManager ), this, dir,
+            nodeManager, new RelationshipType[0] );
     }
 
     public Iterable<Relationship> getRelationships( NodeManager nodeManager, RelationshipType type )
     {
         RelationshipType types[] = new RelationshipType[] { type };
-        return new IntArrayIterator<Relationship>( getAllRelationshipsOfType( nodeManager, types ),
-            this, Direction.BOTH, nodeManager, types, RelationshipGetter.DEFAULT );
+        return new IntArrayIterator( getAllRelationshipsOfType( nodeManager, types ),
+            this, Direction.BOTH, nodeManager, types );
     }
 
     public Iterable<Relationship> getRelationships( NodeManager nodeManager,
             RelationshipType... types )
     {
-        return new IntArrayIterator<Relationship>( getAllRelationshipsOfType( nodeManager, types ),
-            this, Direction.BOTH, nodeManager, types, RelationshipGetter.DEFAULT );
+        return new IntArrayIterator( getAllRelationshipsOfType( nodeManager, types ),
+            this, Direction.BOTH, nodeManager, types );
     }
 
     public Relationship getSingleRelationship( NodeManager nodeManager, RelationshipType type,
         Direction dir )
     {
         RelationshipType types[] = new RelationshipType[] { type };
-        Iterator<Relationship> rels = new IntArrayIterator<Relationship>( getAllRelationshipsOfType( nodeManager,
-                types ), this, dir, nodeManager, types, RelationshipGetter.DEFAULT );
+        Iterator<Relationship> rels = new IntArrayIterator( getAllRelationshipsOfType( nodeManager,
+                types ),
+            this, dir, nodeManager, types );
         if ( !rels.hasNext() )
         {
             return null;
@@ -209,8 +210,8 @@ public class NodeImpl extends Primitive
         Direction dir )
     {
         RelationshipType types[] = new RelationshipType[] { type };
-        return new IntArrayIterator<Relationship>( getAllRelationshipsOfType( nodeManager, types ),
-            this, dir, nodeManager, types, RelationshipGetter.DEFAULT );
+        return new IntArrayIterator( getAllRelationshipsOfType( nodeManager, types ),
+            this, dir, nodeManager, types );
     }
 
     public void delete( NodeManager nodeManager )
@@ -496,38 +497,5 @@ public class NodeImpl extends Primitive
     RelationshipChainPosition getRelChainPosition()
     {
         return relChainPosition;
-    }
-
-    public Iterable<RelationshipImpl> getRelationshipsImpl( NodeManager nodeManager )
-    {
-        return new IntArrayIterator<RelationshipImpl>( getAllRelationships( nodeManager ), this,
-            Direction.BOTH, nodeManager, new RelationshipType[0], RelationshipGetter.INTERNAL );
-    }
-
-    public Iterable<RelationshipImpl> getRelationshipsImpl( NodeManager nodeManager, Direction dir )
-    {
-        return new IntArrayIterator<RelationshipImpl>( getAllRelationships( nodeManager ), this, dir,
-            nodeManager, new RelationshipType[0], RelationshipGetter.INTERNAL );
-    }
-
-    public Iterable<RelationshipImpl> getRelationshipsImpl( NodeManager nodeManager, RelationshipType type )
-    {
-        RelationshipType types[] = new RelationshipType[] { type };
-        return new IntArrayIterator<RelationshipImpl>( getAllRelationshipsOfType( nodeManager, types ),
-            this, Direction.BOTH, nodeManager, types, RelationshipGetter.INTERNAL );
-    }
-
-    public Iterable<RelationshipImpl> getRelationshipsImpl( NodeManager nodeManager, RelationshipType... types )
-    {
-        return new IntArrayIterator<RelationshipImpl>( getAllRelationshipsOfType( nodeManager, types ),
-            this, Direction.BOTH, nodeManager, types, RelationshipGetter.INTERNAL );
-    }
-
-    public Iterable<RelationshipImpl> getRelationshipsImpl( NodeManager nodeManager, RelationshipType type,
-            Direction dir )
-    {
-        RelationshipType types[] = new RelationshipType[] { type };
-        return new IntArrayIterator<RelationshipImpl>( getAllRelationshipsOfType( nodeManager, types ),
-            this, dir, nodeManager, types, RelationshipGetter.INTERNAL );
     }
 }
