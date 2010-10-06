@@ -1,0 +1,19 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.neo4j</groupId>
+  <artifactId>build-all-trunks</artifactId>
+  <name>POM for building all trunks</name>
+  <packaging>pom</packaging>
+  <version>1-SNAPSHOT</version>
+
+  <modules>
+    <module>kernel/trunk</module>
+    <module>shell/trunk</module>
+    <module>index/trunk</module>
+    <module>remote-graphdb/trunk</module>
+    <module>graph-algo/trunk</module>
+    <module>online-backup/trunk</module>
+    <module>apoc/trunk</module>
+  </modules>
+
+</project>
