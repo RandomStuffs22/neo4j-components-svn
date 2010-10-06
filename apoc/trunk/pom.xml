@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
-    <artifactId>parent-pom</artifactId>
     <groupId>org.neo4j</groupId>
-    <version>7</version>
+    <artifactId>parent-central</artifactId>
+    <version>1-SNAPSHOT</version>
   </parent>
 
   <properties>
@@ -54,6 +54,7 @@
 
   <scm>
     <connection>scm:svn:https://svn.neo4j.org/components/apoc/trunk/</connection>
+    <developerConnection>${project.scm.connection}</developerConnection>
     <url>https://trac.neo4j.org/browser/components/apoc</url>
   </scm>
 
@@ -86,3 +87,4 @@
     </developer>
   </developers>
 </project>
+
