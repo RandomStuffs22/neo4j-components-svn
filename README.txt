@@ -9,6 +9,6 @@ pom-for-building-all-trunks.xml
 
   mvn clean -f pom-for-building-all-trunks.xml
   rm -rf ~/.m2/repository
-  mvn install -f ../community/maven-skin/trunk/pom.xml
-  mvn install -f parent-central/trunk/pom.xml
+  mvn install -f ../community/maven-skin/tags/1.0.3/pom.xml
+  mvn install -f parent-central/tags/1/pom.xml
   mvn install -f pom-for-building-all-trunks.xml
