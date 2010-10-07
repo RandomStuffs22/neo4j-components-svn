@@ -13,6 +13,7 @@
     <module>remote-graphdb/trunk</module>
     <module>graph-algo/trunk</module>
     <module>online-backup/trunk</module>
+    <module>udc/trunk</module>
     <module>apoc/trunk</module>
   </modules>
 
